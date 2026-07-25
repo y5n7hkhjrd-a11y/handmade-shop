@@ -19,6 +19,7 @@ export const orderService = {
   async create(data: {
     customerId: string;
     notes?: string;
+    paidAmount?: number;
     recipeId?: string;
     customInput?: string;
     salePrice?: number;
@@ -102,6 +103,7 @@ export const orderService = {
       return orderRepository.create({
         customerId: data.customerId,
         notes: data.notes,
+        paidAmount: data.paidAmount,
         subtotal: totalSubtotal,
         materialCost: totalMaterialCost,
         packagingCost: totalPackagingCost,
@@ -148,6 +150,7 @@ export const orderService = {
       return orderRepository.create({
         customerId: data.customerId,
         notes: data.notes,
+        paidAmount: data.paidAmount,
         recipeId: data.recipeId,
         customInput: data.customInput,
         subtotal: salePrice,
@@ -180,6 +183,7 @@ export const orderService = {
     return orderRepository.create({
       customerId: data.customerId,
       notes: data.notes,
+      paidAmount: data.paidAmount,
       items: data.items,
       orderLines,
     });
@@ -235,6 +239,7 @@ export const orderService = {
     id: string,
     data: {
       notes?: string;
+      paidAmount?: number;
       orderLines: Array<{
         type: 'RECIPE' | 'PRODUCT';
         recipeId?: string;
@@ -307,7 +312,7 @@ export const orderService = {
     return orderRepository.replaceLines(id, data, items, subtotal, materialCost);
   },
 
-  async update(id: string, data: { discount?: number; notes?: string }) {
+  async update(id: string, data: { discount?: number; paidAmount?: number; notes?: string }) {
     const order = await orderRepository.findById(id);
     if (!order) {
       throw new AppError('Order not found', 404);
@@ -327,6 +332,10 @@ export const orderService = {
     endDate?: string;
   }) {
     return orderRepository.list(params);
+  },
+
+  async getStatusCounts() {
+    return orderRepository.getStatusCounts();
   },
 
   async getById(id: string) {

@@ -174,6 +174,7 @@ export interface Order {
   customInput?: string | null;
   subtotal: number;
   discount: number;
+  paidAmount: number;
   materialCost: number;
   packagingCost: number;
   shippingCost: number;

@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import {
   createShippingSchema,
   updateShippingSchema,
-  paginationSchema,
+  listShippingQuerySchema,
 } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -12,12 +12,10 @@ export const shippingRouter: Router = Router();
 
 shippingRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listShippingQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const status = req.query.status as string | undefined;
-      const orderId = req.query.orderId as string | undefined;
+      const { page, limit, status, orderId } = req.query as any;
       const result = await shippingRepository.list({ page, limit, status, orderId });
       res.json({
         success: true,

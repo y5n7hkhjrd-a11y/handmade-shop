@@ -193,6 +193,7 @@ model Order {
   customInput     String?     @map("custom_input")
   subtotal        Decimal     @default(0) @db.Decimal(12, 2)
   discount        Decimal     @default(0) @db.Decimal(12, 2)
+  paidAmount      Decimal     @default(0) @map("paid_amount") @db.Decimal(12, 2)
   materialCost    Decimal     @default(0) @map("material_cost") @db.Decimal(12, 2)
   packagingCost   Decimal     @default(0) @map("packaging_cost") @db.Decimal(12, 2)
   shippingCost    Decimal     @default(0) @map("shipping_cost") @db.Decimal(12, 2)

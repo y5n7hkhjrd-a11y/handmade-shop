@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api';
 import { formatCurrency, formatDate, formatDateTime } from '@handmade-shop/shared';
@@ -9,6 +9,7 @@ import Toast from '@/components/Toast';
 import { SkeletonRow } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
+import ConfirmModal from '@/components/ConfirmModal';
 import { copyToClipboard } from '@/lib/clipboard';
 
 const statusFlow = [
@@ -36,12 +37,28 @@ const statusIcons: Record<string, string> = {
   Completed: '✅',
 };
 const statusLabels: Record<string, string> = {
-  Draft: 'Nháp',
-  WaitingConfirm: 'Chờ xác nhận',
-  InProgress: 'Đang sản xuất',
-  Packaging: 'Đang đóng gói',
-  ReadyToShip: 'Sẵn sàng giao',
+  Draft: 'Nhập đơn',
+  WaitingConfirm: 'Đơn chờ làm',
+  InProgress: 'Đơn đã xong',
+  Packaging: 'Đơn đã gói',
+  ReadyToShip: 'Đã gửi',
   Completed: 'Hoàn thành',
+};
+const filterChipActiveColors: Record<string, string> = {
+  Draft: '!bg-gray-100 !border-gray-300 !text-gray-700 !shadow-sm',
+  WaitingConfirm: '!bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm',
+  InProgress: '!bg-blue-50 !border-blue-300 !text-blue-700 !shadow-sm',
+  Packaging: '!bg-pink-50 !border-pink-300 !text-pink-700 !shadow-sm',
+  ReadyToShip: '!bg-emerald-50 !border-emerald-300 !text-emerald-700 !shadow-sm',
+  Completed: '!bg-green-50 !border-green-300 !text-green-700 !shadow-sm',
+};
+const filterChipHoverColors: Record<string, string> = {
+  Draft: 'hover:!border-gray-200 hover:!text-gray-600 hover:!bg-gray-100/50',
+  WaitingConfirm: 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50',
+  InProgress: 'hover:!border-blue-200 hover:!text-blue-600 hover:!bg-blue-50/50',
+  Packaging: 'hover:!border-pink-200 hover:!text-pink-600 hover:!bg-pink-50/50',
+  ReadyToShip: 'hover:!border-emerald-200 hover:!text-emerald-600 hover:!bg-emerald-50/50',
+  Completed: 'hover:!border-green-200 hover:!text-green-600 hover:!bg-green-50/50',
 };
 const NEXT_STATUS: Record<string, string> = {
   Draft: 'WaitingConfirm',
@@ -114,10 +131,13 @@ function OrderDetail({
 }: {
   order: any;
   onClose: () => void;
-  onStatusChange: () => void;
+  onStatusChange: (openEditAfterDraft?: boolean) => void;
   token: string | null;
   showToast?: (message: string, type?: 'success' | 'error') => void;
 }) {
+  const [showConfirmReturn, setShowConfirmReturn] = useState(false);
+  const [returnLabel, setReturnLabel] = useState('');
+  const mousedownOnContent = useRef(false);
   const handleAdvance = async () => {
     if (!token || !NEXT_STATUS[order.status]) return;
     try {
@@ -136,14 +156,20 @@ function OrderDetail({
     const prevLabel =
       statusLabels[PREV_STATUS[order.status]] ||
       PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim();
-    if (!confirm(`Quay lại trạng thái "${prevLabel}"?`)) return;
+    setReturnLabel(prevLabel);
+    setShowConfirmReturn(true);
+  };
+  const doReturn = async () => {
+    if (!token) return;
     try {
       await apiClient(`/orders/${order.id}/status`, {
         method: 'PATCH',
         body: { status: PREV_STATUS[order.status] },
         token,
       });
-      onStatusChange();
+      const targetIsDraft = PREV_STATUS[order.status] === 'Draft';
+      onStatusChange(targetIsDraft);
+      onClose();
     } catch (e: any) {
       console.error(e);
     }
@@ -152,12 +178,41 @@ function OrderDetail({
     order.items?.reduce((sum: number, i: any) => sum + Number(i.totalPrice), 0) || 0;
   const packagingTotal =
     order.items?.reduce((sum: number, i: any) => sum + Number(i.packagingCost || 0), 0) || 0;
+  const computedTotalCost =
+    itemTotal + Number(order.packagingCost || 0) + Number(order.shippingCost || 0);
+  const salePriceTotal =
+    Number(order.subtotal || 0) -
+    Number(order.discount || 0) +
+    Number(order.packagingCost || 0) +
+    Number(order.shippingCost || 0);
+  const profit = Number(order.subtotal || 0) - Number(order.discount || 0) - computedTotalCost;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b flex items-center justify-between">
-          <div>
+    <div
+      className="modal-overlay"
+      onClick={() => {
+        if (!mousedownOnContent.current) onClose();
+        mousedownOnContent.current = false;
+      }}
+      onMouseDown={() => {
+        mousedownOnContent.current = false;
+      }}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="modal-content max-w-2xl"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={() => {
+          mousedownOnContent.current = true;
+        }}
+      >
+        {/* Accent bar for Đơn chờ làm */}
+        {order.status === 'WaitingConfirm' && (
+          <div className="h-1 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 rounded-t-xl" />
+        )}
+        <div className="p-6 border-b flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               {statusIcons[order.status] || '📋'} Chi tiết đơn hàng
             </h2>
@@ -174,13 +229,36 @@ function OrderDetail({
               </button>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="btn-ghost btn-icon hover:bg-gray-100 rounded-full"
-            aria-label="Đóng"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {PREV_STATUS[order.status] && (
+              <button
+                onClick={handleReturn}
+                className="btn-ghost border border-gray-200 group text-sm"
+              >
+                <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">←</span>
+                <span className="hidden sm:inline">
+                  {statusLabels[PREV_STATUS[order.status]] ||
+                    PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+              </button>
+            )}
+            {NEXT_STATUS[order.status] && (
+              <button onClick={handleAdvance} className="btn-primary group text-sm">
+                <span className="hidden sm:inline">
+                  {statusLabels[NEXT_STATUS[order.status]] ||
+                    NEXT_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+                <span className="ml-1 group-hover:translate-x-0.5 transition-transform">→</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="btn-ghost btn-icon hover:bg-gray-100 rounded-full"
+              aria-label="Đóng"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
@@ -208,15 +286,92 @@ function OrderDetail({
             <div className="p-3 bg-gray-50 rounded-xl">
               <span className="text-xs text-gray-500">Tổng cộng</span>
               <p className="font-bold text-lg text-purple-600 mt-0.5">
-                {formatCurrency(
-                  itemTotal +
-                  Number(order.packagingCost || 0) +
-                  Number(order.shippingCost || 0) -
-                  Number(order.discount || 0)
-                )}
+                {formatCurrency(salePriceTotal)}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                (đã gồm{' '}
+                {formatCurrency(Number(order.packagingCost || 0) + Number(order.shippingCost || 0))}{' '}
+                phí)
               </p>
             </div>
           </div>
+
+          {/* Payment status */}
+          {(() => {
+            const paid = Number(order.paidAmount) || 0;
+            const remaining = salePriceTotal - paid;
+            const isFullyPaid = paid >= salePriceTotal && salePriceTotal > 0;
+            const isPartiallyPaid = paid > 0 && !isFullyPaid;
+            return (
+              <div
+                className={`mt-4 p-3 rounded-xl border ${
+                  isFullyPaid
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : isPartiallyPaid
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-red-50 border-red-200'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      isFullyPaid
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : isPartiallyPaid
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {isFullyPaid
+                      ? '✅ Đã thanh toán'
+                      : isPartiallyPaid
+                        ? '⏳ Thanh toán một phần'
+                        : '❌ Chưa thanh toán'}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-xs text-gray-400 block">Còn lại</span>
+                    <span
+                      className={`text-lg font-bold ${remaining > 0 ? 'text-red-500' : 'text-gray-400'}`}
+                    >
+                      {formatCurrency(remaining)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-gray-500">
+                  <span>
+                    💵 Đã thanh toán:{' '}
+                    <strong className={isFullyPaid ? 'text-emerald-600' : ''}>
+                      {formatCurrency(paid)}
+                    </strong>
+                  </span>
+                  <span>
+                    Tổng cộng: <strong>{formatCurrency(salePriceTotal)}</strong>
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Notes — prominently shown at WaitingConfirm step */}
+          {order.notes && (
+            <div
+              className={`mt-6 p-4 rounded-xl border ${
+                order.status === 'WaitingConfirm'
+                  ? 'bg-amber-50 border-amber-200'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                <span>📝 Ghi chú</span>
+                {order.status === 'WaitingConfirm' && (
+                  <span className="text-[10px] font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                    Đơn chờ làm
+                  </span>
+                )}
+              </h3>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{order.notes}</p>
+            </div>
+          )}
 
           {/* Order Lines — final products */}
           {order.orderLines && order.orderLines.length > 0 && (
@@ -228,45 +383,59 @@ function OrderDetail({
               {order.orderLines.map((ol: any, i: number) => (
                 <div
                   key={ol.id || i}
-                  className="flex items-center justify-between p-3 bg-purple-50 rounded-xl border border-purple-100"
+                  className="flex flex-col p-3 bg-purple-50 rounded-xl border border-purple-100"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-lg">{ol.type === 'RECIPE' ? '📋' : '📦'}</span>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {ol.type === 'RECIPE'
-                          ? ol.recipe?.name || 'Công thức'
-                          : ol.product?.name || 'Sản phẩm'}
-                      </p>
-                      {ol.customInput && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] text-gray-400">Input:</span>
-                          <div className="flex gap-0.5">
-                            {ol.customInput.split('').map((char: string, j: number) => (
-                              <span
-                                key={j}
-                                className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-gray-500 border border-gray-200"
-                              >
-                                {char}
-                              </span>
-                            ))}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-lg">{ol.type === 'RECIPE' ? '📋' : '📦'}</span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {ol.type === 'RECIPE'
+                            ? ol.recipe?.name || 'Công thức'
+                            : ol.product?.name || 'Sản phẩm'}
+                        </p>
+                        {ol.customInput && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[10px] text-gray-400">Input:</span>
+                            <div className="flex gap-0.5">
+                              {ol.customInput.split('').map((char: string, j: number) => (
+                                <span
+                                  key={j}
+                                  className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-gray-500 border border-gray-200"
+                                >
+                                  {char}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <p className="font-bold text-purple-600">
+                        {formatCurrency(
+                          ol.type === 'RECIPE'
+                            ? Number(ol.salePrice || 0)
+                            : Number(ol.unitPrice || 0) * (ol.quantity || 1),
+                        )}
+                      </p>
+                      {ol.quantity > 1 && (
+                        <p className="text-[10px] text-gray-400">× {ol.quantity}</p>
                       )}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-3">
-                    <p className="font-bold text-purple-600">
-                      {formatCurrency(
-                        ol.type === 'RECIPE'
-                          ? Number(ol.salePrice || 0)
-                          : Number(ol.unitPrice || 0) * (ol.quantity || 1)
-                      )}
-                    </p>
-                    {ol.quantity > 1 && (
-                      <p className="text-[10px] text-gray-400">× {ol.quantity}</p>
-                    )}
-                  </div>
+                  {/* Per-line notes - shown at Đơn chờ làm */}
+                  {ol.notes && (
+                    <div
+                      className={`mt-2 p-2.5 rounded-lg text-xs whitespace-pre-wrap border-l-4 ${
+                        order.status === 'WaitingConfirm'
+                          ? 'bg-amber-50/70 border-amber-400 text-amber-800'
+                          : 'bg-gray-50 border-gray-300 text-gray-600'
+                      }`}
+                    >
+                      {ol.notes}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -279,9 +448,7 @@ function OrderDetail({
                 <div className="flex items-center gap-2">
                   <span className="text-lg">📋</span>
                   <div>
-                    <h3 className="text-sm font-semibold text-purple-700">
-                      {order.recipe.name}
-                    </h3>
+                    <h3 className="text-sm font-semibold text-purple-700">{order.recipe.name}</h3>
                     {order.customInput && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="text-[10px] text-gray-400">Input:</span>
@@ -311,14 +478,10 @@ function OrderDetail({
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi tiết chi phí</h3>
             <div className="space-y-2">
               <div className="detail-row py-1.5">
-                <span className="detail-label">💎 Giá vốn nguyên liệu ({order.items?.length || 0} sản phẩm)</span>
-                <span className="detail-value">{formatCurrency(itemTotal)}</span>
-              </div>
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Giảm giá</span>
-                <span className="detail-value text-red-600">
-                  -{formatCurrency(Number(order.discount))}
+                <span className="detail-label">
+                  💎 Giá vốn nguyên liệu ({order.items?.length || 0} sản phẩm)
                 </span>
+                <span className="detail-value">{formatCurrency(itemTotal)}</span>
               </div>
               <div className="detail-row py-1.5">
                 <span className="detail-label">Phí đóng gói</span>
@@ -333,12 +496,7 @@ function OrderDetail({
               <div className="detail-row py-2 border-t-2 border-gray-200">
                 <span className="text-sm font-semibold text-gray-800">Tổng chi phí</span>
                 <span className="text-base font-bold text-purple-600">
-                  {formatCurrency(
-                    itemTotal +
-                    Number(order.packagingCost || 0) +
-                    Number(order.shippingCost || 0) -
-                    Number(order.discount || 0)
-                  )}
+                  {formatCurrency(computedTotalCost)}
                 </span>
               </div>
             </div>
@@ -361,14 +519,21 @@ function OrderDetail({
                       </span>
                     </div>
                   )}
-                  {order.costSnapshot != null && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Tổng chi phí (snapshot)</span>
-                      <span className="font-medium text-gray-700">
-                        {formatCurrency(Number(order.costSnapshot))}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Tổng chi phí (snapshot)</span>
+                    <span className="font-medium text-gray-700">
+                      {formatCurrency(computedTotalCost)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-amber-100 pt-1">
+                    <span className="text-gray-500 font-medium">💵 Lợi nhuận (snapshot)</span>
+                    <span
+                      className={`font-bold ${profit > 0 ? 'text-emerald-600' : profit < 0 ? 'text-red-600' : 'text-gray-500'}`}
+                    >
+                      {profit > 0 ? '+' : ''}
+                      {formatCurrency(profit)}
+                    </span>
+                  </div>
                   {order.recipeSnapshot && (
                     <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
                       <p className="text-xs font-medium text-amber-800 mb-1">
@@ -403,8 +568,6 @@ function OrderDetail({
               </div>
             )}
           </div>
-
-
         </div>
 
         <div className="p-6 border-t flex justify-between items-center">
@@ -414,32 +577,21 @@ function OrderDetail({
               <span className="ml-4">Completed: {formatDateTime(order.completedAt)}</span>
             )}
           </div>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="btn-secondary">
-              Đóng
-            </button>
-            {PREV_STATUS[order.status] && (
-              <button onClick={handleReturn} className="btn-ghost border border-gray-200 group">
-                <span className="mr-1.5 group-hover:-translate-x-0.5 transition-transform">←</span>
-                <span>
-                  {statusLabels[PREV_STATUS[order.status]] ||
-                    PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-              </button>
-            )}
-            {NEXT_STATUS[order.status] && (
-              <button onClick={handleAdvance} className="btn-primary group">
-                <span>
-                  Chuyển sang{' '}
-                  {statusLabels[NEXT_STATUS[order.status]] ||
-                    NEXT_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-                <span className="ml-1.5 group-hover:translate-x-0.5 transition-transform">→</span>
-              </button>
-            )}
-          </div>
+          <button onClick={onClose} className="btn-secondary">
+            Đóng
+          </button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirmReturn}
+        onClose={() => setShowConfirmReturn(false)}
+        onConfirm={doReturn}
+        title="Quay lại trạng thái"
+        message={`Bạn có chắc muốn quay lại trạng thái "${returnLabel}"?`}
+        confirmLabel="Xác nhận"
+        variant="primary"
+      />
     </div>
   );
 }
@@ -456,6 +608,7 @@ export default function OrdersPage() {
   const [form, setForm] = useState({
     customerId: '',
     notes: '',
+    paidAmount: 0,
     orderLines: [] as Array<{
       type: 'RECIPE' | 'PRODUCT';
       recipeId: string;
@@ -473,7 +626,18 @@ export default function OrdersPage() {
   const [matchingRules, setMatchingRules] = useState<any[]>([]);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const { toast, showToast } = useToast();
+
+  const loadCounts = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await apiClient<any>('/orders/counts', { token });
+      if (res.data) setStatusCounts(res.data);
+    } catch {
+      /* ignore */
+    }
+  }, [token]);
 
   const loadOrders = useCallback(async () => {
     if (!token) return;
@@ -493,6 +657,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
+    loadCounts();
     if (token) {
       apiClient('/customers?limit=100', { token })
         .then((r: any) => setCustomers(r.data || []))
@@ -584,6 +749,7 @@ export default function OrdersPage() {
     try {
       const body = {
         notes: form.notes || undefined,
+        paidAmount: form.paidAmount || 0,
         orderLines: form.orderLines.map((line) => {
           if (line.type === 'RECIPE') {
             return {
@@ -608,6 +774,21 @@ export default function OrdersPage() {
       if (editingOrderId) {
         await apiClient(`/orders/${editingOrderId}/lines`, { method: 'PUT', body, token });
         showToast('Đã lưu thay đổi');
+        // Advance after save if requested
+        if (advanceAfterSave.current) {
+          advanceAfterSave.current = false;
+          const orderId = editingOrderId;
+          try {
+            await apiClient(`/orders/${orderId}/status`, {
+              method: 'PATCH',
+              body: { status: NEXT_STATUS['Draft'] },
+              token,
+            });
+            showToast('Đã xác nhận đơn hàng');
+          } catch (e: any) {
+            showToast(e.message || 'Xác nhận thất bại', 'error');
+          }
+        }
       } else {
         await apiClient('/orders', {
           method: 'POST',
@@ -619,32 +800,46 @@ export default function OrdersPage() {
 
       setShowForm(false);
       setEditingOrderId(null);
-      setForm({ customerId: '', notes: '', orderLines: [] });
+      setForm({ customerId: '', notes: '', paidAmount: 0, orderLines: [] });
       setFormErrors({});
       loadOrders();
+      loadCounts();
     } catch (e: any) {
       showToast(e.message || 'Thao tác thất bại', 'error');
     }
   };
 
+  const [confirmReturn, setConfirmReturn] = useState<{
+    id: string;
+    status: string;
+    label: string;
+  } | null>(null);
+  const formMousedownOnContent = useRef(false);
+  const advanceAfterSave = useRef(false);
+
   const advanceOrder = async (id: string, status: string, isReturn = false) => {
     if (!token) return;
     const label = statusLabels[status] || status.replace(/([A-Z])/g, ' $1').trim();
-    if (isReturn && !confirm(`Quay lại trạng thái "${label}"?`)) return;
+    if (isReturn) {
+      setConfirmReturn({ id, status, label });
+      return;
+    }
     try {
       await apiClient(`/orders/${id}/status`, { method: 'PATCH', body: { status }, token });
       showToast(`Đã chuyển sang ${label}`);
       loadOrders();
+      loadCounts();
     } catch (e: any) {
       showToast(e.message || 'Cập nhật thất bại', 'error');
     }
   };
 
-  // Stats
-  const statusCounts = statusFlow.reduce(
+  // Stats (use fetched counts, fall back to local page counts)
+  const localCounts = statusFlow.reduce(
     (acc, s) => ({ ...acc, [s]: orders.filter((o: any) => o.status === s).length }),
     {} as Record<string, number>,
   );
+  const effectiveCounts = Object.keys(statusCounts).length > 0 ? statusCounts : localCounts;
 
   return (
     <div className="page-enter">
@@ -657,6 +852,7 @@ export default function OrdersPage() {
         </div>
         <button
           onClick={() => {
+            setForm({ customerId: '', notes: '', paidAmount: 0, orderLines: [] });
             setShowForm(true);
             setEditingOrderId(null);
             setFormErrors({});
@@ -685,10 +881,15 @@ export default function OrdersPage() {
               setStatusFilter(s);
               setPage(1);
             }}
-            className={`filter-chip ${statusFilter === s ? 'filter-chip-active' : ''}`}
+            className={`filter-chip ${statusFilter === s ? 'filter-chip-active' : ''} ${
+              statusFilter === s && filterChipActiveColors[s]
+                ? filterChipActiveColors[s]
+                : filterChipHoverColors[s] || ''
+            }`}
           >
-            {statusIcons[s]} {statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}
-            <span className="text-gray-400 ml-1">({statusCounts[s] || 0})</span>
+            <span>{statusIcons[s]}</span>
+            <span>{statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}</span>
+            <span className="text-gray-400 ml-1">({effectiveCounts[s] || 0})</span>
           </button>
         ))}
       </div>
@@ -698,46 +899,95 @@ export default function OrdersPage() {
         <div
           className="modal-overlay"
           onClick={() => {
-            setShowForm(false);
-            setEditingOrderId(null);
+            if (!formMousedownOnContent.current) {
+              setShowForm(false);
+              setEditingOrderId(null);
+            }
+            formMousedownOnContent.current = false;
+          }}
+          onMouseDown={() => {
+            formMousedownOnContent.current = false;
           }}
           role="dialog"
           aria-modal="true"
         >
-          <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">
-                {editingOrderId ? 'Chỉnh sửa đơn hàng' : 'Đơn hàng mới'}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {editingOrderId
-                  ? 'Điều chỉnh sản phẩm và thông tin đơn hàng'
-                  : 'Tạo đơn hàng mới cho khách — mỗi dòng có thể là sản phẩm hoặc công thức'}
-              </p>
+          <div
+            className="modal-content max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={() => {
+              formMousedownOnContent.current = true;
+            }}
+          >
+            <div className="p-6 border-b flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {editingOrderId ? 'Chỉnh sửa đơn hàng' : 'Đơn hàng mới'}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {editingOrderId
+                    ? 'Điều chỉnh sản phẩm và thông tin đơn hàng'
+                    : 'Tạo đơn hàng mới cho khách — mỗi dòng có thể là sản phẩm hoặc công thức'}
+                </p>
+              </div>
+              {editingOrderId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    advanceAfterSave.current = true;
+                    const form = document.querySelector('form');
+                    if (form) form.requestSubmit();
+                  }}
+                  className="btn-success"
+                >
+                  Xác nhận →
+                </button>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="label label-required">Khách hàng</label>
-                <select
-                  className={`input ${formErrors.customerId ? 'input-error' : ''}`}
-                  value={form.customerId}
-                  onChange={(e) => {
-                    setForm({ ...form, customerId: e.target.value });
-                    setFormErrors({});
-                  }}
-                  disabled={!!editingOrderId}
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.email ? `— ${c.email}` : ''}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.customerId && (
-                  <p className="mt-1 text-xs text-red-600">{formErrors.customerId}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label label-required">Khách hàng</label>
+                  <select
+                    className={`input ${formErrors.customerId ? 'input-error' : ''}`}
+                    value={form.customerId}
+                    onChange={(e) => {
+                      setForm({ ...form, customerId: e.target.value });
+                      setFormErrors({});
+                    }}
+                    disabled={!!editingOrderId}
+                    autoFocus
+                  >
+                    <option value="">Chọn khách hàng...</option>
+                    {customers.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.email ? `— ${c.email}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.customerId && (
+                    <p className="mt-1 text-xs text-red-600">{formErrors.customerId}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="label">
+                    Số tiền đã thanh toán <span className="text-gray-400 font-normal">(VNĐ)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">
+                      đ
+                    </span>
+                    <input
+                      className="input text-sm pl-5"
+                      type="number"
+                      min={0}
+                      step={1000}
+                      value={form.paidAmount}
+                      onChange={(e) => setForm({ ...form, paidAmount: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Order Lines */}
@@ -1008,6 +1258,25 @@ export default function OrdersPage() {
                               </div>
                             </div>
                           )}
+
+                          {/* Per-line notes */}
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Ghi chú{' '}
+                              <span className="text-gray-400 font-normal">(không bắt buộc)</span>
+                            </label>
+                            <textarea
+                              className="input text-sm"
+                              rows={2}
+                              value={line.notes}
+                              onChange={(e) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, notes: e.target.value };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              placeholder="Ghi chú cho sản phẩm này..."
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -1094,6 +1363,25 @@ export default function OrdersPage() {
                                 )}
                               </div>
                             </div>
+                          </div>
+
+                          {/* Per-line notes */}
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Ghi chú{' '}
+                              <span className="text-gray-400 font-normal">(không bắt buộc)</span>
+                            </label>
+                            <textarea
+                              className="input text-sm"
+                              rows={2}
+                              value={line.notes}
+                              onChange={(e) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, notes: e.target.value };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              placeholder="Ghi chú cho sản phẩm này..."
+                            />
                           </div>
                         </div>
                       )}
@@ -1255,6 +1543,7 @@ export default function OrdersPage() {
                         setForm({
                           customerId: order.customerId,
                           notes: order.notes || '',
+                          paidAmount: Number(order.paidAmount) || 0,
                           orderLines,
                         });
                         setEditingOrderId(order.id);
@@ -1305,10 +1594,10 @@ export default function OrdersPage() {
                     </td>
                     <td className="font-semibold tabular-nums text-right">
                       {formatCurrency(
-                        (order.items?.reduce((s: number, i: any) => s + Number(i.totalPrice), 0) || 0) +
-                        Number(order.packagingCost || 0) +
-                        Number(order.shippingCost || 0) -
-                        Number(order.discount || 0)
+                        Number(order.subtotal || 0) -
+                          Number(order.discount || 0) +
+                          Number(order.packagingCost || 0) +
+                          Number(order.shippingCost || 0),
                       )}
                     </td>
                     <td className="text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
@@ -1370,14 +1659,64 @@ export default function OrdersPage() {
         <OrderDetail
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onStatusChange={() => {
-            setSelectedOrder(null);
+          onStatusChange={(openEditAfterDraft) => {
             loadOrders();
+            loadCounts();
+            if (openEditAfterDraft) {
+              setSelectedOrder(null);
+              if (selectedOrder) {
+                const orderLines = (selectedOrder.orderLines || []).map((ol: any) => ({
+                  type: ol.type,
+                  recipeId: ol.recipeId || '',
+                  customInput: ol.customInput || '',
+                  salePrice: Number(ol.salePrice || 0),
+                  productId: ol.productId || '',
+                  quantity: ol.quantity || 1,
+                  unitPrice: Number(ol.unitPrice || 0),
+                  notes: ol.notes || '',
+                }));
+                setForm({
+                  customerId: selectedOrder.customerId,
+                  notes: selectedOrder.notes || '',
+                  paidAmount: Number(selectedOrder.paidAmount) || 0,
+                  orderLines,
+                });
+                setEditingOrderId(selectedOrder.id);
+                setShowForm(true);
+                setFormErrors({});
+              }
+            } else if (selectedOrder && token) {
+              apiClient(`/orders/${selectedOrder.id}`, { token })
+                .then((res: any) => {
+                  if (res.data) setSelectedOrder(res.data);
+                })
+                .catch(() => {});
+            }
           }}
           token={token}
           showToast={showToast}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmReturn}
+        onClose={() => setConfirmReturn(null)}
+        onConfirm={() => {
+          if (!confirmReturn || !token) return;
+          const { id, status, label } = confirmReturn;
+          apiClient(`/orders/${id}/status`, { method: 'PATCH', body: { status }, token })
+            .then(() => {
+              showToast(`Đã chuyển sang ${label}`);
+              loadOrders();
+              loadCounts();
+            })
+            .catch((e: any) => showToast(e.message || 'Cập nhật thất bại', 'error'));
+        }}
+        title="Quay lại trạng thái"
+        message={`Bạn có chắc muốn quay lại trạng thái "${confirmReturn?.label}"?`}
+        confirmLabel="Xác nhận"
+        variant="primary"
+      />
     </div>
   );
 }

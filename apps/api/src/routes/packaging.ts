@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate.js';
 import {
   createPackagingTemplateSchema,
   updatePackagingTemplateSchema,
-  paginationSchema,
+  listPackagingQuerySchema,
 } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -13,12 +13,10 @@ export const packagingRouter: Router = Router();
 
 packagingRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listPackagingQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const type = req.query.type as string | undefined;
-      const search = req.query.search as string | undefined;
+      const { page, limit, type, search } = req.query as any;
       const result = await packagingRepository.list({ page, limit, type, search });
       res.json({
         success: true,

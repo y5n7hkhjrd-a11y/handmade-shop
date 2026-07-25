@@ -14,11 +14,11 @@ const mockChartData = [35, 55, 40, 70, 60, 85, 65, 90, 75, 95, 80, 100];
 
 function StatusBadge({ status }: { status: string }) {
   const statusMap: Record<string, { badge: string; label: string }> = {
-    Draft: { badge: 'badge-gray', label: 'Nháp' },
-    WaitingConfirm: { badge: 'badge-yellow', label: 'Chờ xác nhận' },
-    InProgress: { badge: 'badge-blue', label: 'Đang SX' },
-    Packaging: { badge: 'badge-purple', label: 'Đóng gói' },
-    ReadyToShip: { badge: 'badge-green', label: 'Sẵn sàng' },
+    Draft: { badge: 'badge-gray', label: 'Nhập đơn' },
+    WaitingConfirm: { badge: 'badge-yellow', label: 'Đơn chờ làm' },
+    InProgress: { badge: 'badge-blue', label: 'Đơn đã xong' },
+    Packaging: { badge: 'badge-purple', label: 'Đơn đã gói' },
+    ReadyToShip: { badge: 'badge-green', label: 'Đã gửi' },
     Completed: { badge: 'badge-green', label: 'Hoàn thành' },
   };
   const info = statusMap[status];

@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate.js';
 import {
   createCustomerSchema,
   updateCustomerSchema,
-  paginationSchema,
+  listCustomersQuerySchema,
 } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -13,11 +13,10 @@ export const customerRouter: Router = Router();
 
 customerRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listCustomersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const search = req.query.search as string | undefined;
+      const { page, limit, search } = req.query as any;
       const result = await customerRepository.list({ page, limit, search });
       res.json({
         success: true,

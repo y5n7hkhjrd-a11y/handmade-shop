@@ -58,6 +58,7 @@ export const orderRepository = {
   async create(data: {
     customerId: string;
     notes?: string;
+    paidAmount?: number;
     recipeId?: string;
     customInput?: string;
     subtotal?: number;
@@ -207,12 +208,14 @@ export const orderRepository = {
     data: { productId: string; quantity: number; unitPrice: number; notes?: string },
   ) {
     const totalPrice = data.unitPrice * data.quantity;
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
     if (!order) return null;
 
+    const existingItemTotal = order.items.reduce((sum, i) => sum + Number(i.totalPrice), 0);
     const newSubtotal = Number(order.subtotal) + totalPrice;
     const newTotal =
-      newSubtotal +
+      existingItemTotal +
+      totalPrice +
       Number(order.packagingCost) +
       Number(order.shippingCost) -
       Number(order.discount);
@@ -254,7 +257,7 @@ export const orderRepository = {
 
   async replaceLines(
     id: string,
-    data: { notes?: string; orderLines: any[] },
+    data: { notes?: string; paidAmount?: number; orderLines: any[] },
     items: Array<{
       productId: string;
       quantity: number;
@@ -299,6 +302,9 @@ export const orderRepository = {
     if (materialCostOverride != null) {
       updateData.materialCost = materialCostOverride;
     }
+    if (data.paidAmount != null) {
+      updateData.paidAmount = data.paidAmount;
+    }
 
     return prisma.order.update({
       where: { id },
@@ -313,12 +319,16 @@ export const orderRepository = {
     });
   },
 
-  async update(id: string, data: { discount?: number; notes?: string }) {
-    const order = await prisma.order.findUnique({ where: { id } });
+  async update(id: string, data: { discount?: number; paidAmount?: number; notes?: string }) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
     if (!order) return null;
     const discount = data.discount ?? Number(order.discount);
+    const itemTotal = order.items.reduce((sum, i) => sum + Number(i.totalPrice), 0);
     const totalCost =
-      Number(order.subtotal) - discount + Number(order.packagingCost) + Number(order.shippingCost);
+      itemTotal - discount + Number(order.packagingCost) + Number(order.shippingCost);
     return prisma.order.update({
       where: { id },
       data: { ...data, totalCost },
@@ -328,6 +338,19 @@ export const orderRepository = {
 
   async softDelete(id: string) {
     return prisma.order.update({ where: { id }, data: { deletedAt: new Date() } });
+  },
+
+  async getStatusCounts() {
+    const counts = await prisma.order.groupBy({
+      by: ['status'],
+      where: { deletedAt: null },
+      _count: { id: true },
+    });
+    const result: Record<string, number> = {};
+    for (const c of counts) {
+      result[c.status] = c._count.id;
+    }
+    return result;
   },
 
   async getRecent(limit = 10) {

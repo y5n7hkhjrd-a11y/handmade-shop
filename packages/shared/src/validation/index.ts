@@ -121,6 +121,7 @@ export const createOrderSchema = z
   .object({
     customerId: z.string().uuid(),
     notes: z.string().optional().or(z.literal('')),
+    paidAmount: z.number().min(0).default(0),
     // New multi-line format
     orderLines: z.array(createOrderLineSchema).optional(),
     // Legacy fields (backward compatibility)
@@ -140,6 +141,7 @@ export const createOrderSchema = z
 export const updateOrderSchema = z.object({
   status: z.nativeEnum(OrderStatus).optional(),
   discount: z.number().min(0).optional(),
+  paidAmount: z.number().min(0).optional(),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -190,6 +192,58 @@ export const updateShippingSchema = z.object({
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+// Paginated list queries with filters
+export const listOrdersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.string().optional(),
+  customerId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export const listCustomersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().optional(),
+});
+
+export const listProductsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.string().optional(),
+  search: z.string().optional(),
+});
+
+export const listInventoryQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.string().optional(),
+  productId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export const listShippingQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.string().optional(),
+  orderId: z.string().optional(),
+});
+
+export const listRecipesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().optional(),
+});
+
+export const listPackagingQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.string().optional(),
+  search: z.string().optional(),
 });
 
 // Date range filter
