@@ -306,7 +306,7 @@ function OrderDetail({
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi tiết chi phí</h3>
             <div className="space-y-2">
               <div className="detail-row py-1.5">
-                <span className="detail-label">Tạm tính ({order.items?.length || 0} sản phẩm)</span>
+                <span className="detail-label">💎 Giá vốn nguyên liệu ({order.items?.length || 0} sản phẩm)</span>
                 <span className="detail-value">{formatCurrency(itemTotal)}</span>
               </div>
               <div className="detail-row py-1.5">
