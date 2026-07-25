@@ -208,7 +208,12 @@ function OrderDetail({
             <div className="p-3 bg-gray-50 rounded-xl">
               <span className="text-xs text-gray-500">Tổng cộng</span>
               <p className="font-bold text-lg text-purple-600 mt-0.5">
-                {formatCurrency(Number(order.totalCost))}
+                {formatCurrency(
+                  itemTotal +
+                  Number(order.packagingCost || 0) +
+                  Number(order.shippingCost || 0) -
+                  Number(order.discount || 0)
+                )}
               </p>
             </div>
           </div>
@@ -328,7 +333,12 @@ function OrderDetail({
               <div className="detail-row py-2 border-t-2 border-gray-200">
                 <span className="text-sm font-semibold text-gray-800">Tổng chi phí</span>
                 <span className="text-base font-bold text-purple-600">
-                  {formatCurrency(Number(order.totalCost))}
+                  {formatCurrency(
+                    itemTotal +
+                    Number(order.packagingCost || 0) +
+                    Number(order.shippingCost || 0) -
+                    Number(order.discount || 0)
+                  )}
                 </span>
               </div>
             </div>
@@ -1294,7 +1304,12 @@ export default function OrdersPage() {
                       {order.items?.length || 0}
                     </td>
                     <td className="font-semibold tabular-nums text-right">
-                      {formatCurrency(Number(order.totalCost))}
+                      {formatCurrency(
+                        (order.items?.reduce((s: number, i: any) => s + Number(i.totalPrice), 0) || 0) +
+                        Number(order.packagingCost || 0) +
+                        Number(order.shippingCost || 0) -
+                        Number(order.discount || 0)
+                      )}
                     </td>
                     <td className="text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
                     <td className="text-right" onClick={(e) => e.stopPropagation()}>
