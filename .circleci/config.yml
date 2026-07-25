@@ -129,15 +129,20 @@ jobs:
           app-dir: apps/api
           project-name: handmade-shop-api-staging
       - run:
+          name: Debug DATABASE_URL prefix
+          command: |
+            echo "DATABASE_URL starts with: ${DATABASE_URL:0:15}..."
+      - run:
           name: Run database migrations (Staging)
           command: |
-            pnpm --filter @handmade-shop/api prisma migrate deploy
+            pnpm --filter @handmade-shop/api exec prisma migrate deploy
+          # Uses 'exec' to run prisma as binary (not a package.json script).
           # Migration happens after deploy so the new schema is ready for the
           # just-deployed code.
       - run:
           name: Seed database (Staging)
           command: |
-            pnpm --filter @handmade-shop/api prisma:seed
+            pnpm --filter @handmade-shop/api exec tsx prisma/seed.ts
           # Seeds sample data on first deploy only — the seed script itself
           # checks if users exist and skips if already seeded (idempotent).
           when: on_success
@@ -165,7 +170,8 @@ jobs:
       - run:
           name: Run database migrations (Production)
           command: |
-            pnpm --filter @handmade-shop/api prisma migrate deploy
+            pnpm --filter @handmade-shop/api exec prisma migrate deploy
+          # Uses 'exec' to run prisma as binary (not a package.json script).
           # Migration runs after deploy. The deployed code must be backward-
           # compatible with the old schema to allow zero-downtime rollback.
 
