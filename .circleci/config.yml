@@ -111,9 +111,6 @@ jobs:
   # ----- Build & Deploy — STAGING -------------------------------------------
   build-and-deploy-staging:
     executor: node-executor
-    environment:
-      DATABASE_URL: "${DATABASE_URL_STAGING}"
-      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_STAGING}"
     steps:
       - install
       - run:
@@ -121,7 +118,9 @@ jobs:
           command: pnpm --filter @handmade-shop/api build
       - run:
           name: Build Web
-          command: pnpm --filter @handmade-shop/web build
+          command: |
+            NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL_STAGING \
+              pnpm --filter @handmade-shop/web build
       - deploy-vercel:
           app-dir: apps/web
           project-name: handmade-shop-web-staging
@@ -129,20 +128,17 @@ jobs:
           app-dir: apps/api
           project-name: handmade-shop-api-staging
       - run:
-          name: Debug DATABASE_URL prefix
-          command: |
-            echo "DATABASE_URL starts with: ${DATABASE_URL:0:15}..."
-      - run:
           name: Run database migrations (Staging)
           command: |
-            pnpm --filter @handmade-shop/api exec prisma migrate deploy
-          # Uses 'exec' to run prisma as binary (not a package.json script).
+            DATABASE_URL=$DATABASE_URL_STAGING \
+              pnpm --filter @handmade-shop/api exec prisma migrate deploy
           # Migration happens after deploy so the new schema is ready for the
           # just-deployed code.
       - run:
           name: Seed database (Staging)
           command: |
-            pnpm --filter @handmade-shop/api exec tsx prisma/seed.ts
+            DATABASE_URL=$DATABASE_URL_STAGING \
+              pnpm --filter @handmade-shop/api exec tsx prisma/seed.ts
           # Seeds sample data on first deploy only — the seed script itself
           # checks if users exist and skips if already seeded (idempotent).
           when: on_success
@@ -150,9 +146,6 @@ jobs:
   # ----- Build & Deploy — PRODUCTION ----------------------------------------
   build-and-deploy-production:
     executor: node-executor
-    environment:
-      DATABASE_URL: "${DATABASE_URL_PROD}"
-      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_PROD}"
     steps:
       - install
       - run:
@@ -160,7 +153,9 @@ jobs:
           command: pnpm --filter @handmade-shop/api build
       - run:
           name: Build Web
-          command: pnpm --filter @handmade-shop/web build
+          command: |
+            NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL_PROD \
+              pnpm --filter @handmade-shop/web build
       - deploy-vercel:
           app-dir: apps/web
           project-name: handmade-shop-web-prod
@@ -170,8 +165,8 @@ jobs:
       - run:
           name: Run database migrations (Production)
           command: |
-            pnpm --filter @handmade-shop/api exec prisma migrate deploy
-          # Uses 'exec' to run prisma as binary (not a package.json script).
+            DATABASE_URL=$DATABASE_URL_PROD \
+              pnpm --filter @handmade-shop/api exec prisma migrate deploy
           # Migration runs after deploy. The deployed code must be backward-
           # compatible with the old schema to allow zero-downtime rollback.
 
