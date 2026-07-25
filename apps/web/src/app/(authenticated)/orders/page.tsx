@@ -148,6 +148,11 @@ function OrderDetail({
       console.error(e);
     }
   };
+  const itemTotal =
+    order.items?.reduce((sum: number, i: any) => sum + Number(i.totalPrice), 0) || 0;
+  const packagingTotal =
+    order.items?.reduce((sum: number, i: any) => sum + Number(i.packagingCost || 0), 0) || 0;
+
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
@@ -295,6 +300,100 @@ function OrderDetail({
               </div>
             </div>
           )}
+
+          {/* Cost breakdown */}
+          <div className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi tiết chi phí</h3>
+            <div className="space-y-2">
+              <div className="detail-row py-1.5">
+                <span className="detail-label">💎 Giá vốn nguyên liệu ({order.items?.length || 0} sản phẩm)</span>
+                <span className="detail-value">{formatCurrency(itemTotal)}</span>
+              </div>
+              <div className="detail-row py-1.5">
+                <span className="detail-label">Giảm giá</span>
+                <span className="detail-value text-red-600">
+                  -{formatCurrency(Number(order.discount))}
+                </span>
+              </div>
+              <div className="detail-row py-1.5">
+                <span className="detail-label">Phí đóng gói</span>
+                <span className="detail-value">
+                  {formatCurrency(Number(order.packagingCost) || packagingTotal)}
+                </span>
+              </div>
+              <div className="detail-row py-1.5">
+                <span className="detail-label">Phí vận chuyển</span>
+                <span className="detail-value">{formatCurrency(Number(order.shippingCost))}</span>
+              </div>
+              <div className="detail-row py-2 border-t-2 border-gray-200">
+                <span className="text-sm font-semibold text-gray-800">Tổng chi phí</span>
+                <span className="text-base font-bold text-purple-600">
+                  {formatCurrency(Number(order.totalCost))}
+                </span>
+              </div>
+            </div>
+
+            {/* Snapshot - captured when order was confirmed */}
+            {order.confirmedAt && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                    📸 Snapshot
+                  </span>
+                  <span className="text-xs text-gray-400">Giá trị tại thời điểm xác nhận</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  {order.salePriceSnapshot != null && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Giá bán (snapshot)</span>
+                      <span className="font-medium text-gray-700">
+                        {formatCurrency(Number(order.salePriceSnapshot))}
+                      </span>
+                    </div>
+                  )}
+                  {order.costSnapshot != null && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Tổng chi phí (snapshot)</span>
+                      <span className="font-medium text-gray-700">
+                        {formatCurrency(Number(order.costSnapshot))}
+                      </span>
+                    </div>
+                  )}
+                  {order.recipeSnapshot && (
+                    <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
+                      <p className="text-xs font-medium text-amber-800 mb-1">
+                        📋 Công thức: {order.recipeSnapshot.name}
+                      </p>
+                      {order.recipeSnapshot.products?.map((p: any, i: number) => (
+                        <div key={i} className="flex justify-between text-[10px] text-amber-700">
+                          <span>
+                            {p.productName} ×{p.quantity}
+                          </span>
+                          <span>{formatCurrency(p.productCost * p.quantity)}</span>
+                        </div>
+                      ))}
+                      {order.customInput && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[10px] text-amber-600">Input:</span>
+                          <div className="flex gap-0.5">
+                            {order.customInput.split('').map((char: string, i: number) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-amber-700 border border-amber-200"
+                              >
+                                {char}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
 
         </div>
 
