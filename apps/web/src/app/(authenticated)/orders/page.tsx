@@ -252,7 +252,11 @@ function OrderDetail({
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
                     <p className="font-bold text-purple-600">
-                      {formatCurrency(Number(ol.salePrice || 0))}
+                      {formatCurrency(
+                        ol.type === 'RECIPE'
+                          ? Number(ol.salePrice || 0)
+                          : Number(ol.unitPrice || 0) * (ol.quantity || 1)
+                      )}
                     </p>
                     {ol.quantity > 1 && (
                       <p className="text-[10px] text-gray-400">× {ol.quantity}</p>
