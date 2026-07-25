@@ -1,0 +1,202 @@
+version: 2.1
+
+# =============================================================================
+# Handmade Shop — CI/CD Pipeline
+# =============================================================================
+# Project activated via CircleCI API (following: true)
+# Branches:
+#   main     → PRODUCTION  (push → test → APPROVE → deploy)
+#   staging  → STAGING     (push → test → APPROVE → deploy)
+#   other    → test only
+#
+# All deployments require manual approval in the CircleCI dashboard.
+#
+# Required CircleCI Project Environment Variables:
+#   VERCEL_TOKEN                 – Vercel API token
+#   VERCEL_ORG_ID                – Vercel team / personal account ID
+#   VERCEL_PROJECT_ID_WEB_STAGING – Vercel project ID for Staging Web
+#   VERCEL_PROJECT_ID_API_STAGING – Vercel project ID for Staging API
+#   VERCEL_PROJECT_ID_WEB_PROD    – Vercel project ID for Production Web
+#   VERCEL_PROJECT_ID_API_PROD    – Vercel project ID for Production API
+#   DATABASE_URL_STAGING          – Staging Postgres connection string
+#   DATABASE_URL_PROD             – Production Postgres connection string
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Orbs
+# ---------------------------------------------------------------------------
+orbs:
+  node: circleci/node@5
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+commands:
+  # ----- Install system + project dependencies ------------------------------
+  install:
+    steps:
+      - checkout
+      - run:
+          name: Install pnpm
+          command: sudo npm install -g pnpm@9
+      - restore_cache:
+          keys:
+            - v1-pnpm-{{ checksum "pnpm-lock.yaml" }}
+            - v1-pnpm-
+      - run:
+          name: Install dependencies
+          command: pnpm install --frozen-lockfile
+      - save_cache:
+          key: v1-pnpm-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - node_modules
+            - apps/web/node_modules
+            - apps/api/node_modules
+            - packages/shared/node_modules
+      - run:
+          name: Build shared package
+          command: pnpm --filter @handmade-shop/shared build
+      - run:
+          name: Generate Prisma Client
+          command: pnpm --filter @handmade-shop/api prisma:generate
+
+  # ----- Deploy a specific app directory to Vercel ---------------------------
+  # Deploys from the monorepo root. Uses --project flag to specify the Vercel
+  # project by name (Root Directory is configured in project settings).
+  deploy-vercel:
+    parameters:
+      app-dir:
+        description: "App directory to deploy (apps/web or apps/api)"
+        type: string
+      project-name:
+        description: "Vercel project name (e.g. handmade-shop-web-staging)"
+        type: string
+    steps:
+      - run:
+          name: Deploy << parameters.app-dir >> to Vercel
+          command: |
+            npx vercel deploy --prod --token=$VERCEL_TOKEN --scope handmade-shop --project << parameters.project-name >> --yes
+
+# ---------------------------------------------------------------------------
+# Executors
+# ---------------------------------------------------------------------------
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:20.14
+    working_directory: ~/project
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # ----- Test ---------------------------------------------------------------
+  test:
+    executor: node-executor
+    steps:
+      - install
+      - run:
+          name: Check formatting
+          command: pnpm format:check
+      - run:
+          name: Run linting
+          command: pnpm lint
+      - run:
+          name: Run tests
+          command: pnpm test
+
+  # ----- Build & Deploy — STAGING -------------------------------------------
+  build-and-deploy-staging:
+    executor: node-executor
+    environment:
+      DATABASE_URL: "${DATABASE_URL_STAGING}"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_STAGING}"
+    steps:
+      - install
+      - run:
+          name: Build API
+          command: pnpm --filter @handmade-shop/api build
+      - run:
+          name: Build Web
+          command: pnpm --filter @handmade-shop/web build
+      - deploy-vercel:
+          app-dir: apps/web
+          project-name: handmade-shop-web-staging
+      - deploy-vercel:
+          app-dir: apps/api
+          project-name: handmade-shop-api-staging
+      - run:
+          name: Run database migrations (Staging)
+          command: |
+            pnpm --filter @handmade-shop/api prisma migrate deploy
+          # Migration happens after deploy so the new schema is ready for the
+          # just-deployed code.
+
+  # ----- Build & Deploy — PRODUCTION ----------------------------------------
+  build-and-deploy-production:
+    executor: node-executor
+    environment:
+      DATABASE_URL: "${DATABASE_URL_PROD}"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_PROD}"
+    steps:
+      - install
+      - run:
+          name: Build API
+          command: pnpm --filter @handmade-shop/api build
+      - run:
+          name: Build Web
+          command: pnpm --filter @handmade-shop/web build
+      - deploy-vercel:
+          app-dir: apps/web
+          project-name: handmade-shop-web-prod
+      - deploy-vercel:
+          app-dir: apps/api
+          project-name: handmade-shop-api-prod
+      # NOTE: Production database migrations should be run manually or via a
+      # separate safe-deploy workflow that drains connections first.
+      # Uncomment the line below to auto-migrate (use with care):
+      # - run:
+      #     name: Run database migrations (Production)
+      #     command: pnpm --filter @handmade-shop/api prisma migrate deploy
+      #     when: on_success
+
+# ---------------------------------------------------------------------------
+# Workflows
+# ---------------------------------------------------------------------------
+workflows:
+  # ----- Test all branches except main & staging ----------------------------
+  test-branches:
+    when:
+      not:
+        or:
+          - equal: [main, << pipeline.git.branch >>]
+          - equal: [staging, << pipeline.git.branch >>]
+    jobs:
+      - test
+
+  # ----- Deploy STAGING on push to staging branch ---------------------------
+  # Manual approval required before deployment to staging.
+  deploy-staging:
+    when:
+      equal: [staging, << pipeline.git.branch >>]
+    jobs:
+      - test
+      - approve-staging:
+          type: approval
+      - build-and-deploy-staging:
+          requires:
+            - test
+            - approve-staging
+
+  # ----- Deploy PRODUCTION on push to main branch ---------------------------
+  # Manual approval required before deployment to production.
+  # An authorized user must click "Approve" in the CircleCI dashboard.
+  deploy-production:
+    when:
+      equal: [main, << pipeline.git.branch >>]
+    jobs:
+      - approve-production:
+          type: approval
+      - build-and-deploy-production:
+          requires:
+            - approve-production

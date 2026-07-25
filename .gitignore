@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+.env
+.env.local
+.env.staging
+.env.production
+.env.vercel
+prisma/migrations/
+coverage/
+.turbo/
+
+# Vercel
+.vercel/
+
+# Windows reserved names
+nul
+NUL
+Nul
+
+# OS
+.DS_Store
+Thumbs.db
+
+.vercel
