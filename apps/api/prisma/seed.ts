@@ -12,6 +12,13 @@ async function main() {
     process.exit(1);
   }
 
+  // ── Check if already seeded (look for admin user) ──
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    console.log(`✅ Database already has ${existingUsers} users — skipping seed.`);
+    return;
+  }
+
   // ── Clear existing data (in reverse dependency order) ──
   await prisma.inventoryTransaction.deleteMany();
   await prisma.orderLine.deleteMany();

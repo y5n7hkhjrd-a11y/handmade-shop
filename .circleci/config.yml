@@ -5,11 +5,12 @@ version: 2.1
 # =============================================================================
 # Project activated via CircleCI API (following: true)
 # Branches:
-#   main     → PRODUCTION  (push → test → APPROVE → deploy)
-#   staging  → STAGING     (push → test → APPROVE → deploy)
+#   main     → PRODUCTION  (push → approve → deploy → migrate DB)
+#   staging  → STAGING     (push → test → approve → deploy → migrate DB → seed)
 #   other    → test only
 #
 # All deployments require manual approval in the CircleCI dashboard.
+# Database migrations run after deploy (backward-compatible schema required).
 #
 # Required CircleCI Project Environment Variables:
 #   VERCEL_TOKEN                 – Vercel API token
@@ -20,6 +21,8 @@ version: 2.1
 #   VERCEL_PROJECT_ID_API_PROD    – Vercel project ID for Production API
 #   DATABASE_URL_STAGING          – Staging Postgres connection string
 #   DATABASE_URL_PROD             – Production Postgres connection string
+#   NEXT_PUBLIC_API_URL_STAGING   – Public API URL for staging
+#   NEXT_PUBLIC_API_URL_PROD      – Public API URL for production
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -131,6 +134,13 @@ jobs:
             pnpm --filter @handmade-shop/api prisma migrate deploy
           # Migration happens after deploy so the new schema is ready for the
           # just-deployed code.
+      - run:
+          name: Seed database (Staging)
+          command: |
+            pnpm --filter @handmade-shop/api prisma:seed
+          # Seeds sample data on first deploy only — the seed script itself
+          # checks if users exist and skips if already seeded (idempotent).
+          when: on_success
 
   # ----- Build & Deploy — PRODUCTION ----------------------------------------
   build-and-deploy-production:
@@ -152,13 +162,12 @@ jobs:
       - deploy-vercel:
           app-dir: apps/api
           project-name: handmade-shop-api-prod
-      # NOTE: Production database migrations should be run manually or via a
-      # separate safe-deploy workflow that drains connections first.
-      # Uncomment the line below to auto-migrate (use with care):
-      # - run:
-      #     name: Run database migrations (Production)
-      #     command: pnpm --filter @handmade-shop/api prisma migrate deploy
-      #     when: on_success
+      - run:
+          name: Run database migrations (Production)
+          command: |
+            pnpm --filter @handmade-shop/api prisma migrate deploy
+          # Migration runs after deploy. The deployed code must be backward-
+          # compatible with the old schema to allow zero-downtime rollback.
 
 # ---------------------------------------------------------------------------
 # Workflows
