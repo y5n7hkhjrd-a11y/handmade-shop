@@ -12,6 +12,7 @@ import { matchingRuleRouter } from './routes/matchingRules.js';
 import { shippingRouter } from './routes/shipping.js';
 import { reportRouter } from './routes/reports.js';
 import { dashboardRouter } from './routes/dashboard.js';
+import { pricingRouter } from './routes/pricing.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
 
@@ -42,6 +43,7 @@ app.use('/api/matching-rules', authenticate, matchingRuleRouter);
 app.use('/api/shipping', authenticate, shippingRouter);
 app.use('/api/reports', authenticate, reportRouter);
 app.use('/api/dashboard', authenticate, dashboardRouter);
+app.use('/api/pricing', authenticate, pricingRouter);
 
 // Error handler
 app.use(errorHandler);
