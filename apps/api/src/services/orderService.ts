@@ -95,7 +95,9 @@ export const orderService = {
         }
       }
 
-      const totalCost = totalSubtotal + totalPackagingCost;
+      // totalCost = actual item costs + packaging, not sale prices
+      const allItemsTotal = allItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      const totalCost = allItemsTotal + totalPackagingCost;
 
       return orderRepository.create({
         customerId: data.customerId,
@@ -140,6 +142,9 @@ export const orderService = {
         quantity: 1,
       };
 
+      const itemsTotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      const totalCost = itemsTotal + costResult.packagingCost;
+
       return orderRepository.create({
         customerId: data.customerId,
         notes: data.notes,
@@ -148,6 +153,7 @@ export const orderService = {
         subtotal: salePrice,
         materialCost: costResult.materialCost,
         packagingCost: costResult.packagingCost,
+        totalCost,
         items,
         orderLines: [orderLine],
       });

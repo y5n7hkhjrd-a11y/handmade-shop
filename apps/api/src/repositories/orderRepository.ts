@@ -86,8 +86,9 @@ export const orderRepository = {
     const { items, orderLines, ...orderData } = data;
     const subtotal = data.subtotal ?? items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
     const packagingCost = data.packagingCost ?? 0;
-    const totalCost = data.totalCost ?? subtotal + packagingCost;
     const materialCost = data.materialCost ?? 0;
+    const itemTotal = items.reduce((sum, i) => sum + (i as any).unitPrice * (i as any).quantity, 0);
+    const totalCost = data.totalCost ?? itemTotal + packagingCost;
     return prisma.order.create({
       data: {
         ...orderData,
@@ -290,7 +291,9 @@ export const orderRepository = {
     const discount = Number(order.discount);
     const packagingCost = Number(order.packagingCost);
     const shippingCost = Number(order.shippingCost);
-    const totalCost = subtotal - discount + packagingCost + shippingCost;
+    // Use actual item costs (materialCostOverride) as base for totalCost, not sale-price subtotal
+    const itemTotalFromItems = items.reduce((sum, i) => sum + i.totalPrice, 0);
+    const totalCost = itemTotalFromItems - discount + packagingCost + shippingCost;
 
     const updateData: any = { subtotal, totalCost, notes: data.notes };
     if (materialCostOverride != null) {
