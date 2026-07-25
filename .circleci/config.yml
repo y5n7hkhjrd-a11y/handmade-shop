@@ -80,7 +80,7 @@ commands:
       - run:
           name: Deploy << parameters.app-dir >> to Vercel
           command: |
-            npx vercel deploy --prod --token=$VERCEL_TOKEN --scope y5n7hkhjrd-a11y --project << parameters.project-name >> --yes
+            npx vercel deploy --prod --token=$VERCEL_TOKEN --project << parameters.project-name >> --yes
 
 # ---------------------------------------------------------------------------
 # Executors
