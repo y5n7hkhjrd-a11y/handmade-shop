@@ -110,19 +110,14 @@ function OrderDetail({
   onClose,
   onStatusChange,
   token,
-  products,
   showToast,
 }: {
   order: any;
   onClose: () => void;
   onStatusChange: () => void;
   token: string | null;
-  products?: any[];
   showToast?: (message: string, type?: 'success' | 'error') => void;
 }) {
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [addForm, setAddForm] = useState({ productId: '', quantity: 1, unitPrice: 0 });
-
   const handleAdvance = async () => {
     if (!token || !NEXT_STATUS[order.status]) return;
     try {
@@ -150,27 +145,6 @@ function OrderDetail({
       });
       onStatusChange();
     } catch (e: any) {
-      console.error(e);
-    }
-  };
-  const handleAddProduct = async () => {
-    if (!token || !addForm.productId) return;
-    try {
-      await apiClient(`/orders/${order.id}/items`, {
-        method: 'POST',
-        body: {
-          productId: addForm.productId,
-          quantity: addForm.quantity,
-          unitPrice: addForm.unitPrice,
-        },
-        token,
-      });
-      showToast?.('Đã thêm sản phẩm');
-      setShowAddProduct(false);
-      setAddForm({ productId: '', quantity: 1, unitPrice: 0 });
-      onStatusChange();
-    } catch (e: any) {
-      showToast?.(e.message || 'Thêm thất bại', 'error');
       console.error(e);
     }
   };
@@ -239,41 +213,34 @@ function OrderDetail({
             </div>
           </div>
 
-          {/* Order Lines info */}
+          {/* Order Lines — final products */}
           {order.orderLines && order.orderLines.length > 0 && (
             <div className="mt-6 space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📋 Chi tiết đơn hàng</span>
-                <span className="badge-gray text-xs">{order.orderLines.length} dòng</span>
+                <span>📋 Sản phẩm & Giá bán</span>
+                <span className="badge-gray text-xs">{order.orderLines.length} sản phẩm</span>
               </h3>
               {order.orderLines.map((ol: any, i: number) => (
                 <div
                   key={ol.id || i}
-                  className="p-3 bg-purple-50 rounded-xl border border-purple-100"
+                  className="flex items-center justify-between p-3 bg-purple-50 rounded-xl border border-purple-100"
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase">
-                      Dòng {i + 1}
-                    </span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ol.type === 'RECIPE' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
-                    >
-                      {ol.type === 'RECIPE' ? '📋 Công thức' : '📦 Sản phẩm'}
-                    </span>
-                  </div>
-                  {ol.type === 'RECIPE' ? (
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">
-                        {ol.recipe?.name || 'Công thức'}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-lg">{ol.type === 'RECIPE' ? '📋' : '📦'}</span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {ol.type === 'RECIPE'
+                          ? ol.recipe?.name || 'Công thức'
+                          : ol.product?.name || 'Sản phẩm'}
                       </p>
                       {ol.customInput && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-xs text-purple-500">Input:</span>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] text-gray-400">Input:</span>
                           <div className="flex gap-0.5">
                             {ol.customInput.split('').map((char: string, j: number) => (
                               <span
                                 key={j}
-                                className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono bg-white rounded text-purple-700 border border-purple-200"
+                                className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-gray-500 border border-gray-200"
                               >
                                 {char}
                               </span>
@@ -281,47 +248,52 @@ function OrderDetail({
                           </div>
                         </div>
                       )}
-                      {ol.quantity > 1 && (
-                        <p className="text-xs text-purple-500 mt-1">× {ol.quantity}</p>
-                      )}
                     </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">
-                        {ol.product?.name || 'Sản phẩm'}
-                      </p>
-                      <p className="text-xs text-gray-500">× {ol.quantity || 1}</p>
-                    </div>
-                  )}
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <p className="font-bold text-purple-600">
+                      {formatCurrency(Number(ol.salePrice || 0))}
+                    </p>
+                    {ol.quantity > 1 && (
+                      <p className="text-[10px] text-gray-400">× {ol.quantity}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Legacy Recipe info */}
+          {/* Legacy Recipe info — single recipe orders */}
           {!order.orderLines?.length && order.recipe && (
             <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">📋</span>
-                <h3 className="text-sm font-semibold text-purple-700">
-                  Công thức: {order.recipe.name}
-                </h3>
-              </div>
-              {order.customInput && (
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-purple-500">Custom Input:</span>
-                  <div className="flex gap-0.5">
-                    {order.customInput.split('').map((char: string, i: number) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono bg-white rounded text-purple-700 border border-purple-200"
-                      >
-                        {char}
-                      </span>
-                    ))}
+                  <span className="text-lg">📋</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-700">
+                      {order.recipe.name}
+                    </h3>
+                    {order.customInput && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] text-gray-400">Input:</span>
+                        <div className="flex gap-0.5">
+                          {order.customInput.split('').map((char: string, i: number) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-gray-500 border border-gray-200"
+                            >
+                              {char}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+                <p className="font-bold text-purple-600 text-lg flex-shrink-0 ml-3">
+                  {formatCurrency(Number(order.salePriceSnapshot || order.totalCost))}
+                </p>
+              </div>
             </div>
           )}
 
@@ -418,131 +390,7 @@ function OrderDetail({
             )}
           </div>
 
-          {/* Items */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📦 Sản phẩm</span>
-                <span className="badge-gray text-xs">{order.items?.length || 0}</span>
-              </h3>
-              {order.status === 'Draft' && (
-                <button
-                  onClick={() => setShowAddProduct(true)}
-                  className="btn-ghost btn-xs text-purple-600"
-                >
-                  + Thêm sản phẩm
-                </button>
-              )}
-            </div>
 
-            {order.items && order.items.length > 0 ? (
-              <div className="table-wrap -mx-6">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sản phẩm</th>
-                      <th className="text-right">SL</th>
-                      <th className="text-right">Đơn giá</th>
-                      <th className="text-right">Đóng gói</th>
-                      <th className="text-right">Tổng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items.map((item: any) => (
-                      <tr key={item.id}>
-                        <td className="font-medium">{item.product?.name || 'Unknown'}</td>
-                        <td className="text-right tabular-nums">{item.quantity}</td>
-                        <td className="text-right tabular-nums">
-                          {formatCurrency(Number(item.unitPrice))}
-                        </td>
-                        <td className="text-right text-gray-500 tabular-nums">
-                          {formatCurrency(Number(item.packagingCost))}
-                        </td>
-                        <td className="text-right font-medium tabular-nums">
-                          {formatCurrency(Number(item.totalPrice))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                <p className="text-xs text-gray-400">Chưa có sản phẩm nào</p>
-              </div>
-            )}
-
-            {/* Add product mini form for Draft orders */}
-            {showAddProduct && order.status === 'Draft' && (
-              <div className="mt-3 p-4 bg-purple-50 rounded-xl border border-purple-100">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-purple-700">+ Thêm sản phẩm</span>
-                  <button
-                    onClick={() => setShowAddProduct(false)}
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-purple-600 mb-1 block">Sản phẩm</label>
-                    <select
-                      className="input text-sm"
-                      value={addForm.productId}
-                      onChange={(e) => {
-                        const product = products?.find((p: any) => p.id === e.target.value);
-                        setAddForm({
-                          productId: e.target.value,
-                          quantity: 1,
-                          unitPrice: Number(product?.cost || 0),
-                        });
-                      }}
-                    >
-                      <option value="">Chọn...</option>
-                      {products?.map((p: any) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.cost))}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="w-20">
-                    <label className="text-[10px] text-purple-600 mb-1 block">SL</label>
-                    <input
-                      className="input text-sm"
-                      type="number"
-                      min={1}
-                      value={addForm.quantity}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, quantity: Math.max(1, Number(e.target.value)) })
-                      }
-                    />
-                  </div>
-                  <div className="w-28">
-                    <label className="text-[10px] text-purple-600 mb-1 block">Đơn giá</label>
-                    <input
-                      className="input text-sm"
-                      type="number"
-                      min={0}
-                      step={100}
-                      value={addForm.unitPrice}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, unitPrice: Number(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <button
-                    onClick={handleAddProduct}
-                    disabled={!addForm.productId}
-                    className="btn-primary btn-sm whitespace-nowrap"
-                  >
-                    Thêm
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="p-6 border-t flex justify-between items-center">
@@ -1508,7 +1356,6 @@ export default function OrdersPage() {
             loadOrders();
           }}
           token={token}
-          products={products}
           showToast={showToast}
         />
       )}
