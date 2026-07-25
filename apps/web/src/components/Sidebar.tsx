@@ -12,7 +12,7 @@ const navItems = [
   { href: '/products', label: 'Hàng hóa', icon: '📦' },
   { href: '/recipes', label: 'Công thức', icon: '📋' },
   { href: '/packaging', label: 'Đóng gói', icon: '🎁' },
-  { href: '/pricing', label: 'Định giá', icon: '💰' },
+  { href: '/cost-rules', label: 'Định giá', icon: '💰' },
   { href: '/matching-rules', label: 'Ký tự', icon: '🔤' },
   { href: '/inventory', label: 'Kho hàng', icon: '📦' },
   { href: '/shipping', label: 'Vận chuyển', icon: '🚚' },
