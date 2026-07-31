@@ -13,6 +13,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
+    "@flaticon/flaticon-uicons": "3.3.1",
     "@handmade-shop/shared": "workspace:*",
     "next": "^14.2.4",
     "react": "^18.3.1",

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Flaticon Uicons - Regular Straight & Brands */
+@import '@flaticon/flaticon-uicons/css/regular/straight.css';
+@import '@flaticon/flaticon-uicons/css/brands/all.css';
+
 :root {
   --primary: #e88dab;
   --primary-dark: #d97d9e;
@@ -112,6 +116,95 @@ body {
     transform: translateY(0);
   }
 }
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 141, 171, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(232, 141, 171, 0);
+  }
+}
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes modalSlideScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes iconShake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  40% {
+    transform: rotate(5deg) scale(1.05);
+  }
+  60% {
+    transform: rotate(-3deg) scale(1);
+  }
+  80% {
+    transform: rotate(2deg) scale(1);
+  }
+}
+@keyframes btnSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes popIn {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes lineFill {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+
 
 @layer components {
   /* ─── Buttons ─── */
@@ -328,13 +421,13 @@ body {
   /* ─── Modal ─── */
   .modal-overlay {
     @apply fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-[10vh];
-    animation: fadeIn 0.15s ease-out;
+    animation: fadeIn 0.25s ease-out;
   }
   .modal-content {
     @apply bg-white mx-4 w-full shadow-lg;
     max-width: 560px;
     border-radius: var(--radius-lg);
-    animation: scaleIn 0.15s ease-out;
+    animation: modalSlideScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     max-height: 80vh;
     overflow-y: auto;
   }
@@ -577,6 +670,11 @@ body {
   .action-bar {
     @apply flex flex-wrap items-center gap-2 mb-4;
   }
+}
+
+/* ─── FlaticonIcon spacing (auto margin when followed by an element) ─── */
+i.fi + * {
+  margin-left: 4px;
 }
 
 /* ─── Page transitions ─── */

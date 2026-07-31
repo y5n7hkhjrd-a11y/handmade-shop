@@ -40,14 +40,16 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Mobile header bar */}
-      <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-[#F0ECEE] sticky top-0 z-20 shadow-sm">
+      <div className="lg:hidden relative overflow-hidden flex items-center gap-2.5 px-3 py-2 bg-gradient-to-r from-white via-pink-50/30 to-purple-50/30 border-b border-pink-100/60 sticky top-0 z-20 shadow-sm">
+        <div className="absolute -top-4 -right-4 w-20 h-20 bg-pink-200/20 rounded-full blur-xl" />
+        <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-purple-200/15 rounded-full blur-xl" />
         <button
           onClick={toggleMobileSidebar}
-          className="btn-ghost -ml-1"
+          className="relative z-10 -ml-1 p-1.5 rounded-lg text-gray-500 hover:text-pink-600 hover:bg-pink-50 transition-all duration-200"
           aria-label={mobileSidebarOpen ? 'Đóng menu' : 'Mở menu'}
         >
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -60,14 +62,15 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
             )}
           </svg>
         </button>
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-xl">💎</span>
-          <span className="font-bold text-base text-[#E88DAB]">Handmade</span>
+        <Link href="/dashboard" className="relative z-10 flex-1 flex items-center justify-center">
+          <img src="/logo.svg" alt="Linus" className="h-8 w-auto max-w-[130px] object-contain" />
         </Link>
+        {/* Bottom gradient line */}
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-300/30 to-transparent" />
       </div>
 
       <Sidebar mobileOpen={mobileSidebarOpen} onMobileToggle={toggleMobileSidebar} />
-      <main className="flex-1 min-w-0 p-5 lg:p-6">
+      <main className="flex-1 min-w-0 px-4 py-3 lg:p-6">
         <div key={pathname} className="page-enter">
           {children}
         </div>

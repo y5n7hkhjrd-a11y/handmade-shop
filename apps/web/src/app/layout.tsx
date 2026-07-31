@@ -3,8 +3,13 @@ import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Handmade Shop - Management System',
+  title: 'Linus',
   description: 'Internal management system for a handmade shop',
+  icons: {
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

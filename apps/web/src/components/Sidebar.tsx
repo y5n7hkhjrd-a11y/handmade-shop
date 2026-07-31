@@ -4,19 +4,35 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import FlaticonIcon from '@/components/FlaticonIcon';
 
-const navItems = [
-  { href: '/dashboard', label: 'Tổng quan', icon: '📊' },
-  { href: '/orders', label: 'Đơn hàng', icon: '🛒' },
-  { href: '/customers', label: 'Khách hàng', icon: '👥' },
-  { href: '/products', label: 'Hàng hóa', icon: '📦' },
-  { href: '/recipes', label: 'Công thức', icon: '📋' },
-  { href: '/packaging', label: 'Đóng gói', icon: '🎁' },
-  { href: '/matching-rules', label: 'Ký tự', icon: '🔤' },
-  { href: '/inventory', label: 'Kho hàng', icon: '📦' },
-  { href: '/shipping', label: 'Vận chuyển', icon: '🚚' },
-  { href: '/reports', label: 'Báo cáo', icon: '📈' },
-  { href: '/settings', label: 'Cài đặt', icon: '⚙️' },
+const navGroups = [
+  {
+    label: 'Quản lý',
+    items: [
+      { href: '/orders', label: 'Đơn hàng', icon: 'clipboard' },
+      { href: '/customers', label: 'Khách hàng', icon: 'users-alt' },
+      { href: '/products', label: 'Hàng hóa', icon: 'box-open' },
+      { href: '/recipes', label: 'Công thức', icon: 'receipt' },
+      { href: '/packaging', label: 'Đóng gói', icon: 'gift' },
+      { href: '/matching-rules', label: 'Ký tự', icon: 'text' },
+    ],
+  },
+  {
+    label: 'Vận hành',
+    items: [
+      { href: '/inventory', label: 'Kho hàng', icon: 'warehouse-alt' },
+      { href: '/shipping', label: 'Vận chuyển', icon: 'truck-side' },
+    ],
+  },
+  {
+    label: 'Phân tích',
+    items: [
+      { href: '/dashboard', label: 'Tổng quan', icon: 'analyse' },
+      { href: '/reports', label: 'Báo cáo', icon: 'stats' },
+      { href: '/settings', label: 'Cài đặt', icon: 'cog' },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -29,19 +45,22 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + '/');
+
   return (
     <>
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden animate-[fadeIn_0.15s_ease-out]"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 lg:hidden animate-[fadeIn_0.2s_ease-out]"
           onClick={onMobileToggle}
         />
       )}
 
       <aside
         className={`
-          bg-white border-r border-[#F0ECEE] flex flex-col transition-all duration-300 ease-in-out
+          bg-white flex flex-col transition-all duration-300 ease-in-out
 
           /* Mobile: fixed overlay */
           fixed inset-y-0 left-0 z-40
@@ -51,27 +70,27 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
           ${collapsed ? 'w-16' : 'w-64'}
         `}
       >
+        {/* Decorative gradient line on the right edge */}
+        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-pink-300/40 via-purple-300/20 to-transparent" />
+
         {/* Logo */}
-        <div
-          className={`p-4 border-b border-[#F0ECEE] flex-shrink-0 ${collapsed ? 'text-center' : ''}`}
-        >
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2 group flex-1 min-w-0">
-              <span className="text-2xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0">
-                💎
-              </span>
-              {!collapsed && (
-                <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent whitespace-nowrap truncate">
-                  Handmade
-                </span>
-              )}
+        <div className={`p-4 border-b border-gray-100 flex-shrink-0 ${collapsed ? 'text-center' : ''}`}>
+          <div className="flex items-center justify-center relative">
+            <Link href="/dashboard" className="flex items-center justify-center group">
+              <img
+                src="/logo.svg"
+                alt="Linus Logo"
+                className="h-16 w-auto max-w-[180px] transition-all duration-300 group-hover:scale-105 object-contain"
+              />
             </Link>
             <button
               onClick={onMobileToggle}
-              className="lg:hidden btn-ghost -mr-2 p-1.5 text-[#B8B0B4] hover:text-[#E88DAB]"
+              className="lg:hidden btn-ghost absolute right-0 p-1.5 text-gray-400 hover:text-pink-500 transition-colors"
               aria-label="Đóng menu"
             >
-              ✕
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
@@ -79,11 +98,11 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         {/* Desktop collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white border border-[#F0ECEE] rounded-full items-center justify-center shadow-sm hover:shadow transition-all duration-200 hover:border-[#F0C8D4] z-10"
+          className="hidden lg:flex absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 hover:border-pink-300 z-10 group"
           aria-label={collapsed ? 'Mở rộng' : 'Thu gọn'}
         >
           <span
-            className="text-xs text-[#C8C0C4] transition-transform duration-300"
+            className="text-xs text-gray-400 group-hover:text-pink-500 transition-all duration-300"
             style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}
           >
             ◀
@@ -91,58 +110,78 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         </button>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-purple-50 text-purple-700 font-semibold shadow-sm'
-                    : 'text-gray-600 hover:bg-purple-50/50 hover:text-purple-600'
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-purple-500 rounded-full" />
-                )}
+        <nav className="flex-1 py-3 px-2 space-y-3 overflow-y-auto overflow-x-hidden">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        active
+                          ? 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 font-semibold shadow-sm'
+                          : 'text-gray-500 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 hover:text-purple-600'
+                      }`}
+                    >
+                      {/* Active indicator bar */}
+                      {active && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gradient-to-b from-pink-400 to-purple-500 rounded-full animate-[fadeIn_0.2s_ease-out]" />
+                      )}
 
-                <span
-                  className={`text-base flex-shrink-0 ${isActive ? '' : 'group-hover:scale-110'} transition-transform duration-200`}
-                >
-                  {item.icon}
-                </span>
+                      {/* Icon */}
+                      <span
+                        className={`relative flex-shrink-0 w-5 h-5 flex items-center justify-center transition-all duration-200 ${
+                          active
+                            ? 'text-purple-600'
+                            : 'text-gray-400 group-hover:scale-110'
+                        }`}
+                      >
+                        <FlaticonIcon name={item.icon} size="sm" />
+                        {active && (
+                          <span className="absolute inset-0 rounded-full bg-purple-100/50 animate-[fadeIn_0.2s_ease-out]" />
+                        )}
+                      </span>
 
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                      {!collapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
 
-                {collapsed && (
-                  <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-white text-[#8E8EA0] text-xs rounded-lg whitespace-nowrap z-50 shadow-lg border border-[#F0ECEE] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                      {collapsed && (
+                        <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-white text-gray-600 text-xs rounded-lg whitespace-nowrap z-50 shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                          {item.label}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* User section */}
-        <div
-          className={`p-3 border-t border-[#F0ECEE] flex-shrink-0 ${collapsed ? 'text-center' : ''}`}
-        >
+        <div className={`p-3 border-t border-gray-100 flex-shrink-0 bg-gradient-to-t from-gray-50/80 to-transparent ${collapsed ? 'text-center' : ''}`}>
           <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : ''}`}>
             <div className="relative w-8 h-8 flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
-                {user?.name?.charAt(0) || 'U'}
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#86D492] border-2 border-white rounded-full" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />
             </div>
 
             {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#1A1A2E] truncate">{user?.name}</p>
-                <p className="text-xs text-[#8E8EA0] font-medium">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 bg-purple-500" />
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-semibold text-gray-800 truncate">{user?.name}</p>
+                <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-pink-400" />
                   {user?.role}
                 </p>
               </div>
@@ -151,10 +190,15 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
 
           <button
             onClick={logout}
-            className={`btn btn-sm w-full text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 ${collapsed ? 'px-0 justify-center' : ''}`}
+            className={`flex items-center gap-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+              collapsed
+                ? 'w-full justify-center p-2 text-gray-400 hover:text-red-500 hover:bg-red-50'
+                : 'w-full px-3 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50/80'
+            }`}
             title="Đăng xuất"
           >
-            {collapsed ? '🚪' : 'Đăng xuất'}
+            <FlaticonIcon name="up-from-bracket" size="sm" className="text-gray-400" />
+            {!collapsed && <span>Đăng xuất</span>}
           </button>
         </div>
       </aside>

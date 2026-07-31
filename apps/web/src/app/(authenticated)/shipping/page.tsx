@@ -7,430 +7,455 @@ import { formatCurrency, formatDateTime } from '@handmade-shop/shared';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 import { SkeletonRow } from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
+import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
 import { copyToClipboard } from '@/lib/clipboard';
-
-interface Shipping {
-  id: string;
-  orderId: string;
-  deliveryType: string;
-  shippingMethod: string;
-  carrier?: string;
-  trackingNumber?: string;
-  status: string;
-  eta?: string;
-  cost: number;
-  shippedAt?: string;
-  deliveredAt?: string;
-  order?: any;
-}
-
-const statusFlow = ['Pending', 'Shipped', 'InTransit', 'Delivered'];
-const statusConfig: Record<string, { label: string; icon: string; badge: string; color: string }> =
-  {
-    Pending: { label: 'Pending', icon: '📋', badge: 'badge-gray', color: 'bg-gray-400' },
-    Shipped: { label: 'Shipped', icon: '📦', badge: 'badge-blue', color: 'bg-blue-500' },
-    InTransit: { label: 'In Transit', icon: '🚚', badge: 'badge-yellow', color: 'bg-amber-500' },
-    Delivered: { label: 'Delivered', icon: '✅', badge: 'badge-green', color: 'bg-emerald-500' },
-    Failed: { label: 'Failed', icon: '❌', badge: 'badge-red', color: 'bg-red-500' },
-  };
-
-const nextActions: Record<string, { status: string; label: string; btn: string }> = {
-  Pending: { status: 'Shipped', label: 'Mark Shipped', btn: 'btn-primary' },
-  Shipped: { status: 'InTransit', label: 'In Transit →', btn: 'btn-primary' },
-  InTransit: { status: 'Delivered', label: 'Mark Delivered', btn: 'btn-success' },
-};
+import { useSort, SortIcon } from '@/hooks/useSort';
+import {
+  carrierConfig,
+  statusLabels,
+  statusColors,
+  statusBgs,
+  statusIcons,
+  statusFlow,
+  nextActions,
+  getCarrier,
+  getStatusLabel,
+  DotProgress,
+  CarrierLogo,
+  type Shipping,
+  type CarrierType,
+} from './shippingConstants';
+import ShippingDetail from './ShippingDetail';
 
 export default function ShippingPage() {
   const { token } = useAuth();
   const [shipments, setShipments] = useState<Shipping[]>([]);
   const [loading, setLoading] = useState(true);
+  const [carrierFilter, setCarrierFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    orderId: '',
-    deliveryType: '',
-    shippingMethod: '',
-    carrier: '',
-    trackingNumber: '',
-    cost: 0,
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [selectedShipment, setSelectedShipment] = useState<Shipping | null>(null);
   const { toast, showToast } = useToast();
+  const [spxUpdating, setSpxUpdating] = useState<string | null>(null);
+  const [grabUpdating, setGrabUpdating] = useState<string | null>(null);
+  const [updatingShipments, setUpdatingShipments] = useState<Set<string>>(new Set());
+  const [justUpdated, setJustUpdated] = useState<string | null>(null);
+  const [justUpdatedStatus, setJustUpdatedStatus] = useState<string | null>(null);
+  const [detailShipment, setDetailShipment] = useState<Shipping | null>(null);
+
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [carrierCounts, setCarrierCounts] = useState<Record<string, number>>({});
+
+  const loadCounts = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await apiClient<any>('/shipping/counts', { token });
+      if (res.data) setStatusCounts(res.data);
+      // Also fetch carrier counts: get all shipments with limit=1 to get total, then calculate
+      const allRes = await apiClient<any>('/shipping?limit=200', { token });
+      if (allRes.data) {
+        const cc: Record<string, number> = {};
+        for (const c of ['SPX', 'Grab', 'SOF']) {
+          cc[c] = allRes.data.filter((s: any) => s.carrier === c).length;
+        }
+        setCarrierCounts(cc);
+      }
+    } catch { /* ignore */ }
+  }, [token]);
 
   const loadShipments = useCallback(async () => {
     if (!token) return;
     try {
-      const params: Record<string, string> = { page: String(page), limit: '20' };
+      const params: Record<string, string> = { page: String(page), limit: '30' };
       if (statusFilter) params.status = statusFilter;
-      const res = await apiClient<any>(`/shipping?${new URLSearchParams(params).toString()}`, {
-        token,
-      });
+      const res = await apiClient<any>(`/shipping?${new URLSearchParams(params).toString()}`, { token });
       setShipments(res.data);
       setTotalPages(res.pagination.totalPages);
-    } catch (e: any) {
-      showToast(e.message || 'Failed', 'error');
-    }
+    } catch (e: any) { showToast(e.message || 'Failed', 'error'); }
     setLoading(false);
   }, [token, page, statusFilter, showToast]);
 
-  useEffect(() => {
-    loadShipments();
-  }, [loadShipments]);
+  useEffect(() => { loadShipments(); }, [loadShipments]);
+  useEffect(() => { loadCounts(); }, [loadCounts]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    if (!form.orderId) {
-      setFormErrors({ orderId: 'Order ID is required' });
-      return;
-    }
-    try {
-      await apiClient('/shipping', {
-        method: 'POST',
-        body: { ...form, cost: Number(form.cost) },
-        token,
-      });
-      showToast('Đã tạo đơn vận chuyển');
-      setShowForm(false);
-      setForm({
-        orderId: '',
-        deliveryType: '',
-        shippingMethod: '',
-        carrier: '',
-        trackingNumber: '',
-        cost: 0,
-      });
-      setFormErrors({});
-      loadShipments();
-    } catch (e: any) {
-      showToast(e.message || 'Tạo không thành công', 'error');
-    }
-  };
+  // Auto-fetch tracking for active shipments on page load
+  useEffect(() => {
+    if (!token || loading || shipments.length === 0) return;
+    const activeCarriers = ['SPX', 'Grab'];
+    const toAutoTrack = shipments.filter(
+      (s) =>
+        activeCarriers.includes(s.carrier || '') &&
+        ['Pending', 'Shipped', 'InTransit'].includes(s.status) &&
+        (s.carrier === 'SPX' ? s.trackingNumber : s.trackingUrl),
+    );
+    if (toAutoTrack.length === 0) return;
+
+    // Process sequentially to avoid overwhelming the API
+    (async () => {
+      let updated = 0;
+      for (const s of toAutoTrack) {
+        try {
+          let res;
+          if (s.carrier === 'SPX' && s.trackingNumber) {
+            res = await apiClient<any>('/shipping/track-spx', {
+              method: 'POST',
+              body: { trackingNumber: s.trackingNumber },
+              token,
+            });
+          } else if (s.carrier === 'Grab' && s.trackingUrl) {
+            res = await apiClient<any>('/shipping/track-grab', {
+              method: 'POST',
+              body: { trackingUrl: s.trackingUrl },
+              token,
+            });
+          }
+          if (res?.data?.status && res.data.status !== s.status) {
+            const updateBody: any = { status: res.data.status };
+            if (res.data.status === 'Delivered') {
+              const latest = res.data.records?.[0];
+              if (latest?.timestamp) updateBody.deliveredAt = latest.timestamp;
+            }
+            await apiClient(`/shipping/${s.id}`, {
+              method: 'PUT',
+              body: updateBody,
+              token,
+            });
+            updated++;
+          }
+        } catch {
+          // Skip silently — don't block the page for tracking failures
+        }
+      }
+      if (updated > 0) {
+        await loadShipments();
+      }
+    })();
+    // Run once when shipments first load, not on re-renders/filter changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading === false && shipments.length > 0]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     if (!token) return;
+    setUpdatingShipments(prev => new Set(prev).add(id));
     try {
       const body: any = { status: newStatus };
       if (newStatus === 'Shipped') body.shippedAt = new Date().toISOString();
       if (newStatus === 'Delivered') body.deliveredAt = new Date().toISOString();
       await apiClient(`/shipping/${id}`, { method: 'PUT', body, token });
-      showToast(`Đã cập nhật sang ${statusConfig[newStatus]?.label || newStatus}`);
-      loadShipments();
-    } catch (e: any) {
-      showToast(e.message || 'Cập nhật thất bại', 'error');
-    }
+      showToast(`Đã cập nhật`);
+      await loadShipments();
+      setJustUpdated(id);
+      setJustUpdatedStatus(newStatus);
+      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
+    } catch (e: any) { showToast(e.message || 'Cập nhật thất bại', 'error'); }
+    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(id); return next; });
   };
 
-  const statusCounts = statusFlow.reduce(
-    (acc, s) => ({ ...acc, [s]: shipments.filter((sh: Shipping) => sh.status === s).length }),
-    {} as Record<string, number>,
-  );
-  const failedCount = shipments.filter((s) => s.status === 'Failed').length;
+  const updateGrabFromTracking = async (shipment: Shipping) => {
+    if (!token || !shipment.trackingUrl) return;
+    setGrabUpdating(shipment.id);
+    setUpdatingShipments(prev => new Set(prev).add(shipment.id));
+    try {
+      const res = await apiClient<any>('/shipping/track-grab', { method: 'POST', body: { trackingUrl: shipment.trackingUrl }, token });
+      const updateBody: any = { status: res.data.status };
+      await apiClient(`/shipping/${shipment.id}`, { method: 'PUT', body: updateBody, token });
+      showToast(`Grab: ${statusLabels[res.data.status as keyof typeof statusLabels] || res.data.status} — đã cập nhật`);
+      await loadShipments();
+      setJustUpdated(shipment.id);
+      setJustUpdatedStatus(res.data.status);
+      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
+    } catch (e: any) { showToast(e.message || 'Tra cứu Grab thất bại', 'error'); }
+    setGrabUpdating(null);
+    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(shipment.id); return next; });
+  };
+
+  const updateSpxFromTracking = async (shipment: Shipping) => {
+    if (!token || !shipment.trackingNumber) return;
+    setSpxUpdating(shipment.id);
+    setUpdatingShipments(prev => new Set(prev).add(shipment.id));
+    try {
+      const res = await apiClient<any>('/shipping/track-spx', { method: 'POST', body: { trackingNumber: shipment.trackingNumber }, token });
+      const updateBody: any = { status: res.data.status };
+      const latest = res.data.records?.length > 0 ? res.data.records[0] : null;
+      if (latest?.timestamp && res.data.status === 'Delivered') { updateBody.deliveredAt = latest.timestamp; }
+      await apiClient(`/shipping/${shipment.id}`, { method: 'PUT', body: updateBody, token });
+      showToast(`SPX: ${res.data.spxStatus} — đã cập nhật`);
+      await loadShipments();
+      setJustUpdated(shipment.id);
+      setJustUpdatedStatus(res.data.status);
+      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
+    } catch (e: any) { showToast(e.message || 'Tra cứu SPX thất bại', 'error'); }
+    setSpxUpdating(null);
+    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(shipment.id); return next; });
+  };
+
+  const filtered = carrierFilter ? shipments.filter((s) => s.carrier === carrierFilter) : shipments;
+  // Use server-side counts when no carrier filter; local counts when carrier filter is active
+  const effectiveStatusCounts = carrierFilter
+    ? statusFlow.reduce((acc, s) => ({ ...acc, [s]: filtered.filter((sh) => sh.status === s).length }), {} as Record<string, number>)
+    : statusCounts;
+  const failedCount = carrierFilter
+    ? filtered.filter((s) => s.status === 'Failed').length
+    : (statusCounts['Failed'] || 0);
+  // Carrier counts always come from API (total across all statuses)
+  const allCarrierCounts = carrierCounts;
+
+  // Sort
+  const { sortedData, sortKey, sortDir, toggleSort } = useSort(filtered, 'createdAt', 'desc');
 
   return (
-    <div className="page-enter">
+    <div className="page-enter space-y-5">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Vận chuyển</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Quản lý vận chuyển, nhà vận chuyển và theo dõi
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setFormErrors({});
-          }}
-          className="btn-primary"
-        >
-          + Đơn vận chuyển mới
-        </button>
-      </div>
+      <style>{`
+        @keyframes successGlow { 0% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); } 50% { box-shadow: 0 0 0 6px rgba(52,211,153,0.15); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+        @keyframes successGlowDelivered { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); } 40% { box-shadow: 0 0 0 10px rgba(16,185,129,0.2); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+        @keyframes statusPopIn { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+        .animate-success-glow { animation: successGlow 1.5s ease-out; }
+        .animate-success-glow-delivered { animation: successGlowDelivered 2s ease-out; }
+        .animate-status-pop { animation: statusPopIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+      `}</style>
 
-      {/* Status filter chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => {
-            setStatusFilter('');
-            setPage(1);
-          }}
-          className={`filter-chip ${!statusFilter ? 'filter-chip-active' : ''}`}
-        >
-          All <span className="text-gray-400 ml-1">({shipments.length})</span>
-        </button>
-        {statusFlow.map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              setStatusFilter(s);
-              setPage(1);
-            }}
-            className={`filter-chip ${statusFilter === s ? 'filter-chip-active' : ''}`}
-          >
-            {statusConfig[s]?.icon} {statusConfig[s]?.label}
-            <span className="text-gray-400 ml-1">({statusCounts[s] || 0})</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setStatusFilter('Failed')}
-          className={`filter-chip ${statusFilter === 'Failed' ? 'filter-chip-active' : ''} hover:border-red-300 hover:text-red-700 hover:bg-red-50`}
-        >
-          ❌ Failed <span className="text-gray-400 ml-1">({failedCount})</span>
-        </button>
-      </div>
-
-      {/* New Shipment Modal */}
-      {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowForm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Đơn vận chuyển mới</h2>
-              <p className="text-sm text-gray-500 mt-1">Tạo đơn vận chuyển cho đơn hàng</p>
+      {/* ─── Header ─── */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50/80 via-white to-purple-50/40 border border-pink-100/40 px-5 py-4 shadow-sm">
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">
+              <FlaticonIcon name="truck-side" size="sm" />
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label label-required">Mã đơn hàng</label>
-                  <input
-                    className={`input ${formErrors.orderId ? 'input-error' : ''}`}
-                    value={form.orderId}
-                    onChange={(e) => {
-                      setForm({ ...form, orderId: e.target.value });
-                      setFormErrors({});
-                    }}
-                    placeholder="UUID"
-                    required
-                  />
-                  {formErrors.orderId && (
-                    <p className="mt-1 text-xs text-red-600">{formErrors.orderId}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="label label-required">Loại giao hàng</label>
-                  <input
-                    className="input"
-                    value={form.deliveryType}
-                    onChange={(e) => setForm({ ...form, deliveryType: e.target.value })}
-                    placeholder="Standard / Express"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label label-required">Phương thức vận chuyển</label>
-                <input
-                  className="input"
-                  value={form.shippingMethod}
-                  onChange={(e) => setForm({ ...form, shippingMethod: e.target.value })}
-                  placeholder="e.g., VNPost, GHN, GHTK"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Đơn vị vận chuyển</label>
-                  <input
-                    className="input"
-                    value={form.carrier}
-                    onChange={(e) => setForm({ ...form, carrier: e.target.value })}
-                    placeholder="e.g., Vietnam Post"
-                  />
-                </div>
-                <div>
-                  <label className="label">Mã theo dõi</label>
-                  <input
-                    className="input"
-                    value={form.trackingNumber}
-                    onChange={(e) => setForm({ ...form, trackingNumber: e.target.value })}
-                    placeholder="Tracking number"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label">Phí (VNĐ)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  value={form.cost}
-                  onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })}
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2 border-t">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  Tạo đơn vận chuyển
-                </button>
-              </div>
-            </form>
+            <div>
+              <h1 className="text-base font-bold text-gray-900">Giao hàng</h1>
+              <p className="text-xs text-gray-400">SPX · Grab · Giao hàng thường</p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Shipments List */}
+      {/* ─── Filters ─── */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => { setCarrierFilter(''); setPage(1); }} className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === '' ? 'bg-gray-900 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}>
+            <FlaticonIcon name="box-open" size="xs" /> Tất cả
+            <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === '' ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}>{shipments.length}</span>
+          </button>
+          {(['SPX', 'Grab', 'SOF'] as const).map((c) => (
+            <button key={c} onClick={() => { setCarrierFilter(c); setPage(1); }} className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === c ? (c === 'SPX' ? 'bg-orange-500 text-white shadow-sm' : c === 'Grab' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-blue-500 text-white shadow-sm') : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}>
+              <CarrierLogo carrier={c} size="xs" /> {carrierConfig[c].label}
+              <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === c ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}>{allCarrierCounts[c] || 0}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] text-gray-400 font-medium mr-1 uppercase tracking-wider">Trạng thái:</span>
+          <button onClick={() => { setStatusFilter(''); setPage(1); }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${!statusFilter ? 'bg-gray-100 text-gray-700 border-gray-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Tất cả <span className="text-gray-400">({filtered.length})</span>
+          </button>
+          {statusFlow.map((s) => (
+            <button key={s} onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1); }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === s ? `${statusBgs[s]} border-current shadow-sm` : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusColors[s]}`} /> {statusLabels[s]} <span className="text-gray-400">({Number(effectiveStatusCounts[s] || 0)})</span>
+            </button>
+          ))}
+          <button onClick={() => setStatusFilter(statusFilter === 'Failed' ? '' : 'Failed')} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === 'Failed' ? 'bg-red-50 text-red-700 border-red-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600'}`}>
+            <FlaticonIcon name="circle-xmark" size="xs" /> Thất bại <span className="text-gray-400">({failedCount})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Table ─── */}
       {loading ? (
         <div className="card p-0 overflow-hidden">
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Method</th>
-                  <th>Tracking</th>
-                  <th>Status</th>
-                  <th className="text-right">Cost</th>
-                  <th>Actions</th>
+                  <th>Hãng</th>
+                  <th>Đơn hàng</th>
+                  <th>Tiến trình</th>
+                  <th>Trạng thái</th>
+                  <th>Theo dõi</th>
+                  <th>Phí</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {[1, 2, 3].map((i) => (
-                  <SkeletonRow key={i} cols={5} />
-                ))}
+                {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} cols={7} />)}
               </tbody>
             </table>
           </div>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="relative overflow-hidden flex flex-col items-center justify-center py-20 text-center">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-100/40 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-100/30 rounded-full blur-3xl" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 flex items-center justify-center mb-4 shadow-inner">
+            <FlaticonIcon name="truck-side" size="lg" className="text-gray-300" />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1.5">Không tìm thấy đơn giao hàng</h3>
+          <p className="text-xs text-gray-400 max-w-xs mb-2">{carrierFilter ? `Không có đơn của ${carrierConfig[carrierFilter]?.label || carrierFilter}.` : 'Tạo đơn giao hàng từ chi tiết đơn hàng.'}</p>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {shipments.map((s) => {
-            const action = nextActions[s.status];
-            const statusIdx = statusFlow.indexOf(s.status);
-            return (
-              <div key={s.id} className="card p-5 group">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                  {/* Status progress */}
-                  <div className="flex items-center gap-2 lg:w-48">
-                    {s.status === 'Failed' ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white text-sm shadow-sm animate-pulse">
-                          ❌
-                        </div>
-                        <span className="text-sm font-semibold text-red-600">Failed</span>
-                      </div>
-                    ) : (
-                      statusFlow.map((step, i) => (
-                        <div key={step} className="flex items-center">
-                          <div
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
-                              i <= statusIdx
-                                ? 'bg-gradient-to-br from-[#E88DAB] to-[#D97D9E] text-white shadow-sm'
-                                : 'bg-gray-200 text-gray-400'
-                            }`}
-                          >
-                            {i < statusIdx ? '✓' : i + 1}
+        <div className="card p-0 overflow-hidden">
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('carrier')}>Hãng <SortIcon sortKey="carrier" currentKey={sortKey} dir={sortDir} /></th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('orderId')}>Đơn hàng <SortIcon sortKey="orderId" currentKey={sortKey} dir={sortDir} /></th>
+                  <th>Tiến trình</th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('status')}>Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} /></th>
+                  <th>Theo dõi</th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('cost')}>Phí <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} /></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedData.map((s) => {
+                  const carrier = getCarrier(s);
+                  const cfg = carrierConfig[carrier];
+                  const action = nextActions[s.status];
+                  const isFailed = s.status === 'Failed';
+                  const isAnimating = updatingShipments.has(s.id);
+                  const wasJustUpdated = justUpdated === s.id;
+
+                  return (
+                    <tr
+                      key={s.id}
+                      onClick={() => setDetailShipment(s)}
+                      className={`cursor-pointer transition-all duration-300 ${
+                        wasJustUpdated && justUpdatedStatus === 'Delivered'
+                          ? 'animate-success-glow-delivered'
+                          : wasJustUpdated
+                            ? 'animate-success-glow'
+                            : isAnimating
+                              ? 'opacity-70'
+                              : ''
+                      } ${isAnimating ? 'pointer-events-none' : ''} hover:bg-blue-50/40`}
+                    >
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <CarrierLogo carrier={carrier} size="sm" />
+                          <div>
+                            <p className="text-xs font-semibold text-gray-800">{s.deliveryType}</p>
+                            {cfg && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.badge}`}>{cfg.label}</span>}
                           </div>
-                          {i < statusFlow.length - 1 && (
-                            <div
-                              className={`w-4 h-0.5 mx-1 ${i < statusIdx ? 'bg-[#E88DAB]' : 'bg-gray-200'}`}
-                            />
+                        </div>
+                      </td>
+                      <td>
+                        <span className="text-xs font-mono text-gray-500">#{s.orderId}</span>
+                        {s.eta && <p className="text-[10px] text-gray-400 mt-0.5">ETA: {formatDateTime(s.eta)}</p>}
+                        {carrier === 'SOF' && (s.driverName || s.driverPhone) && (
+                          <p className="text-[10px] text-blue-500 mt-0.5 font-medium">
+                            {s.driverName && <><FlaticonIcon name="user" size="xs" className="inline-flex mr-0.5" />{s.driverName}</>}{s.driverName && s.driverPhone ? ' · ' : ''}{s.driverPhone && <><FlaticonIcon name="phone" size="xs" className="inline-flex mr-0.5" />{s.driverPhone}</>}
+                          </p>
+                        )}
+                      </td>
+                      <td className="min-w-[140px]">
+                        <DotProgress status={s.status} isFailed={isFailed} />
+                        <div className="flex items-center gap-2 mt-1.5 text-[9px] text-gray-400">
+                          {s.shippedAt && <span><FlaticonIcon name="box-open" size="xs" className="inline-flex mr-0.5 text-gray-400" />{formatDateTime(s.shippedAt)}</span>}
+                          {s.deliveredAt && <span><FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5 text-emerald-500" />{formatDateTime(s.deliveredAt)}</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          key={wasJustUpdated ? 'upd-' + justUpdatedStatus : s.status}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                            wasJustUpdated ? 'animate-status-pop' : ''
+                          } ${statusBgs[s.status] || 'bg-gray-100 text-gray-600'}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`} />
+                          {getStatusLabel(carrier, s.status)}
+                        </span>
+                      </td>
+                      <td>
+                        {carrier === 'SPX' && s.trackingNumber ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); window.open(`https://spx.vn/track?${s.trackingNumber}`, '_blank', 'noopener,noreferrer'); }}
+                              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-medium hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm transition-all max-w-[120px]"
+                            >
+                              <FlaticonIcon name="external-link" size="xs" />
+                              <span className="truncate min-w-0">{s.trackingNumber}</span>
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); copyToClipboard(s.trackingNumber!); }} className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-300 transition-all" title="Sao chép mã vận đơn"><FlaticonIcon name="clipboard" size="xs" /></button>
+                          </div>
+                        ) : carrier === 'Grab' && s.trackingUrl ? (
+                          <button onClick={(e) => { e.stopPropagation(); if (s.trackingUrl) window.open(s.trackingUrl, '_blank', 'noopener,noreferrer'); }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-medium hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+                          >
+                            <FlaticonIcon name="external-link" size="xs" />
+                            Grab Track
+                          </button>
+                        ) : carrier === 'SOF' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
+                            <FlaticonIcon name={s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'} size="xs" className="text-blue-500" />
+                            <span className="text-xs font-medium text-blue-600">{s.deliveryType === 'Khách đến lấy hàng' ? 'Lấy tại shop' : 'Shop giao'}</span>
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 italic text-xs">—</span>
+                        )}
+                      </td>
+                      <td>
+                        {Number(s.cost) === 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-medium">
+                            <FlaticonIcon name="tag" size="xs" /> Miễn phí
+                          </span>
+                        ) : (
+                          <>
+                            <p className="text-sm font-bold text-gray-800">{formatCurrency(Number(s.cost))}</p>
+                            {s.deliveredAt && <p className="text-[10px] text-emerald-500 font-medium"><FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5" />Đã thanh toán</p>}
+                          </>
+                        )}
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 justify-end">
+                          {action && (
+                            <button onClick={() => updateStatus(s.id, action.status)} disabled={isAnimating} className={`btn-xs ${action.btn} disabled:opacity-50`}>
+                              {isAnimating ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" /> : action.label}
+                            </button>
+                          )}
+                          {s.status === 'InTransit' && (
+                            <button onClick={() => updateStatus(s.id, 'Failed')} disabled={isAnimating} className="btn-xs btn-danger disabled:opacity-50">Thất bại</button>
+                          )}
+                          {carrier === 'SPX' && s.trackingNumber && (
+                            <button onClick={() => updateSpxFromTracking(s)} disabled={spxUpdating === s.id} className="btn-xs btn-ghost disabled:opacity-50" title="Cập nhật SPX">
+                              {spxUpdating === s.id ? <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <FlaticonIcon name="refresh" size="xs" />}
+                            </button>
+                          )}
+                          {carrier === 'Grab' && s.trackingUrl && (
+                            <button onClick={() => updateGrabFromTracking(s)} disabled={grabUpdating === s.id} className="btn-xs btn-ghost disabled:opacity-50" title="Cập nhật Grab">
+                              {grabUpdating === s.id ? <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <FlaticonIcon name="refresh" size="xs" />}
+                            </button>
                           )}
                         </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div>
-                      <p className="text-xs text-gray-500">Method</p>
-                      <p className="font-medium text-sm">{s.deliveryType}</p>
-                      <p className="text-xs text-gray-400">{s.shippingMethod}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Tracking</p>
-                      {s.trackingNumber ? (
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-sm">{s.trackingNumber}</span>
-                          <button
-                            onClick={() => copyToClipboard(s.trackingNumber!)}
-                            className="copy-btn"
-                            title="Sao chép mã vận đơn"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-300 italic text-sm">—</span>
-                      )}
-                      {s.carrier && <p className="text-xs text-gray-400">{s.carrier}</p>}
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Status</p>
-                      <span className={statusConfig[s.status]?.badge || 'badge-gray'}>
-                        {statusConfig[s.status]?.icon} {statusConfig[s.status]?.label || s.status}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Cost</p>
-                      <p className="font-bold text-[#D97D9E]">{formatCurrency(Number(s.cost))}</p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-1 lg:flex-col">
-                    {action && (
-                      <button
-                        onClick={() => updateStatus(s.id, action.status)}
-                        className={`btn-xs ${action.btn}`}
-                      >
-                        {action.label}
-                      </button>
-                    )}
-                    {s.status === 'InTransit' && (
-                      <button
-                        onClick={() => updateStatus(s.id, 'Failed')}
-                        className="btn-xs btn-danger"
-                      >
-                        Mark Failed
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Timeline info */}
-                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-4 text-xs text-gray-400">
-                  <span>
-                    Order:{' '}
-                    <span className="font-mono text-gray-500">{s.orderId.slice(0, 8)}...</span>
-                  </span>
-                  {s.shippedAt && <span>📦 Shipped: {formatDateTime(s.shippedAt)}</span>}
-                  {s.deliveredAt && <span>✅ Delivered: {formatDateTime(s.deliveredAt)}</span>}
-                  {s.eta && <span>📅 ETA: {formatDateTime(s.eta)}</span>}
-                </div>
-              </div>
-            );
-          })}
-          {shipments.length === 0 && (
-            <EmptyState
-              icon="🚚"
-              title="Không tìm thấy đơn vận chuyển"
-              message={
-                statusFilter
-                  ? 'Không có đơn vận chuyển phù hợp với bộ lọc.'
-                  : 'Tạo đơn vận chuyển đầu tiên để bắt đầu.'
-              }
-            />
-          )}
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-gray-100">
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
         </div>
+      )}
+
+      {/* ─── Detail Modal ─── */}
+      {detailShipment && (
+        <ShippingDetail
+          shipment={detailShipment}
+          token={token}
+          showToast={showToast}
+          updatingShipments={updatingShipments}
+          spxUpdating={spxUpdating}
+          grabUpdating={grabUpdating}
+          onUpdateStatus={updateStatus}
+          onUpdateSpx={updateSpxFromTracking}
+          onUpdateGrab={updateGrabFromTracking}
+          onClose={() => setDetailShipment(null)}
+        />
       )}
     </div>
   );

@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
+import { NumberInput } from '@/components/NumberInput';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
+import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
 
 interface PackagingComponent {
@@ -27,8 +29,8 @@ interface PackagingTemplate {
 }
 
 const typeConfig: Record<string, { icon: string; badge: string; label: string }> = {
-  ITEM: { icon: '📦', badge: 'badge-blue', label: 'Per Item' },
-  ORDER: { icon: '🎁', badge: 'badge-pink', label: 'Per Order' },
+  ITEM: { icon: 'box', badge: 'badge-blue', label: 'Per Item' },
+  ORDER: { icon: 'gift', badge: 'badge-pink', label: 'Per Order' },
 };
 
 export default function PackagingPage() {
@@ -139,14 +141,40 @@ export default function PackagingPage() {
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Đóng gói</h1>
-          <p className="text-gray-500 mt-1 text-sm">{templates.length} phương án đóng gói</p>
+      {/* Page header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+                <FlaticonIcon name="gift" size="md" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                  Đóng gói
+                </h1>
+                {templates.length > 0 && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {templates.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Phương án đóng gói</p>
+            </div>
+          </div>
+          <button onClick={() => setShowForm(true)} className="btn-primary !gap-1.5 !px-4">
+            <span>＋ Thêm phương án</span>
+          </button>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
-          + Thêm phương án
-        </button>
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
       {/* Summary chips */}
@@ -182,7 +210,7 @@ export default function PackagingPage() {
 
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <FlaticonIcon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm..."
@@ -260,14 +288,14 @@ export default function PackagingPage() {
                         setForm({ ...form, components: c });
                       }}
                     />
-                    <input
+                    <NumberInput
                       className="input text-sm"
-                      type="number"
                       placeholder="Qty"
                       value={comp.quantity}
-                      onChange={(e) => {
+                      hideZero
+                      onChange={(val) => {
                         const c = [...form.components];
-                        c[idx] = { ...c[idx]!, quantity: Number(e.target.value) };
+                        c[idx] = { ...c[idx]!, quantity: val };
                         setForm({ ...form, components: c });
                       }}
                     />
@@ -282,14 +310,14 @@ export default function PackagingPage() {
                       }}
                     />
                     <div className="relative">
-                      <input
+                      <NumberInput
                         className="input text-sm"
-                        type="number"
                         placeholder="Cost"
                         value={comp.cost}
-                        onChange={(e) => {
+                        hideZero
+                        onChange={(val) => {
                           const c = [...form.components];
-                          c[idx] = { ...c[idx]!, cost: Number(e.target.value) };
+                          c[idx] = { ...c[idx]!, cost: val };
                           setForm({ ...form, components: c });
                         }}
                       />
@@ -363,13 +391,13 @@ export default function PackagingPage() {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-lg shadow-sm flex-shrink-0">
-                      🎁
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                      <FlaticonIcon name="gift" size="md" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">{tpl.name}</h3>
                       <span className={typeConfig[tpl.type]?.badge || 'badge-gray'}>
-                        {typeConfig[tpl.type]?.icon} {typeConfig[tpl.type]?.label || tpl.type}
+                        {typeConfig[tpl.type]?.icon ? <FlaticonIcon name={typeConfig[tpl.type]!.icon} size="sm" /> : null} {typeConfig[tpl.type]?.label || tpl.type}
                       </span>
                     </div>
                   </div>
@@ -392,9 +420,8 @@ export default function PackagingPage() {
                       className="btn-ghost btn-xs"
                       title="Nhân bản mẫu"
                       aria-label="Nhân bản mẫu"
-                    >
-                      📋
-                    </button>
+                    >                        <FlaticonIcon name="clipboard" size="xs" />
+                      </button>
                   </div>
                 </div>
                 {expandedId === tpl.id && (
@@ -434,7 +461,7 @@ export default function PackagingPage() {
           {filteredTemplates.length === 0 && (
             <div className="col-span-full">
               <EmptyState
-                icon="🎁"
+                emoji="🎁"
                 title={search || typeFilter ? 'Không tìm thấy mẫu phù hợp' : 'Chưa có mẫu đóng gói'}
                 message={
                   search || typeFilter

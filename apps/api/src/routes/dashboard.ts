@@ -7,7 +7,18 @@ export const dashboardRouter: Router = Router();
 
 dashboardRouter.get('/stats', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const [totalOrders, completedOrders, activeOrders, recentOrders] = await Promise.all([
+    const now = new Date();
+    const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalOrders,
+      completedOrders,
+      activeOrders,
+      recentOrders,
+      deadlineOrders,
+      overdueCount,
+      soonCount,
+    ] = await Promise.all([
       prisma.order.count({ where: { deletedAt: null } }),
       prisma.order.findMany({
         where: { deletedAt: null, status: OrderStatus.Completed },
@@ -17,6 +28,33 @@ dashboardRouter.get('/stats', async (_req: Request, res: Response, next: NextFun
         where: { deletedAt: null, status: { notIn: [OrderStatus.Completed] } },
       }),
       orderRepository.getRecent(10),
+      // Orders with deadlines that are upcoming (including overdue)
+      prisma.order.findMany({
+        where: {
+          deletedAt: null,
+          deadline: { not: null },
+          status: { notIn: [OrderStatus.Completed, OrderStatus.ReadyToShip] },
+        },
+        include: { customer: true },
+        orderBy: { deadline: 'asc' },
+        take: 8,
+      }),
+      // Overdue orders (deadline has passed, not completed)
+      prisma.order.count({
+        where: {
+          deletedAt: null,
+          deadline: { lt: now },
+          status: { notIn: [OrderStatus.Completed, OrderStatus.ReadyToShip] },
+        },
+      }),
+      // Soon orders (deadline within 3 days, not completed)
+      prisma.order.count({
+        where: {
+          deletedAt: null,
+          deadline: { gte: now, lte: in3Days },
+          status: { notIn: [OrderStatus.Completed, OrderStatus.ReadyToShip] },
+        },
+      }),
     ]);
 
     const totalRevenue = completedOrders.reduce(
@@ -38,6 +76,9 @@ dashboardRouter.get('/stats', async (_req: Request, res: Response, next: NextFun
         totalProfit,
         activeOrders,
         recentOrders,
+        deadlineOrders,
+        overdueCount,
+        soonCount,
       },
     });
   } catch (error) {

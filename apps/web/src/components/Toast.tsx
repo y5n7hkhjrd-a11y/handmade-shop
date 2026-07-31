@@ -1,6 +1,7 @@
 'use client';
 
 import { type ToastState } from '@/hooks/useToast';
+import FlaticonIcon from '@/components/FlaticonIcon';
 
 interface ToastProps {
   toast: ToastState | null;
@@ -19,7 +20,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
             : 'bg-red-50 border-red-200 text-red-800'
         }`}
       >
-        <span className="text-lg">{toast.type === 'success' ? '✅' : '❌'}</span>
+        <FlaticonIcon name={toast.type === 'success' ? 'badge-check' : 'circle-xmark'} size="md" />
         <span className="text-sm font-medium flex-1">{toast.message}</span>
         {onClose && (
           <button

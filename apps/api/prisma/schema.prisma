@@ -68,7 +68,8 @@ model MatchingRule {
 
 model User {
   id        String    @id @default(uuid()) @db.Uuid
-  email     String    @unique
+  username  String    @unique
+  email     String?
   password  String
   name      String
   role      UserRole  @default(Staff)
@@ -85,6 +86,10 @@ model Customer {
   email     String    @unique
   phone     String?
   address   String?
+  facebook  String?
+  instagram String?
+  tiktok    String?
+  threads   String?
   notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -182,12 +187,22 @@ model PackagingComponent {
   @@map("packaging_components")
 }
 
+model OrderSequence {
+  date    String @id
+  counter Int
+
+  @@map("order_sequences")
+}
+
 model Order {
-  id              String      @id @default(uuid()) @db.Uuid
+  id              String      @id
   customerId      String      @map("customer_id") @db.Uuid
   status          OrderStatus @default(Draft)
   orderDate       DateTime    @default(now()) @map("order_date")
+  deadline        DateTime?   @map("deadline")
   confirmedAt     DateTime?   @map("confirmed_at")
+  packagedAt      DateTime?   @map("packaged_at")
+  sentAt          DateTime?   @map("sent_at")
   completedAt     DateTime?   @map("completed_at")
   recipeId        String?     @map("recipe_id") @db.Uuid
   customInput     String?     @map("custom_input")
@@ -197,6 +212,7 @@ model Order {
   materialCost    Decimal     @default(0) @map("material_cost") @db.Decimal(12, 2)
   packagingCost   Decimal     @default(0) @map("packaging_cost") @db.Decimal(12, 2)
   shippingCost    Decimal     @default(0) @map("shipping_cost") @db.Decimal(12, 2)
+  shippingPaidBy  String?     @default("prepaid") @map("shipping_paid_by")
   totalCost       Decimal     @default(0) @map("total_cost") @db.Decimal(12, 2)
   salePriceSnapshot  Decimal? @map("sale_price_snapshot") @db.Decimal(12, 2)
   costSnapshot       Decimal? @map("cost_snapshot") @db.Decimal(12, 2)
@@ -217,7 +233,7 @@ model Order {
 
 model OrderLine {
   id          String        @id @default(uuid()) @db.Uuid
-  orderId     String        @map("order_id") @db.Uuid
+  orderId     String        @map("order_id")
   type        OrderLineType
   // Recipe type fields
   recipeId    String?       @map("recipe_id") @db.Uuid
@@ -243,7 +259,7 @@ model OrderLine {
 
 model OrderItem {
   id                 String   @id @default(uuid()) @db.Uuid
-  orderId            String   @map("order_id") @db.Uuid
+  orderId            String   @map("order_id")
   productId          String   @map("product_id") @db.Uuid
   quantity           Int      @default(1)
   unitPrice          Decimal  @map("unit_price") @db.Decimal(12, 2)
@@ -296,11 +312,14 @@ model CostRule {
 
 model Shipping {
   id              String         @id @default(uuid()) @db.Uuid
-  orderId         String         @map("order_id") @db.Uuid
+  orderId         String         @map("order_id")
   deliveryType    String         @map("delivery_type")
   shippingMethod  String         @map("shipping_method")
   carrier         String?
   trackingNumber  String?        @map("tracking_number")
+  trackingUrl     String?        @map("tracking_url")
+  driverName      String?        @map("driver_name")
+  driverPhone     String?        @map("driver_phone")
   status          ShippingStatus @default(Pending)
   eta             DateTime?
   cost            Decimal        @default(0) @db.Decimal(12, 2)

@@ -8,7 +8,7 @@ import Toast from '@/components/Toast';
 import { SkeletonRow } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
-import { copyToClipboard } from '@/lib/clipboard';
+import FlaticonIcon from '@/components/FlaticonIcon';
 
 interface MatchingRule {
   id: string;
@@ -207,43 +207,67 @@ export default function MatchingRulesPage() {
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quy tắc ghép ký tự</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Quản lý cách nhận diện ký tự cho sản phẩm CHARM — {rules.length} quy tắc
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isAdmin && (
+      {/* Page header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+                <FlaticonIcon name="link-horizontal" size="md" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                  Quy tắc ghép ký tự
+                </h1>
+                {rules.length > 0 && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {rules.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Cách nhận diện ký tự cho sản phẩm CHARM</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={handleResetDefaults}
+                className="btn-secondary btn-sm"
+                title="Khôi phục quy tắc mặc định"
+              >
+                <FlaticonIcon name="arrows-repeat" size="sm" className="mr-1" /> Mặc định
+              </button>
+            )}
             <button
-              onClick={handleResetDefaults}
-              className="btn-secondary btn-sm"
-              title="Khôi phục quy tắc mặc định"
+              onClick={() => {
+                setEditingId(null);
+                setForm({ code: '', name: '', pattern: '', description: '', isActive: true });
+                setFormErrors({});
+                setFormError('');
+                setShowForm(true);
+              }}
+              className="btn-primary !gap-1.5 !px-4"
+              disabled={!isAdmin}
             >
-              🔄 Mặc định
+              <span>＋ Thêm quy tắc</span>
             </button>
-          )}
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setForm({ code: '', name: '', pattern: '', description: '', isActive: true });
-              setFormErrors({});
-              setFormError('');
-              setShowForm(true);
-            }}
-            className="btn-primary"
-            disabled={!isAdmin}
-          >
-            + Thêm quy tắc
-          </button>
+          </div>
         </div>
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
       {/* Search */}
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <FlaticonIcon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm quy tắc..."
@@ -524,7 +548,7 @@ export default function MatchingRulesPage() {
                           aria-label="Chỉnh sửa quy tắc"
                           disabled={!isAdmin}
                         >
-                          ✏️
+                          <FlaticonIcon name="pencil" size="sm" />
                         </button>
                         <button
                           onClick={() => setExpandedId(expandedId === rule.id ? null : rule.id)}
@@ -547,7 +571,7 @@ export default function MatchingRulesPage() {
                           aria-label="Xóa quy tắc"
                           disabled={!isAdmin}
                         >
-                          🗑️
+                          <FlaticonIcon name="trash" size="sm" />
                         </button>
                       </div>
                     </td>
@@ -557,7 +581,7 @@ export default function MatchingRulesPage() {
                   <tr>
                     <td colSpan={6} className="text-center py-12">
                       <EmptyState
-                        icon="🔤"
+                        emoji="🔤"
                         title="Chưa có quy tắc ghép ký tự nào"
                         message="Thêm quy tắc để bắt đầu cấu hình cách nhận diện ký tự cho sản phẩm CHARM."
                         action={
@@ -579,7 +603,7 @@ export default function MatchingRulesPage() {
       {/* System info callout */}
       <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
         <div className="flex items-start gap-3">
-          <span className="text-lg flex-shrink-0">💡</span>
+          <FlaticonIcon name="bulb" size="lg" className="flex-shrink-0" />
           <div>
             <h4 className="text-sm font-semibold text-gray-700">Thông tin hệ thống</h4>
             <p className="text-xs text-gray-500 mt-1">

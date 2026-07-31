@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import FlaticonIcon from '@/components/FlaticonIcon';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -39,15 +40,32 @@ export default function ConfirmModal({
 
   return (
     <div className="modal-overlay !items-center !pt-0" onKeyDown={handleKeyDown}>
-      <div className="modal-content max-w-sm !rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 text-center">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
-            <span className="text-2xl">⚠️</span>
+      <div className="max-w-sm mx-4 w-full" onClick={(e) => e.stopPropagation()} style={{ animation: 'modalSlideScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+        <div className="bg-white shadow-lg rounded-2xl p-6 text-center">
+          <div
+            className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center"
+            style={{ animation: 'iconShake 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both' }}
+          >
+            <FlaticonIcon name="triangle-warning" size="xl" className="text-amber-500" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-          <p className="text-sm text-gray-500 mb-6">{message}</p>
+          <h3
+            className="text-lg font-semibold text-gray-900 mb-2"
+            style={{ animation: 'btnSlideUp 0.3s ease-out 0.1s both' }}
+          >
+            {title}
+          </h3>
+          <p
+            className="text-sm text-gray-500 mb-6"
+            style={{ animation: 'btnSlideUp 0.3s ease-out 0.15s both' }}
+          >
+            {message}
+          </p>
           <div className="flex gap-3 justify-center">
-            <button onClick={onClose} className="btn-secondary px-6">
+            <button
+              onClick={onClose}
+              className="btn-secondary px-6"
+              style={{ animation: 'btnSlideUp 0.3s ease-out 0.2s both' }}
+            >
               {cancelLabel}
             </button>
             <button
@@ -57,6 +75,7 @@ export default function ConfirmModal({
                 onClose();
               }}
               className={`btn px-6 text-white ${variant === 'danger' ? 'bg-red-500 hover:bg-red-600' : 'btn-primary'}`}
+              style={{ animation: 'btnSlideUp 0.3s ease-out 0.25s both' }}
             >
               {confirmLabel}
             </button>

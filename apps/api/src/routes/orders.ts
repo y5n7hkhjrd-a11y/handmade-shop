@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { orderService } from '../services/orderService.js';
 import { validate } from '../middleware/validate.js';
+import { AppError } from '../middleware/errorHandler.js';
 import { createOrderSchema, updateOrderSchema, listOrdersQuerySchema } from '@handmade-shop/shared';
 import { OrderStatus } from '@handmade-shop/shared';
 
@@ -11,7 +12,7 @@ orderRouter.get(
   validate(listOrdersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit, status, customerId, startDate, endDate } = req.query as any;
+      const { page, limit, status, customerId, startDate, endDate, deadlineFilter } = req.query as any;
       const result = await orderService.list({
         page,
         limit,
@@ -19,6 +20,7 @@ orderRouter.get(
         customerId,
         startDate,
         endDate,
+        deadlineFilter,
       });
       res.json({
         success: true,
@@ -69,7 +71,14 @@ orderRouter.post(
 
 orderRouter.patch('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status } = req.body;
+    const { status, shippingCost, shippingPaidBy } = req.body;
+    // Save shipping info if provided
+    if (shippingCost !== undefined || shippingPaidBy !== undefined) {
+      const updateData: any = {};
+      if (shippingCost !== undefined) updateData.shippingCost = shippingCost;
+      if (shippingPaidBy !== undefined) updateData.shippingPaidBy = shippingPaidBy;
+      await orderService.update(req.params.id!, updateData);
+    }
     const order = await orderService.updateStatus(req.params.id!, status as OrderStatus);
     res.json({ success: true, data: order });
   } catch (error) {
@@ -94,11 +103,24 @@ orderRouter.post('/:id/items', async (req: Request, res: Response, next: NextFun
 
 orderRouter.put('/:id/lines', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { orderLines, notes, paidAmount } = req.body;
+    const { orderLines, notes, paidAmount, deadline } = req.body;
     if (paidAmount !== undefined && (typeof paidAmount !== 'number' || paidAmount < 0)) {
       throw new Error('Số tiền đã thanh toán không hợp lệ');
     }
-    const order = await orderService.updateLines(req.params.id!, { orderLines, notes, paidAmount });
+    const order = await orderService.updateLines(req.params.id!, { orderLines, notes, paidAmount, deadline });
+    res.json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+});
+
+orderRouter.patch('/:id/payment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { paidAmount } = req.body;
+    if (typeof paidAmount !== 'number' || paidAmount < 0) {
+      throw new AppError('Số tiền đã thanh toán không hợp lệ');
+    }
+    const order = await orderService.markPaid(req.params.id!, paidAmount);
     res.json({ success: true, data: order });
   } catch (error) {
     next(error);

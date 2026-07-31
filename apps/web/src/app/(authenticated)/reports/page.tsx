@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
+import FlaticonIcon from '@/components/FlaticonIcon';
 
 interface ProfitData {
   period: string;
@@ -129,76 +130,94 @@ export default function ReportsPage() {
 
   return (
     <div className="page-enter space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Báo cáo</h1>
-          <p className="text-gray-500 mt-1 text-sm">Phân tích và thống kê kinh doanh</p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <button
-              onClick={() => setShowDateFilter(!showDateFilter)}
-              className="btn-secondary btn-sm"
-            >
-              <span className="mr-1.5">📅</span>
-              {dateRange.startDate || dateRange.endDate ? 'Đã lọc' : 'Khoảng ngày'}
-            </button>
-            {showDateFilter && (
-              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-10 min-w-[240px] animate-[scaleIn_0.15s_ease-out]">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      className="input text-sm"
-                      value={dateRange.startDate || ''}
-                      onChange={(e) =>
-                        setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
-                      }
-                    />
+      {/* ─── Header ─── */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-purple-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }} />
+        <div className="relative px-4 py-3 sm:px-6 sm:py-5">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3.5">
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                    <FlaticonIcon name="analyse" size="lg" />
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">End Date</label>
-                    <input
-                      type="date"
-                      className="input text-sm"
-                      value={dateRange.endDate || ''}
-                      onChange={(e) =>
-                        setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
-                      }
-                    />
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-purple-300/30 blur-sm -z-10" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                      Báo cáo
+                    </h1>
                   </div>
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        setDateRange({});
-                        setShowDateFilter(false);
-                      }}
-                      className="btn-ghost btn-xs flex-1"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={() => setShowDateFilter(false)}
-                      className="btn-primary btn-xs flex-1"
-                    >
-                      Apply
-                    </button>
-                  </div>
+                  <p className="text-sm text-gray-400 mt-0.5">Phân tích và thống kê kinh doanh</p>
                 </div>
               </div>
-            )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                  className="btn-secondary btn-sm"
+                >
+                  <FlaticonIcon name="time-watch-calendar" size="sm" className="mr-1.5" />
+                  {dateRange.startDate || dateRange.endDate ? 'Đã lọc' : 'Khoảng ngày'}
+                </button>
+                {showDateFilter && (
+                  <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-10 min-w-[240px] animate-[scaleIn_0.15s_ease-out]">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">Start Date</label>
+                        <input
+                          type="date"
+                          className="input text-sm"
+                          value={dateRange.startDate || ''}
+                          onChange={(e) => setDateRange((prev) => ({ ...prev, startDate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1 block">End Date</label>
+                        <input
+                          type="date"
+                          className="input text-sm"
+                          value={dateRange.endDate || ''}
+                          onChange={(e) => setDateRange((prev) => ({ ...prev, endDate: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => { setDateRange({}); setShowDateFilter(false); }}
+                          className="btn-ghost btn-xs flex-1"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          onClick={() => setShowDateFilter(false)}
+                          className="btn-primary btn-xs flex-1"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={exportToCSV}
+                className="btn-secondary btn-sm"
+                disabled={profitData.length === 0}
+              >
+                <FlaticonIcon name="download" size="sm" className="mr-1.5" /> Export
+              </button>
+            </div>
           </div>
-          <button
-            onClick={exportToCSV}
-            className="btn-secondary btn-sm"
-            disabled={profitData.length === 0}
-          >
-            <span className="mr-1.5">📥</span> Export
-          </button>
         </div>
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
       </div>
 
       <div className="tabs w-fit">
@@ -378,7 +397,7 @@ export default function ReportsPage() {
               {profitData.length === 0 && !loading && (
                 <div className="card">
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="empty-state-icon">📊</div>
+                    <FlaticonIcon name="analyse" size="xl" className="empty-state-icon" />
                     <p className="font-semibold text-gray-700 mb-1">No revenue data yet</p>
                     <p className="text-sm text-gray-500 max-w-sm">
                       Complete some orders to see revenue reports and financial insights.
@@ -445,7 +464,7 @@ export default function ReportsPage() {
                             : '0.0';
                         return (
                           <tr key={p.productId} className="group">
-                            <td className="text-center">
+                            <td className="text-left">
                               <span
                                 className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
                                   idx === 0
@@ -558,7 +577,7 @@ export default function ReportsPage() {
                         const avgOrder = c.totalOrders > 0 ? c.totalSpent / c.totalOrders : 0;
                         return (
                           <tr key={c.customerId} className="group">
-                            <td className="text-center text-gray-400">
+                            <td className="text-left text-gray-400">
                               {idx === 0
                                 ? '🥇'
                                 : idx === 1
@@ -591,7 +610,7 @@ export default function ReportsPage() {
                         <tr>
                           <td colSpan={5}>
                             <div className="flex flex-col items-center justify-center py-12 text-center">
-                              <div className="empty-state-icon">👥</div>
+                              <FlaticonIcon name="users-alt" size="xl" className="empty-state-icon" />
                               <p className="font-semibold text-gray-700 mb-1">No customer data</p>
                               <p className="text-sm text-gray-500 max-w-sm">
                                 Complete orders to see customer rankings.

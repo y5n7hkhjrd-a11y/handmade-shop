@@ -44,7 +44,8 @@ export enum PackagingType {
 // User
 export interface User {
   id: string;
-  email: string;
+  username: string;
+  email?: string | null;
   name: string;
   role: UserRole;
   createdAt: string;
@@ -53,7 +54,7 @@ export interface User {
 
 // Auth
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -69,6 +70,10 @@ export interface Customer {
   email: string;
   phone?: string | null;
   address?: string | null;
+  facebook?: string | null;
+  instagram?: string | null;
+  tiktok?: string | null;
+  threads?: string | null;
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -167,6 +172,7 @@ export interface Order {
   customer?: Customer;
   status: OrderStatus;
   orderDate: string;
+  deadline?: string | null;
   confirmedAt?: string | null;
   completedAt?: string | null;
   recipeId?: string | null;
@@ -178,6 +184,7 @@ export interface Order {
   materialCost: number;
   packagingCost: number;
   shippingCost: number;
+  shippingPaidBy?: string | null;
   totalCost: number;
   salePriceSnapshot?: number | null;
   costSnapshot?: number | null;
@@ -235,6 +242,9 @@ export interface Shipping {
   shippingMethod: string;
   carrier?: string | null;
   trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  driverName?: string | null;
+  driverPhone?: string | null;
   status: ShippingStatus;
   eta?: string | null;
   cost: number;

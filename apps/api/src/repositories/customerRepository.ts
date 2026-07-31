@@ -1,5 +1,16 @@
 import { prisma } from '../lib/prisma.js';
 
+/** Convert empty strings to undefined so Prisma treats them as "not set" */
+function cleanOptionalStrings<T extends Record<string, any>>(data: T): T {
+  const cleaned = { ...data };
+  for (const key of Object.keys(cleaned)) {
+    if ((cleaned as any)[key] === '') {
+      (cleaned as any)[key] = undefined;
+    }
+  }
+  return cleaned;
+}
+
 export const customerRepository = {
   async findById(id: string) {
     return prisma.customer.findUnique({ where: { id } });
@@ -35,16 +46,20 @@ export const customerRepository = {
     email?: string;
     phone?: string;
     address?: string;
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+    threads?: string;
     notes?: string;
   }) {
-    return prisma.customer.create({ data: data as any });
+    return prisma.customer.create({ data: cleanOptionalStrings(data) as any });
   },
 
   async update(
     id: string,
-    data: { name?: string; email?: string; phone?: string; address?: string; notes?: string },
+    data: { name?: string; email?: string; phone?: string; address?: string; facebook?: string; instagram?: string; tiktok?: string; threads?: string; notes?: string },
   ) {
-    return prisma.customer.update({ where: { id }, data: data as any });
+    return prisma.customer.update({ where: { id }, data: cleanOptionalStrings(data) as any });
   },
 
   async softDelete(id: string) {

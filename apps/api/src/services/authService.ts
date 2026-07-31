@@ -12,18 +12,18 @@ const JWT_EXPIRES_IN = (
 ) as jwt.SignOptions['expiresIn'];
 
 export const authService = {
-  async login(email: string, password: string) {
-    const user = await userRepository.findByEmail(email);
+  async login(username: string, password: string) {
+    const user = await userRepository.findByUsername(username);
     if (!user || user.deletedAt) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError('Invalid username or password', 401);
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError('Invalid username or password', 401);
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
 
@@ -31,6 +31,7 @@ export const authService = {
       token,
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
         name: user.name,
         role: user.role,
@@ -40,15 +41,16 @@ export const authService = {
     };
   },
 
-  async createUser(data: { email: string; password: string; name: string; role?: UserRole }) {
-    const existing = await userRepository.findByEmail(data.email);
+  async createUser(data: { username: string; password: string; name: string; role?: UserRole; email?: string }) {
+    const existing = await userRepository.findByUsername(data.username);
     if (existing) {
-      throw new AppError('Email already in use', 409);
+      throw new AppError('Username already in use', 409);
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = await userRepository.create({
       ...data,
+      email: data.email || undefined,
       password: hashedPassword,
     });
 

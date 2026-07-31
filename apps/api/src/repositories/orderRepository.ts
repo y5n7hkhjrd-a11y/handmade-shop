@@ -1,5 +1,26 @@
 import { prisma } from '../lib/prisma.js';
 
+function pad(num: number, size: number): string {
+  return String(num).padStart(size, '0');
+}
+
+async function generateOrderId(): Promise<string> {
+  const now = new Date();
+  const yymmdd =
+    now.getFullYear().toString().slice(2) +
+    pad(now.getMonth() + 1, 2) +
+    pad(now.getDate(), 2);
+
+  // Atomically increment the daily counter using upsert
+  const seq = await prisma.orderSequence.upsert({
+    where: { date: yymmdd },
+    update: { counter: { increment: 1 } },
+    create: { date: yymmdd, counter: 1 },
+  });
+
+  return `${yymmdd}-${pad(seq.counter, 3)}`;
+}
+
 export const orderRepository = {
   async findById(id: string) {
     return prisma.order.findUnique({
@@ -27,6 +48,7 @@ export const orderRepository = {
     customerId?: string;
     startDate?: string;
     endDate?: string;
+    deadlineFilter?: string;
   }) {
     const where: any = { deletedAt: null };
     if (params.status) where.status = params.status;
@@ -35,6 +57,15 @@ export const orderRepository = {
       where.orderDate = {};
       if (params.startDate) where.orderDate.gte = new Date(params.startDate);
       if (params.endDate) where.orderDate.lte = new Date(params.endDate);
+    }
+    if (params.deadlineFilter === 'overdue') {
+      where.deadline = { not: null, lt: new Date() };
+      where.status = { notIn: ['Completed', 'ReadyToShip'] };
+    } else if (params.deadlineFilter === 'soon') {
+      const now = new Date();
+      const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+      where.deadline = { not: null, gte: now, lte: in3Days };
+      where.status = { notIn: ['Completed', 'ReadyToShip'] };
     }
     const [data, total] = await Promise.all([
       prisma.order.findMany({
@@ -57,6 +88,7 @@ export const orderRepository = {
 
   async create(data: {
     customerId: string;
+    deadline?: string;
     notes?: string;
     paidAmount?: number;
     recipeId?: string;
@@ -84,15 +116,18 @@ export const orderRepository = {
       notes?: string;
     }>;
   }) {
+    const id = await generateOrderId();
     const { items, orderLines, ...orderData } = data;
     const subtotal = data.subtotal ?? items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
     const packagingCost = data.packagingCost ?? 0;
     const materialCost = data.materialCost ?? 0;
     const itemTotal = items.reduce((sum, i) => sum + (i as any).unitPrice * (i as any).quantity, 0);
     const totalCost = data.totalCost ?? itemTotal + packagingCost;
-    return prisma.order.create({
+    return (prisma.order as any).create({
       data: {
+        id,
         ...orderData,
+        deadline: data.deadline ? new Date(data.deadline) : undefined,
         subtotal,
         materialCost,
         packagingCost,
@@ -125,7 +160,28 @@ export const orderRepository = {
 
   async updateStatus(id: string, status: string) {
     const updateData: any = { status };
+    if (status === 'Packaging') updateData.packagedAt = new Date();
+    if (status === 'ReadyToShip') updateData.sentAt = new Date();
     if (status === 'Completed') updateData.completedAt = new Date();
+    // Fetch current order to determine transition direction
+    const existing = await prisma.order.findUnique({
+      where: { id },
+      select: { confirmedAt: true, status: true },
+    });
+    if (existing) {
+      if (status === 'Draft') {
+        // Backward WaitingConfirm → Draft: clear confirmedAt
+        updateData.confirmedAt = null;
+      } else if (status === 'WaitingConfirm') {
+        if (existing.status === 'InProgress') {
+          // Backward InProgress → WaitingConfirm: clear confirmedAt
+          updateData.confirmedAt = null;
+        } else if (!existing.confirmedAt) {
+          // Forward Draft → WaitingConfirm: set confirmedAt
+          updateData.confirmedAt = new Date();
+        }
+      }
+    }
     return prisma.order.update({
       where: { id },
       data: updateData,
@@ -183,12 +239,15 @@ export const orderRepository = {
 
     const updateData: any = {
       status: 'InProgress',
-      confirmedAt: new Date(),
       salePriceSnapshot: order.subtotal,
       costSnapshot: order.totalCost,
       materialCost: order.materialCost,
       packagingCost: order.packagingCost,
     };
+    // Only set confirmedAt on first confirmation — don't overwrite if order goes back and forth
+    if (!order.confirmedAt) {
+      updateData.confirmedAt = new Date();
+    }
     if (recipeSnapshot) updateData.recipeSnapshot = recipeSnapshot;
 
     return prisma.order.update({
@@ -205,14 +264,16 @@ export const orderRepository = {
 
   async addItem(
     id: string,
-    data: { productId: string; quantity: number; unitPrice: number; notes?: string },
+    data: { productId: string; quantity: number; unitPrice: number; unitCost?: number; notes?: string },
   ) {
-    const totalPrice = data.unitPrice * data.quantity;
+    const salePrice = data.unitPrice || 0;  // User-entered sale price
+    const itemCost = data.unitCost ?? salePrice;  // Actual cost per unit (passed from service or fallback)
+    const totalPrice = itemCost * data.quantity;  // Cost * qty for OrderItem
     const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
     if (!order) return null;
 
     const existingItemTotal = order.items.reduce((sum, i) => sum + Number(i.totalPrice), 0);
-    const newSubtotal = Number(order.subtotal) + totalPrice;
+    const newSubtotal = Number(order.subtotal) + salePrice * data.quantity;  // Use sale price for subtotal
     const newTotal =
       existingItemTotal +
       totalPrice +
@@ -225,7 +286,7 @@ export const orderRepository = {
         orderId: id,
         productId: data.productId,
         quantity: data.quantity,
-        unitPrice: data.unitPrice,
+        unitPrice: itemCost,  // Store cost price for cost tracking
         totalPrice,
         notes: data.notes,
       },
@@ -237,14 +298,14 @@ export const orderRepository = {
         type: 'PRODUCT',
         productId: data.productId,
         quantity: data.quantity,
-        unitPrice: data.unitPrice,
+        unitPrice: salePrice,  // Store sale price for display
         notes: data.notes,
       },
     });
 
     return prisma.order.update({
       where: { id },
-      data: { subtotal: newSubtotal, totalCost: newTotal },
+      data: { subtotal: newSubtotal, totalCost: newTotal, materialCost: { increment: totalPrice } },
       include: {
         customer: true,
         items: { include: { product: true } },
@@ -257,7 +318,7 @@ export const orderRepository = {
 
   async replaceLines(
     id: string,
-    data: { notes?: string; paidAmount?: number; orderLines: any[] },
+    data: { notes?: string; paidAmount?: number; deadline?: string; orderLines: any[] },
     items: Array<{
       productId: string;
       quantity: number;
@@ -305,6 +366,9 @@ export const orderRepository = {
     if (data.paidAmount != null) {
       updateData.paidAmount = data.paidAmount;
     }
+    if (data.deadline !== undefined) {
+      updateData.deadline = data.deadline ? new Date(data.deadline) : null;
+    }
 
     return prisma.order.update({
       where: { id },
@@ -317,9 +381,7 @@ export const orderRepository = {
         orderLines: { include: { recipe: true, product: true } },
       },
     });
-  },
-
-  async update(id: string, data: { discount?: number; paidAmount?: number; notes?: string }) {
+  },    async update(id: string, data: { discount?: number; paidAmount?: number; deadline?: string; shippingCost?: number; shippingPaidBy?: string; notes?: string }) {
     const order = await prisma.order.findUnique({
       where: { id },
       include: { items: true },
@@ -329,9 +391,13 @@ export const orderRepository = {
     const itemTotal = order.items.reduce((sum, i) => sum + Number(i.totalPrice), 0);
     const totalCost =
       itemTotal - discount + Number(order.packagingCost) + Number(order.shippingCost);
-    return prisma.order.update({
+    const updateData: any = { ...data, totalCost };
+    if (data.deadline !== undefined) {
+      updateData.deadline = data.deadline ? new Date(data.deadline) : null;
+    }
+    return (prisma.order as any).update({
       where: { id },
-      data: { ...data, totalCost },
+      data: updateData,
       include: { customer: true, items: { include: { product: true } }, shipping: true },
     });
   },

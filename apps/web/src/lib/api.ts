@@ -36,13 +36,13 @@ export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): 
 
 // Auth helpers
 export const authApi = {
-  login: (email: string, password: string) =>
+  login: (username: string, password: string) =>
     apiClient<{ success: boolean; data: { token: string; user: any } }>('/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { username, password },
     }),
 
-  register: (data: { email: string; password: string; name: string; role?: string }) =>
+  register: (data: { username: string; password: string; name: string; role?: string; email?: string }) =>
     apiClient<{ success: boolean; data: any }>('/auth/register', {
       method: 'POST',
       body: data,

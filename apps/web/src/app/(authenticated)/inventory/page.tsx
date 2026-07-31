@@ -7,8 +7,11 @@ import { formatDateTime } from '@handmade-shop/shared';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 import { SkeletonRow } from '@/components/LoadingSpinner';
+import { useSort, SortIcon } from '@/hooks/useSort';
 import EmptyState from '@/components/EmptyState';
+import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
+import InventoryForm from './InventoryForm';
 
 interface Transaction {
   id: string;
@@ -29,9 +32,9 @@ interface StockSummary {
 }
 
 const typeConfig: Record<string, { icon: string; badge: string; label: string }> = {
-  IMPORT: { icon: '📥', badge: 'badge-green', label: 'Import' },
-  SALE: { icon: '📤', badge: 'badge-red', label: 'Sale' },
-  ADJUSTMENT: { icon: '⚖️', badge: 'badge-yellow', label: 'Adjustment' },
+  IMPORT: { icon: 'download', badge: 'badge-green', label: 'Import' },
+  SALE: { icon: 'upload', badge: 'badge-red', label: 'Sale' },
+  ADJUSTMENT: { icon: 'balance-scale-left', badge: 'badge-yellow', label: 'Adjustment' },
 };
 
 export default function InventoryPage() {
@@ -46,16 +49,6 @@ export default function InventoryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [showStockView, setShowStockView] = useState(false);
-  const [form, setForm] = useState({
-    type: 'IMPORT',
-    productId: '',
-    componentName: '',
-    quantity: 0,
-    unit: 'pieces',
-    reference: '',
-    notes: '',
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast, showToast } = useToast();
 
   const loadData = useCallback(async () => {
@@ -88,37 +81,6 @@ export default function InventoryPage() {
     }
   }, [token, page, typeFilter, productFilter, loadData]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    if (form.quantity <= 0) {
-      setFormErrors({ quantity: 'Quantity must be greater than 0' });
-      return;
-    }
-    try {
-      await apiClient('/inventory', {
-        method: 'POST',
-        body: { ...form, quantity: Number(form.quantity) },
-        token,
-      });
-      showToast('Đã ghi nhận giao dịch');
-      setShowForm(false);
-      setForm({
-        type: 'IMPORT',
-        productId: '',
-        componentName: '',
-        quantity: 0,
-        unit: 'pieces',
-        reference: '',
-        notes: '',
-      });
-      setFormErrors({});
-      loadData();
-    } catch (e: any) {
-      showToast(e.message || 'Thất bại', 'error');
-    }
-  };
-
   // Calculate stock levels
   const productStock: Record<string, number> = {};
   const productNames: Record<string, string> = {};
@@ -134,6 +96,9 @@ export default function InventoryPage() {
     else productStock[key] += Number(tx.quantity);
   });
 
+  // Sort
+  const { sortedData, sortKey, sortDir, toggleSort } = useSort(transactions, 'createdAt', 'desc');
+
   const totals = { import: 0, sale: 0, adjustment: 0 };
   transactions.forEach((tx) => {
     if (tx.type === 'IMPORT') totals.import += Number(tx.quantity);
@@ -146,20 +111,40 @@ export default function InventoryPage() {
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Kho hàng</h1>
-          <p className="text-gray-500 mt-1 text-sm">Theo dõi nhập xuất tồn kho</p>
+      {/* Page header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+                <FlaticonIcon name="warehouse-alt" size="md" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                  Kho hàng
+                </h1>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Theo dõi nhập xuất tồn kho</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowStockView(!showStockView)} className="btn-secondary btn-sm">
+              <span className="mr-1.5">{showStockView ? '📋' : '📊'}</span>
+              {showStockView ? 'Giao dịch' : 'Tồn kho'}
+            </button>
+            <button onClick={() => setShowForm(true)} className="btn-primary !gap-1.5 !px-4">
+              <span>＋ Ghi nhận giao dịch</span>
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowStockView(!showStockView)} className="btn-secondary btn-sm">
-            <span className="mr-1.5">{showStockView ? '📋' : '📊'}</span>
-            {showStockView ? 'Giao dịch' : 'Tồn kho'}
-          </button>
-          <button onClick={() => setShowForm(true)} className="btn-primary">
-            + Ghi nhận giao dịch
-          </button>
-        </div>
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
       {/* Stat cards */}
@@ -317,117 +302,14 @@ export default function InventoryPage() {
       </div>
 
       {/* Create Transaction Modal */}
-      {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowForm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Giao dịch mới</h2>
-              <p className="text-sm text-gray-500 mt-1">Ghi nhận biến động kho</p>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div>
-                <label className="label">Loại</label>
-                <select
-                  className="input"
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
-                >
-                  <option value="IMPORT">📥 Import — Stock received</option>
-                  <option value="SALE">📤 Sale — Stock sold</option>
-                  <option value="ADJUSTMENT">⚖️ Adjustment — Stock correction</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="label">
-                  Sản phẩm <span className="text-gray-400 font-normal">(hoặc tên nguyên liệu)</span>
-                </label>
-                <select
-                  className="input"
-                  value={form.productId}
-                  onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                >
-                  <option value="">Chọn sản phẩm...</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {!form.productId && (
-                <div>
-                  <label className="label">
-                    Component Name <span className="text-gray-400 font-normal">(fallback)</span>
-                  </label>
-                  <input
-                    className="input"
-                    value={form.componentName}
-                    onChange={(e) => setForm({ ...form, componentName: e.target.value })}
-                    placeholder="e.g., Beads, String, Clasp"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label label-required">Số lượng</label>
-                  <input
-                    className={`input ${formErrors.quantity ? 'input-error' : ''}`}
-                    type="number"
-                    step="0.0001"
-                    value={form.quantity}
-                    onChange={(e) => {
-                      setForm({ ...form, quantity: Number(e.target.value) });
-                      setFormErrors({});
-                    }}
-                    required
-                  />
-                  {formErrors.quantity && (
-                    <p className="mt-1 text-xs text-red-600">{formErrors.quantity}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="label">Đơn vị</label>
-                  <input
-                    className="input"
-                    value={form.unit}
-                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label">
-                  Tham chiếu{' '}
-                  <span className="text-gray-400 font-normal">(ví dụ: PO#, hóa đơn)</span>
-                </label>
-                <input
-                  className="input"
-                  value={form.reference}
-                  onChange={(e) => setForm({ ...form, reference: e.target.value })}
-                  placeholder="Tham chiếu (không bắt buộc)"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2 border-t">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  Ghi nhận
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <InventoryForm
+        isOpen={showForm}
+        token={token}
+        products={products}
+        showToast={showToast}
+        onClose={() => setShowForm(false)}
+        onSuccess={loadData}
+      />
 
       {/* Transactions List */}
       {loading ? (
@@ -438,7 +320,7 @@ export default function InventoryPage() {
                 <tr>
                   <th>Type</th>
                   <th>Product</th>
-                  <th className="text-right">Qty</th>
+                  <th className="text-left">Qty</th>
                   <th>Reference</th>
                   <th>Date</th>
                 </tr>
@@ -457,19 +339,19 @@ export default function InventoryPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Loại</th>
-                  <th>Sản phẩm / Nguyên liệu</th>
-                  <th className="text-right">Số lượng</th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('type')}>Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} /></th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('product.name')}>Sản phẩm / Nguyên liệu <SortIcon sortKey="product.name" currentKey={sortKey} dir={sortDir} /></th>
+                  <th className="text-left cursor-pointer select-none group" onClick={() => toggleSort('quantity')}>Số lượng <SortIcon sortKey="quantity" currentKey={sortKey} dir={sortDir} /></th>
                   <th>Tham chiếu</th>
-                  <th>Ngày</th>
+                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('createdAt')}>Ngày <SortIcon sortKey="createdAt" currentKey={sortKey} dir={sortDir} /></th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((tx) => (
+                {sortedData.map((tx) => (
                   <tr key={tx.id} className="group">
                     <td>
                       <span className={typeConfig[tx.type]?.badge || 'badge-gray'}>
-                        {typeConfig[tx.type]?.icon} {typeConfig[tx.type]?.label || tx.type}
+                        {typeConfig[tx.type]?.icon ? <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" /> : null} {typeConfig[tx.type]?.label || tx.type}
                       </span>
                     </td>
                     <td>
@@ -480,7 +362,7 @@ export default function InventoryPage() {
                       </span>
                     </td>
                     <td
-                      className={`text-right font-semibold tabular-nums ${
+                      className={`text-left font-semibold tabular-nums ${
                         tx.type === 'IMPORT'
                           ? 'text-emerald-600'
                           : tx.type === 'SALE'
@@ -500,7 +382,7 @@ export default function InventoryPage() {
                 ))}
                 {transactions.length === 0 && (
                   <EmptyState
-                    icon="📊"
+                    emoji="📊"
                     title="Không tìm thấy giao dịch"
                     message={
                       typeFilter

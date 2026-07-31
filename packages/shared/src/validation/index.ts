@@ -10,12 +10,13 @@ import {
 
 // Auth
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  username: z.string().min(1, 'Username is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1, 'Username is required'),
+  email: z.string().email().optional().or(z.literal('')),
   password: z.string().min(6),
   name: z.string().min(1, 'Name is required'),
   role: z.nativeEnum(UserRole).default(UserRole.Staff),
@@ -27,6 +28,10 @@ export const createCustomerSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   address: z.string().optional().or(z.literal('')),
+  facebook: z.string().optional().or(z.literal('')),
+  instagram: z.string().optional().or(z.literal('')),
+  tiktok: z.string().optional().or(z.literal('')),
+  threads: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -120,6 +125,7 @@ export const createOrderItemSchema = z.object({
 export const createOrderSchema = z
   .object({
     customerId: z.string().uuid(),
+    deadline: z.string().optional().or(z.literal('')),
     notes: z.string().optional().or(z.literal('')),
     paidAmount: z.number().min(0).default(0),
     // New multi-line format
@@ -142,6 +148,9 @@ export const updateOrderSchema = z.object({
   status: z.nativeEnum(OrderStatus).optional(),
   discount: z.number().min(0).optional(),
   paidAmount: z.number().min(0).optional(),
+  deadline: z.string().optional().or(z.literal('')),
+  shippingCost: z.number().min(0).optional(),
+  shippingPaidBy: z.enum(['prepaid', 'cod', 'shop']).optional(),
   notes: z.string().optional().or(z.literal('')),
 });
 
@@ -169,11 +178,14 @@ export const updateCostRuleSchema = createCostRuleSchema.partial();
 
 // Shipping
 export const createShippingSchema = z.object({
-  orderId: z.string().uuid(),
+  orderId: z.string().min(1, 'Order ID is required'),
   deliveryType: z.string().min(1),
   shippingMethod: z.string().min(1),
   carrier: z.string().optional().or(z.literal('')),
   trackingNumber: z.string().optional().or(z.literal('')),
+  trackingUrl: z.string().optional().or(z.literal('')),
+  driverName: z.string().optional().or(z.literal('')),
+  driverPhone: z.string().optional().or(z.literal('')),
   eta: z.string().datetime().optional().or(z.literal('')),
   cost: z.number().min(0).default(0),
 });
@@ -181,7 +193,10 @@ export const createShippingSchema = z.object({
 export const updateShippingSchema = z.object({
   status: z.nativeEnum(ShippingStatus).optional(),
   trackingNumber: z.string().optional().or(z.literal('')),
+  trackingUrl: z.string().optional().or(z.literal('')),
   carrier: z.string().optional().or(z.literal('')),
+  driverName: z.string().optional().or(z.literal('')),
+  driverPhone: z.string().optional().or(z.literal('')),
   eta: z.string().datetime().optional().or(z.literal('')),
   shippedAt: z.string().datetime().optional().or(z.literal('')),
   deliveredAt: z.string().datetime().optional().or(z.literal('')),
@@ -202,6 +217,7 @@ export const listOrdersQuerySchema = z.object({
   customerId: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  deadlineFilter: z.enum(['overdue', 'soon']).optional(),
 });
 
 export const listCustomersQuerySchema = z.object({
