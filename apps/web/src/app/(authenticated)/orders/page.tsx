@@ -114,6 +114,7 @@ export default function OrdersPage() {
         .then((r: any) => setMatchingRules(r.data || []))
         .catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadOrders, token]);
 
   const [confirmAdvanceTable, setConfirmAdvanceTable] = useState<{

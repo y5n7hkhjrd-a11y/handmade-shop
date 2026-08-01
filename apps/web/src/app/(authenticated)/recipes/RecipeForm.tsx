@@ -76,6 +76,7 @@ export default function RecipeForm({
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editingRecipe]);
 
   const getUsedRuleIds = () => {

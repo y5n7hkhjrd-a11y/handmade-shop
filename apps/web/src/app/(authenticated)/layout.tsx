@@ -63,6 +63,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           </svg>
         </button>
         <Link href="/dashboard" className="relative z-10 flex-1 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.svg" alt="Linus" className="h-8 w-auto max-w-[130px] object-contain" />
         </Link>
         {/* Bottom gradient line */}

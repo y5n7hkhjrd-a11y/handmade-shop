@@ -92,6 +92,7 @@ export default function LoginPage() {
             />
 
             <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.svg"
                 alt="Linus"
@@ -136,6 +137,7 @@ export default function LoginPage() {
           <div className="p-6 sm:p-10 flex flex-col justify-center">
             {/* Mobile brand header */}
             <div className="lg:hidden text-center mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.svg"
                 alt="Linus"

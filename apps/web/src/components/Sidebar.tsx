@@ -78,6 +78,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         >
           <div className="flex items-center justify-center relative">
             <Link href="/dashboard" className="flex items-center justify-center group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.svg"
                 alt="Linus Logo"

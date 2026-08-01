@@ -18,6 +18,7 @@ const brandImages: Record<BrandName, string> = {
 
 export default function BrandIcon({ brand, size = 20, className = '' }: BrandIconProps) {
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={brandImages[brand]}
       alt={`${brand} logo`}

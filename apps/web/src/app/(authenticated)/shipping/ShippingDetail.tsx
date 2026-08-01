@@ -115,6 +115,7 @@ export default function ShippingDetail({
       setSpxRecordsLoading(false);
       setGrabTrackingInfo(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, shipment]);
 
   const carrier = getCarrier(shipment);

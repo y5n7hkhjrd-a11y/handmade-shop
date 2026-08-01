@@ -1019,8 +1019,9 @@ export default function OrderDetail({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-red-800">Vận chuyển thất bại!</p>
                       <p className="text-xs text-red-600 mt-0.5">
-                        Đơn giao hàng hiện tại không thành công. Nhấn nút <strong>"Thử lại"</strong>{' '}
-                        bên dưới để xóa đơn cũ và tạo đơn giao mới.
+                        Đơn giao hàng hiện tại không thành công. Nhấn nút{' '}
+                        <strong>&ldquo;Thử lại&rdquo;</strong> bên dưới để xóa đơn cũ và tạo đơn
+                        giao mới.
                       </p>
                       <div className="flex items-center gap-2 mt-2 text-[10px] text-red-500">
                         <span className="inline-flex items-center gap-1">
