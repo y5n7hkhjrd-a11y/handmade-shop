@@ -26,7 +26,9 @@ async function main() {
       console.log(`❌ [${order.id}] ${order.customer?.name || 'N/A'}`);
       console.log(`   Đã thanh toán: ${paid.toLocaleString('vi-VN')}₫`);
       console.log(`   Tổng hiện tại: ${salePriceTotal.toLocaleString('vi-VN')}₫`);
-      console.log(`   Chênh lệch:    ${(paid - salePriceTotal).toLocaleString('vi-VN')}₫ (trả thừa)\n`);
+      console.log(
+        `   Chênh lệch:    ${(paid - salePriceTotal).toLocaleString('vi-VN')}₫ (trả thừa)\n`,
+      );
     }
 
     // Case 2: paidAmount > 0 but total is now 0 (order was emptied?)

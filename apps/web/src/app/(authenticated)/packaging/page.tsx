@@ -146,7 +146,13 @@ export default function PackagingPage() {
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
         <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
@@ -210,7 +216,11 @@ export default function PackagingPage() {
 
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <FlaticonIcon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <FlaticonIcon
+            name="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm..."
@@ -397,7 +407,10 @@ export default function PackagingPage() {
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">{tpl.name}</h3>
                       <span className={typeConfig[tpl.type]?.badge || 'badge-gray'}>
-                        {typeConfig[tpl.type]?.icon ? <FlaticonIcon name={typeConfig[tpl.type]!.icon} size="sm" /> : null} {typeConfig[tpl.type]?.label || tpl.type}
+                        {typeConfig[tpl.type]?.icon ? (
+                          <FlaticonIcon name={typeConfig[tpl.type]!.icon} size="sm" />
+                        ) : null}{' '}
+                        {typeConfig[tpl.type]?.label || tpl.type}
                       </span>
                     </div>
                   </div>
@@ -420,8 +433,10 @@ export default function PackagingPage() {
                       className="btn-ghost btn-xs"
                       title="Nhân bản mẫu"
                       aria-label="Nhân bản mẫu"
-                    >                        <FlaticonIcon name="clipboard" size="xs" />
-                      </button>
+                    >
+                      {' '}
+                      <FlaticonIcon name="clipboard" size="xs" />
+                    </button>
                   </div>
                 </div>
                 {expandedId === tpl.id && (

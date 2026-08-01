@@ -12,7 +12,8 @@ orderRouter.get(
   validate(listOrdersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit, status, customerId, startDate, endDate, deadlineFilter } = req.query as any;
+      const { page, limit, status, customerId, startDate, endDate, deadlineFilter } =
+        req.query as any;
       const result = await orderService.list({
         page,
         limit,
@@ -107,7 +108,12 @@ orderRouter.put('/:id/lines', async (req: Request, res: Response, next: NextFunc
     if (paidAmount !== undefined && (typeof paidAmount !== 'number' || paidAmount < 0)) {
       throw new Error('Số tiền đã thanh toán không hợp lệ');
     }
-    const order = await orderService.updateLines(req.params.id!, { orderLines, notes, paidAmount, deadline });
+    const order = await orderService.updateLines(req.params.id!, {
+      orderLines,
+      notes,
+      paidAmount,
+      deadline,
+    });
     res.json({ success: true, data: order });
   } catch (error) {
     next(error);

@@ -61,7 +61,9 @@ export default function ShippingPage() {
         }
         setCarrierCounts(cc);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [token]);
 
   const loadShipments = useCallback(async () => {
@@ -69,15 +71,23 @@ export default function ShippingPage() {
     try {
       const params: Record<string, string> = { page: String(page), limit: '30' };
       if (statusFilter) params.status = statusFilter;
-      const res = await apiClient<any>(`/shipping?${new URLSearchParams(params).toString()}`, { token });
+      const res = await apiClient<any>(`/shipping?${new URLSearchParams(params).toString()}`, {
+        token,
+      });
       setShipments(res.data);
       setTotalPages(res.pagination.totalPages);
-    } catch (e: any) { showToast(e.message || 'Failed', 'error'); }
+    } catch (e: any) {
+      showToast(e.message || 'Failed', 'error');
+    }
     setLoading(false);
   }, [token, page, statusFilter, showToast]);
 
-  useEffect(() => { loadShipments(); }, [loadShipments]);
-  useEffect(() => { loadCounts(); }, [loadCounts]);
+  useEffect(() => {
+    loadShipments();
+  }, [loadShipments]);
+  useEffect(() => {
+    loadCounts();
+  }, [loadCounts]);
 
   // Auto-fetch tracking for active shipments on page load
   useEffect(() => {
@@ -137,7 +147,7 @@ export default function ShippingPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     if (!token) return;
-    setUpdatingShipments(prev => new Set(prev).add(id));
+    setUpdatingShipments((prev) => new Set(prev).add(id));
     try {
       const body: any = { status: newStatus };
       if (newStatus === 'Shipped') body.shippedAt = new Date().toISOString();
@@ -147,57 +157,99 @@ export default function ShippingPage() {
       await loadShipments();
       setJustUpdated(id);
       setJustUpdatedStatus(newStatus);
-      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
-    } catch (e: any) { showToast(e.message || 'Cập nhật thất bại', 'error'); }
-    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(id); return next; });
+      setTimeout(() => {
+        setJustUpdated(null);
+        setJustUpdatedStatus(null);
+      }, 2000);
+    } catch (e: any) {
+      showToast(e.message || 'Cập nhật thất bại', 'error');
+    }
+    setUpdatingShipments((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
   const updateGrabFromTracking = async (shipment: Shipping) => {
     if (!token || !shipment.trackingUrl) return;
     setGrabUpdating(shipment.id);
-    setUpdatingShipments(prev => new Set(prev).add(shipment.id));
+    setUpdatingShipments((prev) => new Set(prev).add(shipment.id));
     try {
-      const res = await apiClient<any>('/shipping/track-grab', { method: 'POST', body: { trackingUrl: shipment.trackingUrl }, token });
+      const res = await apiClient<any>('/shipping/track-grab', {
+        method: 'POST',
+        body: { trackingUrl: shipment.trackingUrl },
+        token,
+      });
       const updateBody: any = { status: res.data.status };
       await apiClient(`/shipping/${shipment.id}`, { method: 'PUT', body: updateBody, token });
-      showToast(`Grab: ${statusLabels[res.data.status as keyof typeof statusLabels] || res.data.status} — đã cập nhật`);
+      showToast(
+        `Grab: ${statusLabels[res.data.status as keyof typeof statusLabels] || res.data.status} — đã cập nhật`,
+      );
       await loadShipments();
       setJustUpdated(shipment.id);
       setJustUpdatedStatus(res.data.status);
-      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
-    } catch (e: any) { showToast(e.message || 'Tra cứu Grab thất bại', 'error'); }
+      setTimeout(() => {
+        setJustUpdated(null);
+        setJustUpdatedStatus(null);
+      }, 2000);
+    } catch (e: any) {
+      showToast(e.message || 'Tra cứu Grab thất bại', 'error');
+    }
     setGrabUpdating(null);
-    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(shipment.id); return next; });
+    setUpdatingShipments((prev) => {
+      const next = new Set(prev);
+      next.delete(shipment.id);
+      return next;
+    });
   };
 
   const updateSpxFromTracking = async (shipment: Shipping) => {
     if (!token || !shipment.trackingNumber) return;
     setSpxUpdating(shipment.id);
-    setUpdatingShipments(prev => new Set(prev).add(shipment.id));
+    setUpdatingShipments((prev) => new Set(prev).add(shipment.id));
     try {
-      const res = await apiClient<any>('/shipping/track-spx', { method: 'POST', body: { trackingNumber: shipment.trackingNumber }, token });
+      const res = await apiClient<any>('/shipping/track-spx', {
+        method: 'POST',
+        body: { trackingNumber: shipment.trackingNumber },
+        token,
+      });
       const updateBody: any = { status: res.data.status };
       const latest = res.data.records?.length > 0 ? res.data.records[0] : null;
-      if (latest?.timestamp && res.data.status === 'Delivered') { updateBody.deliveredAt = latest.timestamp; }
+      if (latest?.timestamp && res.data.status === 'Delivered') {
+        updateBody.deliveredAt = latest.timestamp;
+      }
       await apiClient(`/shipping/${shipment.id}`, { method: 'PUT', body: updateBody, token });
       showToast(`SPX: ${res.data.spxStatus} — đã cập nhật`);
       await loadShipments();
       setJustUpdated(shipment.id);
       setJustUpdatedStatus(res.data.status);
-      setTimeout(() => { setJustUpdated(null); setJustUpdatedStatus(null); }, 2000);
-    } catch (e: any) { showToast(e.message || 'Tra cứu SPX thất bại', 'error'); }
+      setTimeout(() => {
+        setJustUpdated(null);
+        setJustUpdatedStatus(null);
+      }, 2000);
+    } catch (e: any) {
+      showToast(e.message || 'Tra cứu SPX thất bại', 'error');
+    }
     setSpxUpdating(null);
-    setUpdatingShipments(prev => { const next = new Set(prev); next.delete(shipment.id); return next; });
+    setUpdatingShipments((prev) => {
+      const next = new Set(prev);
+      next.delete(shipment.id);
+      return next;
+    });
   };
 
   const filtered = carrierFilter ? shipments.filter((s) => s.carrier === carrierFilter) : shipments;
   // Use server-side counts when no carrier filter; local counts when carrier filter is active
   const effectiveStatusCounts = carrierFilter
-    ? statusFlow.reduce((acc, s) => ({ ...acc, [s]: filtered.filter((sh) => sh.status === s).length }), {} as Record<string, number>)
+    ? statusFlow.reduce(
+        (acc, s) => ({ ...acc, [s]: filtered.filter((sh) => sh.status === s).length }),
+        {} as Record<string, number>,
+      )
     : statusCounts;
   const failedCount = carrierFilter
     ? filtered.filter((s) => s.status === 'Failed').length
-    : (statusCounts['Failed'] || 0);
+    : statusCounts['Failed'] || 0;
   // Carrier counts always come from API (total across all statuses)
   const allCarrierCounts = carrierCounts;
 
@@ -235,29 +287,71 @@ export default function ShippingPage() {
       {/* ─── Filters ─── */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button onClick={() => { setCarrierFilter(''); setPage(1); }} className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === '' ? 'bg-gray-900 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}>
+          <button
+            onClick={() => {
+              setCarrierFilter('');
+              setPage(1);
+            }}
+            className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === '' ? 'bg-gray-900 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}
+          >
             <FlaticonIcon name="box-open" size="xs" /> Tất cả
-            <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === '' ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}>{shipments.length}</span>
+            <span
+              className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === '' ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}
+            >
+              {shipments.length}
+            </span>
           </button>
           {(['SPX', 'Grab', 'SOF'] as const).map((c) => (
-            <button key={c} onClick={() => { setCarrierFilter(c); setPage(1); }} className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === c ? (c === 'SPX' ? 'bg-orange-500 text-white shadow-sm' : c === 'Grab' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-blue-500 text-white shadow-sm') : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}>
+            <button
+              key={c}
+              onClick={() => {
+                setCarrierFilter(c);
+                setPage(1);
+              }}
+              className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === c ? (c === 'SPX' ? 'bg-orange-500 text-white shadow-sm' : c === 'Grab' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-blue-500 text-white shadow-sm') : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}
+            >
               <CarrierLogo carrier={c} size="xs" /> {carrierConfig[c].label}
-              <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === c ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}>{allCarrierCounts[c] || 0}</span>
+              <span
+                className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${carrierFilter === c ? 'bg-white/20 text-white/90' : 'bg-gray-100 text-gray-500'}`}
+              >
+                {allCarrierCounts[c] || 0}
+              </span>
             </button>
           ))}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] text-gray-400 font-medium mr-1 uppercase tracking-wider">Trạng thái:</span>
-          <button onClick={() => { setStatusFilter(''); setPage(1); }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${!statusFilter ? 'bg-gray-100 text-gray-700 border-gray-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Tất cả <span className="text-gray-400">({filtered.length})</span>
+          <span className="text-[10px] text-gray-400 font-medium mr-1 uppercase tracking-wider">
+            Trạng thái:
+          </span>
+          <button
+            onClick={() => {
+              setStatusFilter('');
+              setPage(1);
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${!statusFilter ? 'bg-gray-100 text-gray-700 border-gray-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Tất cả{' '}
+            <span className="text-gray-400">({filtered.length})</span>
           </button>
           {statusFlow.map((s) => (
-            <button key={s} onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1); }} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === s ? `${statusBgs[s]} border-current shadow-sm` : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusColors[s]}`} /> {statusLabels[s]} <span className="text-gray-400">({Number(effectiveStatusCounts[s] || 0)})</span>
+            <button
+              key={s}
+              onClick={() => {
+                setStatusFilter(statusFilter === s ? '' : s);
+                setPage(1);
+              }}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === s ? `${statusBgs[s]} border-current shadow-sm` : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${statusColors[s]}`} /> {statusLabels[s]}{' '}
+              <span className="text-gray-400">({Number(effectiveStatusCounts[s] || 0)})</span>
             </button>
           ))}
-          <button onClick={() => setStatusFilter(statusFilter === 'Failed' ? '' : 'Failed')} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === 'Failed' ? 'bg-red-50 text-red-700 border-red-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600'}`}>
-            <FlaticonIcon name="circle-xmark" size="xs" /> Thất bại <span className="text-gray-400">({failedCount})</span>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'Failed' ? '' : 'Failed')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 border ${statusFilter === 'Failed' ? 'bg-red-50 text-red-700 border-red-300 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-red-300 hover:text-red-600'}`}
+          >
+            <FlaticonIcon name="circle-xmark" size="xs" /> Thất bại{' '}
+            <span className="text-gray-400">({failedCount})</span>
           </button>
         </div>
       </div>
@@ -279,7 +373,9 @@ export default function ShippingPage() {
                 </tr>
               </thead>
               <tbody>
-                {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} cols={7} />)}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <SkeletonRow key={i} cols={7} />
+                ))}
               </tbody>
             </table>
           </div>
@@ -291,8 +387,14 @@ export default function ShippingPage() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 flex items-center justify-center mb-4 shadow-inner">
             <FlaticonIcon name="truck-side" size="lg" className="text-gray-300" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1.5">Không tìm thấy đơn giao hàng</h3>
-          <p className="text-xs text-gray-400 max-w-xs mb-2">{carrierFilter ? `Không có đơn của ${carrierConfig[carrierFilter]?.label || carrierFilter}.` : 'Tạo đơn giao hàng từ chi tiết đơn hàng.'}</p>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1.5">
+            Không tìm thấy đơn giao hàng
+          </h3>
+          <p className="text-xs text-gray-400 max-w-xs mb-2">
+            {carrierFilter
+              ? `Không có đơn của ${carrierConfig[carrierFilter]?.label || carrierFilter}.`
+              : 'Tạo đơn giao hàng từ chi tiết đơn hàng.'}
+          </p>
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
@@ -300,12 +402,32 @@ export default function ShippingPage() {
             <table>
               <thead>
                 <tr>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('carrier')}>Hãng <SortIcon sortKey="carrier" currentKey={sortKey} dir={sortDir} /></th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('orderId')}>Đơn hàng <SortIcon sortKey="orderId" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('carrier')}
+                  >
+                    Hãng <SortIcon sortKey="carrier" currentKey={sortKey} dir={sortDir} />
+                  </th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('orderId')}
+                  >
+                    Đơn hàng <SortIcon sortKey="orderId" currentKey={sortKey} dir={sortDir} />
+                  </th>
                   <th>Tiến trình</th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('status')}>Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('status')}
+                  >
+                    Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
+                  </th>
                   <th>Theo dõi</th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('cost')}>Phí <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('cost')}
+                  >
+                    Phí <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
+                  </th>
                   <th></th>
                 </tr>
               </thead>
@@ -337,24 +459,72 @@ export default function ShippingPage() {
                           <CarrierLogo carrier={carrier} size="sm" />
                           <div>
                             <p className="text-xs font-semibold text-gray-800">{s.deliveryType}</p>
-                            {cfg && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.badge}`}>{cfg.label}</span>}
+                            {cfg && (
+                              <span
+                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.badge}`}
+                              >
+                                {cfg.label}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td>
                         <span className="text-xs font-mono text-gray-500">#{s.orderId}</span>
-                        {s.eta && <p className="text-[10px] text-gray-400 mt-0.5">ETA: {formatDateTime(s.eta)}</p>}
+                        {s.eta && (
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            ETA: {formatDateTime(s.eta)}
+                          </p>
+                        )}
                         {carrier === 'SOF' && (s.driverName || s.driverPhone) && (
                           <p className="text-[10px] text-blue-500 mt-0.5 font-medium">
-                            {s.driverName && <><FlaticonIcon name="user" size="xs" className="inline-flex mr-0.5" />{s.driverName}</>}{s.driverName && s.driverPhone ? ' · ' : ''}{s.driverPhone && <><FlaticonIcon name="phone" size="xs" className="inline-flex mr-0.5" />{s.driverPhone}</>}
+                            {s.driverName && (
+                              <>
+                                <FlaticonIcon
+                                  name="user"
+                                  size="xs"
+                                  className="inline-flex mr-0.5"
+                                />
+                                {s.driverName}
+                              </>
+                            )}
+                            {s.driverName && s.driverPhone ? ' · ' : ''}
+                            {s.driverPhone && (
+                              <>
+                                <FlaticonIcon
+                                  name="phone"
+                                  size="xs"
+                                  className="inline-flex mr-0.5"
+                                />
+                                {s.driverPhone}
+                              </>
+                            )}
                           </p>
                         )}
                       </td>
                       <td className="min-w-[140px]">
                         <DotProgress status={s.status} isFailed={isFailed} />
                         <div className="flex items-center gap-2 mt-1.5 text-[9px] text-gray-400">
-                          {s.shippedAt && <span><FlaticonIcon name="box-open" size="xs" className="inline-flex mr-0.5 text-gray-400" />{formatDateTime(s.shippedAt)}</span>}
-                          {s.deliveredAt && <span><FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5 text-emerald-500" />{formatDateTime(s.deliveredAt)}</span>}
+                          {s.shippedAt && (
+                            <span>
+                              <FlaticonIcon
+                                name="box-open"
+                                size="xs"
+                                className="inline-flex mr-0.5 text-gray-400"
+                              />
+                              {formatDateTime(s.shippedAt)}
+                            </span>
+                          )}
+                          {s.deliveredAt && (
+                            <span>
+                              <FlaticonIcon
+                                name="badge-check"
+                                size="xs"
+                                className="inline-flex mr-0.5 text-emerald-500"
+                              />
+                              {formatDateTime(s.deliveredAt)}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -364,7 +534,9 @@ export default function ShippingPage() {
                             wasJustUpdated ? 'animate-status-pop' : ''
                           } ${statusBgs[s.status] || 'bg-gray-100 text-gray-600'}`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`} />
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`}
+                          />
                           {getStatusLabel(carrier, s.status)}
                         </span>
                       </td>
@@ -372,16 +544,37 @@ export default function ShippingPage() {
                         {carrier === 'SPX' && s.trackingNumber ? (
                           <div className="flex items-center gap-1">
                             <button
-                              onClick={(e) => { e.stopPropagation(); window.open(`https://spx.vn/track?${s.trackingNumber}`, '_blank', 'noopener,noreferrer'); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `https://spx.vn/track?${s.trackingNumber}`,
+                                  '_blank',
+                                  'noopener,noreferrer',
+                                );
+                              }}
                               className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-medium hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm transition-all max-w-[120px]"
                             >
                               <FlaticonIcon name="external-link" size="xs" />
                               <span className="truncate min-w-0">{s.trackingNumber}</span>
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); copyToClipboard(s.trackingNumber!); }} className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-300 transition-all" title="Sao chép mã vận đơn"><FlaticonIcon name="clipboard" size="xs" /></button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(s.trackingNumber!);
+                              }}
+                              className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-300 transition-all"
+                              title="Sao chép mã vận đơn"
+                            >
+                              <FlaticonIcon name="clipboard" size="xs" />
+                            </button>
                           </div>
                         ) : carrier === 'Grab' && s.trackingUrl ? (
-                          <button onClick={(e) => { e.stopPropagation(); if (s.trackingUrl) window.open(s.trackingUrl, '_blank', 'noopener,noreferrer'); }}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (s.trackingUrl)
+                                window.open(s.trackingUrl, '_blank', 'noopener,noreferrer');
+                            }}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-medium hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all"
                           >
                             <FlaticonIcon name="external-link" size="xs" />
@@ -389,8 +582,18 @@ export default function ShippingPage() {
                           </button>
                         ) : carrier === 'SOF' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
-                            <FlaticonIcon name={s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'} size="xs" className="text-blue-500" />
-                            <span className="text-xs font-medium text-blue-600">{s.deliveryType === 'Khách đến lấy hàng' ? 'Lấy tại shop' : 'Shop giao'}</span>
+                            <FlaticonIcon
+                              name={
+                                s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'
+                              }
+                              size="xs"
+                              className="text-blue-500"
+                            />
+                            <span className="text-xs font-medium text-blue-600">
+                              {s.deliveryType === 'Khách đến lấy hàng'
+                                ? 'Lấy tại shop'
+                                : 'Shop giao'}
+                            </span>
                           </span>
                         ) : (
                           <span className="text-gray-300 italic text-xs">—</span>
@@ -403,29 +606,72 @@ export default function ShippingPage() {
                           </span>
                         ) : (
                           <>
-                            <p className="text-sm font-bold text-gray-800">{formatCurrency(Number(s.cost))}</p>
-                            {s.deliveredAt && <p className="text-[10px] text-emerald-500 font-medium"><FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5" />Đã thanh toán</p>}
+                            <p className="text-sm font-bold text-gray-800">
+                              {formatCurrency(Number(s.cost))}
+                            </p>
+                            {s.deliveredAt && (
+                              <p className="text-[10px] text-emerald-500 font-medium">
+                                <FlaticonIcon
+                                  name="badge-check"
+                                  size="xs"
+                                  className="inline-flex mr-0.5"
+                                />
+                                Đã thanh toán
+                              </p>
+                            )}
                           </>
                         )}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
                           {action && (
-                            <button onClick={() => updateStatus(s.id, action.status)} disabled={isAnimating} className={`btn-xs ${action.btn} disabled:opacity-50`}>
-                              {isAnimating ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" /> : action.label}
+                            <button
+                              onClick={() => updateStatus(s.id, action.status)}
+                              disabled={isAnimating}
+                              className={`btn-xs ${action.btn} disabled:opacity-50`}
+                            >
+                              {isAnimating ? (
+                                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                              ) : (
+                                action.label
+                              )}
                             </button>
                           )}
                           {s.status === 'InTransit' && (
-                            <button onClick={() => updateStatus(s.id, 'Failed')} disabled={isAnimating} className="btn-xs btn-danger disabled:opacity-50">Thất bại</button>
+                            <button
+                              onClick={() => updateStatus(s.id, 'Failed')}
+                              disabled={isAnimating}
+                              className="btn-xs btn-danger disabled:opacity-50"
+                            >
+                              Thất bại
+                            </button>
                           )}
                           {carrier === 'SPX' && s.trackingNumber && (
-                            <button onClick={() => updateSpxFromTracking(s)} disabled={spxUpdating === s.id} className="btn-xs btn-ghost disabled:opacity-50" title="Cập nhật SPX">
-                              {spxUpdating === s.id ? <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <FlaticonIcon name="refresh" size="xs" />}
+                            <button
+                              onClick={() => updateSpxFromTracking(s)}
+                              disabled={spxUpdating === s.id}
+                              className="btn-xs btn-ghost disabled:opacity-50"
+                              title="Cập nhật SPX"
+                            >
+                              {spxUpdating === s.id ? (
+                                <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                              ) : (
+                                <FlaticonIcon name="refresh" size="xs" />
+                              )}
                             </button>
                           )}
                           {carrier === 'Grab' && s.trackingUrl && (
-                            <button onClick={() => updateGrabFromTracking(s)} disabled={grabUpdating === s.id} className="btn-xs btn-ghost disabled:opacity-50" title="Cập nhật Grab">
-                              {grabUpdating === s.id ? <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /> : <FlaticonIcon name="refresh" size="xs" />}
+                            <button
+                              onClick={() => updateGrabFromTracking(s)}
+                              disabled={grabUpdating === s.id}
+                              className="btn-xs btn-ghost disabled:opacity-50"
+                              title="Cập nhật Grab"
+                            >
+                              {grabUpdating === s.id ? (
+                                <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                              ) : (
+                                <FlaticonIcon name="refresh" size="xs" />
+                              )}
                             </button>
                           )}
                         </div>

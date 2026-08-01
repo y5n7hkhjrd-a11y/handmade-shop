@@ -8,13 +8,60 @@ import ConfirmModal from '@/components/ConfirmModal';
 import { copyToClipboard } from '@/lib/clipboard';
 import { NumberInput } from '@/components/NumberInput';
 import BrandIcon from '@/components/BrandIcon';
-import { statusFlow, statusPillClasses, statusDotColors, statusIcons, statusLabels, PREV_STATUS, NEXT_STATUS, SOCIAL_PLATFORMS } from './orderConstants';
+import {
+  statusFlow,
+  statusPillClasses,
+  statusDotColors,
+  statusIcons,
+  statusLabels,
+  PREV_STATUS,
+  NEXT_STATUS,
+  SOCIAL_PLATFORMS,
+} from './orderConstants';
 import { DotProgress } from '../shipping/shippingConstants';
 
-const carrierConfig: Record<string, { label: string; icon: string; isBrand?: boolean; color: string; gradient: string; badge: string; accent: string; progress: string }> = {
-  SPX: { label: 'SPX', icon: 'shopee', isBrand: true, color: 'text-orange-700', gradient: 'from-orange-500 to-orange-600', badge: 'bg-orange-50 text-orange-700 border-orange-200', accent: 'border-l-orange-400', progress: 'bg-orange-400' },
-  Grab: { label: 'Grab', icon: 'grab', isBrand: true, color: 'text-emerald-700', gradient: 'from-emerald-500 to-green-600', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', accent: 'border-l-emerald-400', progress: 'bg-emerald-400' },
-  SOF: { label: 'SOF', icon: 'truck-side', color: 'text-blue-600', gradient: 'from-blue-400 to-blue-500', badge: 'bg-blue-50 text-blue-600 border-blue-200', accent: 'border-l-blue-400', progress: 'bg-blue-400' },
+const carrierConfig: Record<
+  string,
+  {
+    label: string;
+    icon: string;
+    isBrand?: boolean;
+    color: string;
+    gradient: string;
+    badge: string;
+    accent: string;
+    progress: string;
+  }
+> = {
+  SPX: {
+    label: 'SPX',
+    icon: 'shopee',
+    isBrand: true,
+    color: 'text-orange-700',
+    gradient: 'from-orange-500 to-orange-600',
+    badge: 'bg-orange-50 text-orange-700 border-orange-200',
+    accent: 'border-l-orange-400',
+    progress: 'bg-orange-400',
+  },
+  Grab: {
+    label: 'Grab',
+    icon: 'grab',
+    isBrand: true,
+    color: 'text-emerald-700',
+    gradient: 'from-emerald-500 to-green-600',
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    accent: 'border-l-emerald-400',
+    progress: 'bg-emerald-400',
+  },
+  SOF: {
+    label: 'SOF',
+    icon: 'truck-side',
+    color: 'text-blue-600',
+    gradient: 'from-blue-400 to-blue-500',
+    badge: 'bg-blue-50 text-blue-600 border-blue-200',
+    accent: 'border-l-blue-400',
+    progress: 'bg-blue-400',
+  },
 };
 
 const TIMELINE_DOT_COLORS = [
@@ -59,7 +106,10 @@ function OrderTimeline({ currentStatus }: { currentStatus: string }) {
     if (newIdx >= 0) {
       setAnimDot(newIdx);
       setAnimLine(newIdx);
-      const t = setTimeout(() => { setAnimDot(null); setAnimLine(null); }, 500);
+      const t = setTimeout(() => {
+        setAnimDot(null);
+        setAnimLine(null);
+      }, 500);
       return () => clearTimeout(t);
     }
   }, [currentStatus]);
@@ -191,12 +241,26 @@ export default function OrderDetail({
 
   // SPX tracking number validation
   useEffect(() => {
-    if (!token || !shipForm.trackingNumber || shipForm.trackingNumber.length < 10) { setSpxValid('idle'); return; }
-    if (shipCarrier !== 'SPX') { setSpxValid('idle'); return; }
+    if (!token || !shipForm.trackingNumber || shipForm.trackingNumber.length < 10) {
+      setSpxValid('idle');
+      return;
+    }
+    if (shipCarrier !== 'SPX') {
+      setSpxValid('idle');
+      return;
+    }
     setSpxValid('loading');
     const timer = setTimeout(async () => {
-      try { await apiClient<any>('/shipping/track-spx', { method: 'POST', body: { trackingNumber: shipForm.trackingNumber }, token }); setSpxValid('valid'); }
-      catch { setSpxValid('invalid'); }
+      try {
+        await apiClient<any>('/shipping/track-spx', {
+          method: 'POST',
+          body: { trackingNumber: shipForm.trackingNumber },
+          token,
+        });
+        setSpxValid('valid');
+      } catch {
+        setSpxValid('invalid');
+      }
     }, 800);
     return () => clearTimeout(timer);
   }, [shipForm.trackingNumber, token, shipCarrier]);
@@ -207,10 +271,14 @@ export default function OrderDetail({
     try {
       const res = await apiClient<any>(`/shipping/order/${order.id}`, { token });
       setOrderShipments(res.data || []);
-    } catch { setOrderShipments([]); }
+    } catch {
+      setOrderShipments([]);
+    }
   }, [token, order.id]);
 
-  useEffect(() => { loadOrderShipments(); }, [loadOrderShipments]);
+  useEffect(() => {
+    loadOrderShipments();
+  }, [loadOrderShipments]);
 
   // Auto-fetch SPX/Grab tracking when shipments are loaded
   useEffect(() => {
@@ -223,16 +291,32 @@ export default function OrderDetail({
     const doTrack = async () => {
       try {
         if (carrier === 'SPX' && s.trackingNumber) {
-          const res = await apiClient<any>('/shipping/track-spx', { method: 'POST', body: { trackingNumber: s.trackingNumber }, token });
+          const res = await apiClient<any>('/shipping/track-spx', {
+            method: 'POST',
+            body: { trackingNumber: s.trackingNumber },
+            token,
+          });
           if (res.data.status && res.data.status !== s.status) {
-            await apiClient(`/shipping/${s.id}`, { method: 'PUT', body: { status: res.data.status }, token });
+            await apiClient(`/shipping/${s.id}`, {
+              method: 'PUT',
+              body: { status: res.data.status },
+              token,
+            });
             loadOrderShipments();
             onStatusChange();
           }
         } else if (carrier === 'Grab' && s.trackingUrl) {
-          const res = await apiClient<any>('/shipping/track-grab', { method: 'POST', body: { trackingUrl: s.trackingUrl }, token });
+          const res = await apiClient<any>('/shipping/track-grab', {
+            method: 'POST',
+            body: { trackingUrl: s.trackingUrl },
+            token,
+          });
           if (res.data.status && res.data.status !== s.status) {
-            await apiClient(`/shipping/${s.id}`, { method: 'PUT', body: { status: res.data.status }, token });
+            await apiClient(`/shipping/${s.id}`, {
+              method: 'PUT',
+              body: { status: res.data.status },
+              token,
+            });
             loadOrderShipments();
             onStatusChange();
           }
@@ -274,7 +358,11 @@ export default function OrderDetail({
       const paid = Number(order.paidAmount) || 0;
       const remaining = salePriceTotal - paid;
       if (remaining > 0) {
-        if (showToast) showToast('Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói', 'error');
+        if (showToast)
+          showToast(
+            'Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói',
+            'error',
+          );
         return;
       }
     }
@@ -344,9 +432,7 @@ export default function OrderDetail({
   const computedTotalCost =
     itemTotal + Number(order.packagingCost || 0) + (shopPaysShipping ? shippingCost : 0);
   const salePriceTotal =
-    Number(order.subtotal || 0) -
-    Number(order.discount || 0) +
-    Number(order.packagingCost || 0);
+    Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.packagingCost || 0);
   const profit = Number(order.subtotal || 0) - Number(order.discount || 0) - computedTotalCost;
 
   return (
@@ -376,10 +462,15 @@ export default function OrderDetail({
         <div className="p-6 border-b flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              {statusIcons[order.status] ? <FlaticonIcon name={statusIcons[order.status]} size="sm" className="inline-flex" /> : null} Chi tiết đơn hàng
+              {statusIcons[order.status] ? (
+                <FlaticonIcon name={statusIcons[order.status]} size="sm" className="inline-flex" />
+              ) : null}{' '}
+              Chi tiết đơn hàng
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-500 font-mono">{order.id.length > 14 ? order.id.slice(0, 8) + '...' : order.id}</span>
+              <span className="text-sm text-gray-500 font-mono">
+                {order.id.length > 14 ? order.id.slice(0, 8) + '...' : order.id}
+              </span>
               <button
                 onClick={() => {
                   copyToClipboard(order.id);
@@ -387,14 +478,21 @@ export default function OrderDetail({
                 className="copy-btn"
                 title="Sao chép mã đơn hàng"
               >
-                <FlaticonIcon name="clipboard" size="sm" /> <span className="copy-icon">Sao chép</span>
+                <FlaticonIcon name="clipboard" size="sm" />{' '}
+                <span className="copy-icon">Sao chép</span>
               </button>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {PREV_STATUS[order.status] && (
-              <button onClick={handleReturn} className="btn-xs btn-ghost border border-gray-200 group" title={`Quay lại ${statusLabels[PREV_STATUS[order.status]] || PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}`}>
-                <span className="group-hover:-translate-x-0.5 transition-transform inline-block">←</span>
+              <button
+                onClick={handleReturn}
+                className="btn-xs btn-ghost border border-gray-200 group"
+                title={`Quay lại ${statusLabels[PREV_STATUS[order.status]] || PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}`}
+              >
+                <span className="group-hover:-translate-x-0.5 transition-transform inline-block">
+                  ←
+                </span>
                 <span className="hidden sm:inline ml-1 text-xs">
                   {statusLabels[PREV_STATUS[order.status]] ||
                     PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
@@ -425,7 +523,10 @@ export default function OrderDetail({
           <OrderTimeline currentStatus={order.status} />
 
           {/* Customer & Status row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 animate-[slideUp_0.3s_ease-out]" style={{ animationDelay: '100ms' }}>
+          <div
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 animate-[slideUp_0.3s_ease-out]"
+            style={{ animationDelay: '100ms' }}
+          >
             <div className="p-3 bg-gray-50 rounded-xl">
               <span className="text-xs text-gray-500">Khách hàng</span>
               <div className="mt-0.5">
@@ -435,148 +536,198 @@ export default function OrderDetail({
                 >
                   {order.customer?.name || 'N/A'}
                 </button>
-                {(order.customer && (order.customer.facebook || order.customer.instagram || order.customer.tiktok || order.customer.threads || order.customer.phone)) && (
-                  <div className="flex items-center gap-1 mt-1">
-                    {(() => {
-                      return SOCIAL_PLATFORMS.map((sl) => {
-                        let val = order.customer?.[sl.key];
-                        if (sl.phoneBased) {
-                          val = order.customer?.phone || null;
-                          if (!val) return null;
-                        } else if (!val) {
-                          return null;
-                        }
-                        const href = val.startsWith('http') ? val : `${sl.domain}${val.replace(/^@/, '')}`;
-                        const finalHref = sl.phoneBased ? `https://zalo.me/${val.replace(/[^0-9]/g, '')}` : href;
-                        return (
-                          <a
-                            key={sl.key}
-                            href={finalHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-5 h-5 flex items-center justify-center rounded bg-white border border-gray-200 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-200 hover:border-gray-400"
-                            title={`Mở ${sl.label}`}
-                          >
-                            {sl.icon}
-                          </a>
-                        );
-                      });
-                    })()}
-                  </div>
-                )}
+                {order.customer &&
+                  (order.customer.facebook ||
+                    order.customer.instagram ||
+                    order.customer.tiktok ||
+                    order.customer.threads ||
+                    order.customer.phone) && (
+                    <div className="flex items-center gap-1 mt-1">
+                      {(() => {
+                        return SOCIAL_PLATFORMS.map((sl) => {
+                          let val = order.customer?.[sl.key];
+                          if (sl.phoneBased) {
+                            val = order.customer?.phone || null;
+                            if (!val) return null;
+                          } else if (!val) {
+                            return null;
+                          }
+                          const href = val.startsWith('http')
+                            ? val
+                            : `${sl.domain}${val.replace(/^@/, '')}`;
+                          const finalHref = sl.phoneBased
+                            ? `https://zalo.me/${val.replace(/[^0-9]/g, '')}`
+                            : href;
+                          return (
+                            <a
+                              key={sl.key}
+                              href={finalHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-5 h-5 flex items-center justify-center rounded bg-white border border-gray-200 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-200 hover:border-gray-400"
+                              title={`Mở ${sl.label}`}
+                            >
+                              {sl.icon}
+                            </a>
+                          );
+                        });
+                      })()}
+                    </div>
+                  )}
               </div>
             </div>
             <div className="p-3 bg-gray-50 rounded-xl">
               <span className="text-xs text-gray-500">Trạng thái</span>
               <p className="mt-0.5">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusPillClasses[order.status] || 'bg-gray-50 text-gray-600 ring-1 ring-gray-200'}`}>
-                  <span className={`w-2 h-2 rounded-full ${statusDotColors[order.status] || 'bg-gray-400'}`} />
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusPillClasses[order.status] || 'bg-gray-50 text-gray-600 ring-1 ring-gray-200'}`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${statusDotColors[order.status] || 'bg-gray-400'}`}
+                  />
                   {statusLabels[order.status] || order.status}
                 </span>
               </p>
             </div>
             <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500"><FlaticonIcon name="time-watch-calendar" size="xs" className="inline-flex mr-1" /> Ngày đặt</span>
+              <span className="text-xs text-gray-500">
+                <FlaticonIcon name="time-watch-calendar" size="xs" className="inline-flex mr-1" />{' '}
+                Ngày đặt
+              </span>
               <p className="font-medium text-gray-900 mt-0.5 text-sm">
                 {formatDateTime(order.orderDate)}
               </p>
             </div>
             <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500"><FlaticonIcon name="usd-circle" size="xs" className="inline-flex mr-1" /> Tổng cộng</span>
+              <span className="text-xs text-gray-500">
+                <FlaticonIcon name="usd-circle" size="xs" className="inline-flex mr-1" /> Tổng cộng
+              </span>
               <p className="font-bold text-lg text-purple-600 mt-0.5">
                 {formatCurrency(salePriceTotal)}
               </p>
               <p className="text-[10px] text-gray-400 mt-0.5">
-                (đã gồm{' '}
-                {formatCurrency(Number(order.packagingCost || 0))}{' '}
-                phí đóng gói)
+                (đã gồm {formatCurrency(Number(order.packagingCost || 0))} phí đóng gói)
               </p>
             </div>
           </div>
 
           {/* Deadline alert */}
-          {order.deadline && (() => {
-            const deadlineDate = new Date(order.deadline);
-            const now = new Date();
-            now.setHours(0,0,0,0);
-            deadlineDate.setHours(23,59,59,999);
-            const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-            const isOverdue = diffDays <= 0;
-            const isSoon = diffDays > 0 && diffDays <= 3;
-            const isCompleted = order.status === 'Completed' || order.status === 'ReadyToShip';
-            return (
-              <div className={`mt-4 p-3 rounded-xl border flex items-center justify-between ${
-                isCompleted
-                  ? 'bg-gray-50 border-gray-200 text-gray-500'
-                  : isOverdue
-                    ? 'bg-red-50 border-red-200 text-red-700'
-                    : isSoon
-                      ? 'bg-amber-50 border-amber-200 text-amber-700'
-                      : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">
-                    {isCompleted ? <FlaticonIcon name="badge-check" size="sm" /> : isOverdue ? <span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> : isSoon ? <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> : <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {isCompleted ? 'Đã hoàn thành' : isOverdue ? 'Quá hạn!' : 'Hạn chót'}
-                    </p>
-                    <p className={`text-xs ${isCompleted ? 'text-gray-400' : ''}`}>
-                      <span className="font-medium">{formatDate(order.deadline)}</span>
-                      {!isCompleted && (
-                        <span className="ml-1">
-                          {isOverdue
-                            ? `(quá ${Math.abs(diffDays)} ngày)`
-                            : `(còn ${diffDays} ngày)`}
-                        </span>
+          {order.deadline &&
+            (() => {
+              const deadlineDate = new Date(order.deadline);
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+              deadlineDate.setHours(23, 59, 59, 999);
+              const diffDays = Math.ceil(
+                (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+              );
+              const isOverdue = diffDays <= 0;
+              const isSoon = diffDays > 0 && diffDays <= 3;
+              const isCompleted = order.status === 'Completed' || order.status === 'ReadyToShip';
+              return (
+                <div
+                  className={`mt-4 p-3 rounded-xl border flex items-center justify-between ${
+                    isCompleted
+                      ? 'bg-gray-50 border-gray-200 text-gray-500'
+                      : isOverdue
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : isSoon
+                          ? 'bg-amber-50 border-amber-200 text-amber-700'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">
+                      {isCompleted ? (
+                        <FlaticonIcon name="badge-check" size="sm" />
+                      ) : isOverdue ? (
+                        <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+                      ) : isSoon ? (
+                        <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
+                      ) : (
+                        <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
                       )}
-                    </p>
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {isCompleted ? 'Đã hoàn thành' : isOverdue ? 'Quá hạn!' : 'Hạn chót'}
+                      </p>
+                      <p className={`text-xs ${isCompleted ? 'text-gray-400' : ''}`}>
+                        <span className="font-medium">{formatDate(order.deadline)}</span>
+                        {!isCompleted && (
+                          <span className="ml-1">
+                            {isOverdue
+                              ? `(quá ${Math.abs(diffDays)} ngày)`
+                              : `(còn ${diffDays} ngày)`}
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {/* Timeline dates row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-            <div className={`p-3 rounded-xl border ${
-              order.confirmedAt ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100'
-            }`}>
-              <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">                 <FlaticonIcon name="tools" size="xs" className="inline-flex" /> Ngày xác nhận
+            <div
+              className={`p-3 rounded-xl border ${
+                order.confirmedAt ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
+              <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
+                {' '}
+                <FlaticonIcon name="tools" size="xs" className="inline-flex" /> Ngày xác nhận
               </span>
-              <p className={`text-xs font-semibold mt-1 ${order.confirmedAt ? 'text-blue-700' : 'text-gray-400'}`}>
+              <p
+                className={`text-xs font-semibold mt-1 ${order.confirmedAt ? 'text-blue-700' : 'text-gray-400'}`}
+              >
                 {order.confirmedAt ? formatDateTime(order.confirmedAt) : '—'}
               </p>
             </div>
-            <div className={`p-3 rounded-xl border ${
-              order.packagedAt ? 'bg-pink-50 border-pink-200' : 'bg-gray-50 border-gray-100'
-            }`}>
+            <div
+              className={`p-3 rounded-xl border ${
+                order.packagedAt ? 'bg-pink-50 border-pink-200' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
               <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
-                <FlaticonIcon name="gift" size="xs" className="inline-flex" /> {statusLabels.Packaging}
+                <FlaticonIcon name="gift" size="xs" className="inline-flex" />{' '}
+                {statusLabels.Packaging}
               </span>
-              <p className={`text-xs font-semibold mt-1 ${order.packagedAt ? 'text-pink-700' : 'text-gray-400'}`}>
+              <p
+                className={`text-xs font-semibold mt-1 ${order.packagedAt ? 'text-pink-700' : 'text-gray-400'}`}
+              >
                 {order.packagedAt ? formatDateTime(order.packagedAt) : '—'}
               </p>
             </div>
-            <div className={`p-3 rounded-xl border ${
-              order.sentAt ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'
-            }`}>
+            <div
+              className={`p-3 rounded-xl border ${
+                order.sentAt ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
               <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
-                <FlaticonIcon name="box-open" size="xs" className="inline-flex" /> {statusLabels.ReadyToShip}
+                <FlaticonIcon name="box-open" size="xs" className="inline-flex" />{' '}
+                {statusLabels.ReadyToShip}
               </span>
-              <p className={`text-xs font-semibold mt-1 ${order.sentAt ? 'text-emerald-700' : 'text-gray-400'}`}>
+              <p
+                className={`text-xs font-semibold mt-1 ${order.sentAt ? 'text-emerald-700' : 'text-gray-400'}`}
+              >
                 {order.sentAt ? formatDateTime(order.sentAt) : '—'}
               </p>
             </div>
-            <div className={`p-3 rounded-xl border ${
-              order.completedAt ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'
-            }`}>
+            <div
+              className={`p-3 rounded-xl border ${
+                order.completedAt ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
               <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
-                <FlaticonIcon name="badge-check" size="xs" className="inline-flex" /> {statusLabels.Completed}
+                <FlaticonIcon name="badge-check" size="xs" className="inline-flex" />{' '}
+                {statusLabels.Completed}
               </span>
-              <p className={`text-xs font-semibold mt-1 ${order.completedAt ? 'text-green-700' : 'text-gray-400'}`}>
+              <p
+                className={`text-xs font-semibold mt-1 ${order.completedAt ? 'text-green-700' : 'text-gray-400'}`}
+              >
                 {order.completedAt ? formatDateTime(order.completedAt) : '—'}
               </p>
             </div>
@@ -608,11 +759,19 @@ export default function OrderDetail({
                           : 'bg-red-100 text-red-700'
                     }`}
                   >
-                    {isFullyPaid
-                      ? (<span className="inline-flex items-center gap-1"><FlaticonIcon name="badge-check" size="xs" /> Đã thanh toán</span>)
-                      : isPartiallyPaid
-                        ? (<span className="inline-flex items-center gap-1"><FlaticonIcon name="alarm-clock" size="xs" /> Thanh toán một phần</span>)
-                        : (<span className="inline-flex items-center gap-1"><FlaticonIcon name="circle-xmark" size="xs" /> Chưa thanh toán</span>)}
+                    {isFullyPaid ? (
+                      <span className="inline-flex items-center gap-1">
+                        <FlaticonIcon name="badge-check" size="xs" /> Đã thanh toán
+                      </span>
+                    ) : isPartiallyPaid ? (
+                      <span className="inline-flex items-center gap-1">
+                        <FlaticonIcon name="alarm-clock" size="xs" /> Thanh toán một phần
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <FlaticonIcon name="circle-xmark" size="xs" /> Chưa thanh toán
+                      </span>
+                    )}
                   </span>
                   <div className="text-right">
                     <span className="text-xs text-gray-400 block">Còn lại</span>
@@ -625,7 +784,8 @@ export default function OrderDetail({
                 </div>
                 <div className="flex items-center gap-4 mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-gray-500">
                   <span>
-                    <FlaticonIcon name="usd-circle" size="xs" className="inline-flex" /> Đã thanh toán:{' '}
+                    <FlaticonIcon name="usd-circle" size="xs" className="inline-flex" /> Đã thanh
+                    toán:{' '}
                     <strong className={isFullyPaid ? 'text-emerald-600' : ''}>
                       {formatCurrency(paid)}
                     </strong>
@@ -636,60 +796,62 @@ export default function OrderDetail({
                 </div>
 
                 {/* Mark as paid checkbox — at InProgress, Packaging, ReadyToShip steps */}
-                {['InProgress', 'Packaging', 'ReadyToShip'].includes(order.status) && remaining > 0 && (
-                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          className="sr-only"
-                          checked={false}
-                          onChange={() => {
-                            setShowConfirmPaid(true);
-                          }}
-                          disabled={markingPaid}
-                        />
-                        <div
-                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
-                            markingPaid
-                              ? 'border-gray-300 bg-gray-100'
-                              : 'border-blue-400 bg-white group-hover:border-blue-500 group-hover:bg-blue-50'
-                          }`}
-                        >
-                          {markingPaid && (
-                            <svg
-                              className="w-3 h-3 text-gray-400 animate-spin"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                              />
-                            </svg>
-                          )}
+                {['InProgress', 'Packaging', 'ReadyToShip'].includes(order.status) &&
+                  remaining > 0 && (
+                    <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={false}
+                            onChange={() => {
+                              setShowConfirmPaid(true);
+                            }}
+                            disabled={markingPaid}
+                          />
+                          <div
+                            className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                              markingPaid
+                                ? 'border-gray-300 bg-gray-100'
+                                : 'border-blue-400 bg-white group-hover:border-blue-500 group-hover:bg-blue-50'
+                            }`}
+                          >
+                            {markingPaid && (
+                              <svg
+                                className="w-3 h-3 text-gray-400 animate-spin"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                              </svg>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors">
-                          Khách hàng đã thanh toán phần còn lại
-                        </span>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          Số tiền còn lại: <strong className="text-red-500">{formatCurrency(remaining)}</strong>
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                )}
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors">
+                            Khách hàng đã thanh toán phần còn lại
+                          </span>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Số tiền còn lại:{' '}
+                            <strong className="text-red-500">{formatCurrency(remaining)}</strong>
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
               </div>
             );
           })()}
@@ -703,7 +865,9 @@ export default function OrderDetail({
                   : 'bg-gray-50 border-gray-200'
               }`}
             >
-              <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">                  <FlaticonIcon name="clipboard" size="sm" /> <span>Ghi chú</span>
+              <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                {' '}
+                <FlaticonIcon name="clipboard" size="sm" /> <span>Ghi chú</span>
                 {order.status === 'WaitingConfirm' && (
                   <span className="text-[10px] font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
                     Đơn chờ làm
@@ -728,7 +892,10 @@ export default function OrderDetail({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FlaticonIcon name={ol.type === 'RECIPE' ? 'receipt' : 'box-open'} size="sm" />
+                      <FlaticonIcon
+                        name={ol.type === 'RECIPE' ? 'receipt' : 'box-open'}
+                        size="sm"
+                      />
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 truncate">
                           {ol.type === 'RECIPE'
@@ -808,7 +975,9 @@ export default function OrderDetail({
                   </div>
                 </div>
                 <p className="font-bold text-purple-600 text-lg flex-shrink-0 ml-3">
-                  {order.salePriceSnapshot != null ? formatCurrency(Number(order.salePriceSnapshot)) : '—'}
+                  {order.salePriceSnapshot != null
+                    ? formatCurrency(Number(order.salePriceSnapshot))
+                    : '—'}
                 </p>
               </div>
             </div>
@@ -828,9 +997,13 @@ export default function OrderDetail({
                     className={`btn-xs ${showShipForm ? 'btn-ghost border border-gray-200' : 'btn-primary'}`}
                   >
                     {showShipForm ? (
-                      <><FlaticonIcon name="circle-xmark" size="xs" className="mr-0.5" /> Đóng</>
+                      <>
+                        <FlaticonIcon name="circle-xmark" size="xs" className="mr-0.5" /> Đóng
+                      </>
                     ) : (
-                      <><FlaticonIcon name="plus" size="xs" className="mr-0.5" /> Tạo đơn giao</>
+                      <>
+                        <FlaticonIcon name="plus" size="xs" className="mr-0.5" /> Tạo đơn giao
+                      </>
                     )}
                   </button>
                 )}
@@ -846,11 +1019,13 @@ export default function OrderDetail({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-red-800">Vận chuyển thất bại!</p>
                       <p className="text-xs text-red-600 mt-0.5">
-                        Đơn giao hàng hiện tại không thành công. Nhấn nút <strong>"Thử lại"</strong> bên dưới để xóa đơn cũ và tạo đơn giao mới.
+                        Đơn giao hàng hiện tại không thành công. Nhấn nút <strong>"Thử lại"</strong>{' '}
+                        bên dưới để xóa đơn cũ và tạo đơn giao mới.
                       </p>
                       <div className="flex items-center gap-2 mt-2 text-[10px] text-red-500">
                         <span className="inline-flex items-center gap-1">
-                          <FlaticonIcon name="clock" size="xs" /> Trạng thái đơn hàng hiện tại: <strong>{statusLabels[order.status] || order.status}</strong>
+                          <FlaticonIcon name="clock" size="xs" /> Trạng thái đơn hàng hiện tại:{' '}
+                          <strong>{statusLabels[order.status] || order.status}</strong>
                         </span>
                       </div>
                     </div>
@@ -859,310 +1034,467 @@ export default function OrderDetail({
               )}
 
               {/* Existing shipment (1 per order) */}
-              {orderShipments.length > 0 && (() => {
-                const s = orderShipments[0];
-                const cfg = carrierConfig[s.carrier] || carrierConfig.SPX;
-                const carrier = s.carrier || 'SPX';
-                return (
-                  <div className="mb-4">
-                    <div className="relative flex items-center gap-2.5 px-3 py-2.5 bg-white rounded-lg border border-gray-200">
-                      {order.status === 'Packaging' && !editingShipmentId && (
-                        <button
-                          onClick={() => {
-                            const newForm: typeof shipForm = {
-                              trackingNumber: s.trackingNumber || '',
-                              trackingUrl: s.trackingUrl || '',
-                              eta: s.eta ? s.eta.split('T')[0] : '',
-                              sofType: s.deliveryType === 'Khách đến lấy hàng' ? 'pickup' as const : 'delivery' as const,
-                              cost: Number(s.cost),
-                            };
-                            originalShipForm.current = newForm;
-                            setEditingShipmentId(s.id);
-                            setShipCarrier(s.carrier || 'SPX');
-                            setShipForm(newForm);
-                            setShowShipForm(true);
-                          }}
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all shadow-sm"
-                          title="Sửa đơn giao"
-                        >
-                          <FlaticonIcon name="pencil" size="xs" />
-                        </button>
-                      )}
-                      <div className="w-6 h-6 rounded flex items-center justify-center shrink-0">
-                        {cfg.isBrand ? (
-                          <BrandIcon brand={cfg.icon as 'grab' | 'shopee'} size={18} />
-                        ) : (
-                          <div className={`w-6 h-6 rounded bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-white`}>
-                            <FlaticonIcon name={cfg.icon} size="xs" />
-                          </div>
+              {orderShipments.length > 0 &&
+                (() => {
+                  const s = orderShipments[0];
+                  const cfg = carrierConfig[s.carrier] || carrierConfig.SPX;
+                  const carrier = s.carrier || 'SPX';
+                  return (
+                    <div className="mb-4">
+                      <div className="relative flex items-center gap-2.5 px-3 py-2.5 bg-white rounded-lg border border-gray-200">
+                        {order.status === 'Packaging' && !editingShipmentId && (
+                          <button
+                            onClick={() => {
+                              const newForm: typeof shipForm = {
+                                trackingNumber: s.trackingNumber || '',
+                                trackingUrl: s.trackingUrl || '',
+                                eta: s.eta ? s.eta.split('T')[0] : '',
+                                sofType:
+                                  s.deliveryType === 'Khách đến lấy hàng'
+                                    ? ('pickup' as const)
+                                    : ('delivery' as const),
+                                cost: Number(s.cost),
+                              };
+                              originalShipForm.current = newForm;
+                              setEditingShipmentId(s.id);
+                              setShipCarrier(s.carrier || 'SPX');
+                              setShipForm(newForm);
+                              setShowShipForm(true);
+                            }}
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all shadow-sm"
+                            title="Sửa đơn giao"
+                          >
+                            <FlaticonIcon name="pencil" size="xs" />
+                          </button>
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-xs text-gray-800">{cfg.label}</span>
-                          {carrier === 'SPX' && s.trackingNumber && (
-                            <button
-                              onClick={() => window.open(`https://spx.vn/track?${s.trackingNumber}`, '_blank')}
-                              className="text-[10px] text-orange-600 hover:text-orange-800 underline truncate max-w-[140px]"
-                            >
-                              {s.trackingNumber}
-                            </button>
-                          )}
-                          {carrier === 'Grab' && s.trackingUrl && (
-                            <button
-                              onClick={() => window.open(s.trackingUrl, '_blank')}
-                              className="text-[10px] text-emerald-600 hover:text-emerald-800 underline truncate max-w-[140px]"
-                            >
-                              Mở tracking
-                            </button>
-                          )}
-                          {carrier === 'SOF' && (
-                            <span className="text-[10px] text-blue-600">
-                              {s.deliveryType === 'Khách đến lấy hàng' ? 'Khách lấy' : 'Shop giao'}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-gray-400">
-                          {Number(s.cost) === 0 ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 font-medium">
-                              <FlaticonIcon name="tag" size="xs" /> Miễn phí ship
-                            </span>
-                          ) : (
-                            formatCurrency(Number(s.cost))
-                          )}
-                        </p>
-                      </div>
-                      <DotProgress status={s.status} isFailed={s.status === 'Failed'} />
-                    </div>
-                    {s.status === 'Failed' && (
-                      <button
-                        onClick={() => {
-                          setRetryShipmentId(s.id);
-                          setShowRetryConfirm(true);
-                        }}
-                        className="mt-2 w-full py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium hover:bg-red-100 hover:border-red-300 transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <FlaticonIcon name="refresh" size="xs" /> Thử lại với đơn giao mới
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Create / Edit form — only at Đã gói step */}
-              {order.status === 'Packaging' && (orderShipments.length === 0 || editingShipmentId) && <>
-              <div className="mb-4">
-                <p className="text-[11px] font-medium text-gray-500 mb-2">Ai trả ship?</p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: 'prepaid', label: 'Khách trả trước', cls: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
-                    { key: 'cod', label: 'Khách trả sau (COD)', cls: 'border-amber-300 bg-amber-50 text-amber-700' },
-                    { key: 'shop', label: 'Shop trả (tính vào chi phí)', cls: 'border-blue-300 bg-blue-50 text-blue-700' },
-                  ].map((opt) => {
-                    const isSel = shippingPaidBy === opt.key;
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => setLocalShippingPaidBy(opt.key)}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isSel ? opt.cls : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Carrier selector */}
-              <div className="mb-4">
-                <p className="text-[11px] font-medium text-gray-500 mb-2">Hãng vận chuyển</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['SPX', 'Grab', 'SOF'] as const).map((carrier) => {
-                    const isSel = shipCarrier === carrier;
-                    const cfg = carrierConfig[carrier];
-                    const aCls = carrier === 'SPX' ? 'border-orange-400 bg-orange-50' : carrier === 'Grab' ? 'border-emerald-400 bg-emerald-50' : 'border-blue-400 bg-blue-50';
-                    return (
-                      <button
-                        type="button"
-                        key={carrier}
-                        onClick={() => setShipCarrier(carrier)}
-                        className={`relative p-2.5 rounded-lg border-2 transition-all text-left ${isSel ? aCls : 'border-gray-200 bg-white hover:border-gray-300'}`}
-                      >
-                        <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0">
                           {cfg.isBrand ? (
-                            <BrandIcon brand={cfg.icon as 'grab' | 'shopee'} size={22} />
+                            <BrandIcon brand={cfg.icon as 'grab' | 'shopee'} size={18} />
                           ) : (
-                            <div className={`w-6 h-6 rounded bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-white`}>
+                            <div
+                              className={`w-6 h-6 rounded bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-white`}
+                            >
                               <FlaticonIcon name={cfg.icon} size="xs" />
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <p className={`text-[11px] font-semibold ${isSel ? cfg.color : 'text-gray-700'}`}>{cfg.label}</p>
-                            <p className="text-[9px] text-gray-400 truncate">{carrier === 'SPX' ? 'Shopee Express' : carrier === 'Grab' ? 'GrabExpress' : 'Tự giao'}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-xs text-gray-800">{cfg.label}</span>
+                            {carrier === 'SPX' && s.trackingNumber && (
+                              <button
+                                onClick={() =>
+                                  window.open(`https://spx.vn/track?${s.trackingNumber}`, '_blank')
+                                }
+                                className="text-[10px] text-orange-600 hover:text-orange-800 underline truncate max-w-[140px]"
+                              >
+                                {s.trackingNumber}
+                              </button>
+                            )}
+                            {carrier === 'Grab' && s.trackingUrl && (
+                              <button
+                                onClick={() => window.open(s.trackingUrl, '_blank')}
+                                className="text-[10px] text-emerald-600 hover:text-emerald-800 underline truncate max-w-[140px]"
+                              >
+                                Mở tracking
+                              </button>
+                            )}
+                            {carrier === 'SOF' && (
+                              <span className="text-[10px] text-blue-600">
+                                {s.deliveryType === 'Khách đến lấy hàng'
+                                  ? 'Khách lấy'
+                                  : 'Shop giao'}
+                              </span>
+                            )}
                           </div>
+                          <p className="text-[10px] text-gray-400">
+                            {Number(s.cost) === 0 ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 font-medium">
+                                <FlaticonIcon name="tag" size="xs" /> Miễn phí ship
+                              </span>
+                            ) : (
+                              formatCurrency(Number(s.cost))
+                            )}
+                          </p>
                         </div>
-                        {isSel && <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-[8px]">✓</div>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Expandable delivery form */}
-              {showShipForm && (
-                <div className="pt-3 border-t border-gray-200 space-y-3">
-                  {/* SPX fields */}
-                  {shipCarrier === 'SPX' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-medium text-gray-500 mb-1 block">Mã vận đơn SPX</label>
-                        <div className="relative">
-                          <input
-                            className={`input text-sm pr-8 ${spxValid === 'invalid' ? 'border-red-300 bg-red-50' : spxValid === 'valid' ? 'border-emerald-300 bg-emerald-50' : ''}`}
-                            value={shipForm.trackingNumber}
-                            onChange={(e) => { setShipForm({ ...shipForm, trackingNumber: e.target.value }); setSpxValid('idle'); }}
-                            placeholder="SPXVN..."
-                          />
-                          {spxValid !== 'idle' && shipForm.trackingNumber.length >= 10 && (
-                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                              {spxValid === 'loading' ? (
-                                <span className="w-3.5 h-3.5 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin inline-block" />
-                              ) : spxValid === 'valid' ? (
-                                <FlaticonIcon name="badge-check" size="xs" className="text-emerald-500" />
-                              ) : (
-                                <FlaticonIcon name="circle-xmark" size="xs" className="text-red-400" />
-                              )}
-                            </span>
-                          )}
-                        </div>
-                        {spxValid === 'invalid' && <p className="mt-1 text-[10px] text-red-500">Mã vận đơn không hợp lệ</p>}
+                        <DotProgress status={s.status} isFailed={s.status === 'Failed'} />
                       </div>
-                      <div>
-                        <label className="text-[10px] font-medium text-gray-500 mb-1 block">Dự kiến giao</label>
-                        <input type="date" className="input text-sm" value={shipForm.eta} onChange={(e) => setShipForm({ ...shipForm, eta: e.target.value })} />
-                      </div>
+                      {s.status === 'Failed' && (
+                        <button
+                          onClick={() => {
+                            setRetryShipmentId(s.id);
+                            setShowRetryConfirm(true);
+                          }}
+                          className="mt-2 w-full py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium hover:bg-red-100 hover:border-red-300 transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <FlaticonIcon name="refresh" size="xs" /> Thử lại với đơn giao mới
+                        </button>
+                      )}
                     </div>
-                  )}
+                  );
+                })()}
 
-                  {/* Grab fields */}
-                  {shipCarrier === 'Grab' && (
-                    <div>
-                      <label className="text-[10px] font-medium text-gray-500 mb-1 block">Link tracking Grab</label>
-                      <input className="input text-sm" value={shipForm.trackingUrl} onChange={(e) => setShipForm({ ...shipForm, trackingUrl: e.target.value })} placeholder="https://grab.com/track/..." />
-                    </div>
-                  )}
-
-                  {/* SOF fields */}
-                  {shipCarrier === 'SOF' && (
-                    <div>
-                      <label className="text-[10px] font-medium text-gray-500 mb-2 block">Hình thức giao hàng</label>
-                      <div className="grid grid-cols-2 gap-3">
+              {/* Create / Edit form — only at Đã gói step */}
+              {order.status === 'Packaging' &&
+                (orderShipments.length === 0 || editingShipmentId) && (
+                  <>
+                    <div className="mb-4">
+                      <p className="text-[11px] font-medium text-gray-500 mb-2">Ai trả ship?</p>
+                      <div className="flex flex-wrap gap-2">
                         {[
-                          { value: 'pickup', label: 'Khách đến lấy', desc: 'Tự đến cửa hàng nhận', icon: 'store-alt' },
-                          { value: 'delivery', label: 'Shop giao hàng', desc: 'Chủ shop tự vận chuyển', icon: 'truck-side' },
-                        ].map((opt) => (
-                          <button
-                            type="button"
-                            key={opt.value}
-                            onClick={() => setShipForm({ ...shipForm, sofType: opt.value as 'pickup' | 'delivery' })}
-                            className={`p-2.5 rounded-lg border-2 text-left transition-all ${shipForm.sofType === opt.value ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white">
-                                <FlaticonIcon name={opt.icon} size="xs" />
-                              </div>
-                              <div>
-                                <p className={`text-xs font-medium ${shipForm.sofType === opt.value ? 'text-blue-700' : 'text-gray-700'}`}>{opt.label}</p>
-                                <p className="text-[9px] text-gray-400">{opt.desc}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                          {
+                            key: 'prepaid',
+                            label: 'Khách trả trước',
+                            cls: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+                          },
+                          {
+                            key: 'cod',
+                            label: 'Khách trả sau (COD)',
+                            cls: 'border-amber-300 bg-amber-50 text-amber-700',
+                          },
+                          {
+                            key: 'shop',
+                            label: 'Shop trả (tính vào chi phí)',
+                            cls: 'border-blue-300 bg-blue-50 text-blue-700',
+                          },
+                        ].map((opt) => {
+                          const isSel = shippingPaidBy === opt.key;
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => setLocalShippingPaidBy(opt.key)}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${isSel ? opt.cls : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
-                  )}
 
-                  {/* Cost & Submit */}
-                  <div className="flex items-end gap-3 pt-2 border-t border-gray-200">
-                    <div className="flex-1">
-                      <label className="text-[10px] font-medium text-gray-500 mb-1 block">Phí giao hàng (VNĐ)</label>
-                      <NumberInput className="input text-sm" value={shipForm.cost} onChange={(val) => setShipForm({ ...shipForm, cost: val })} step={1000} placeholder="0" />
+                    {/* Carrier selector */}
+                    <div className="mb-4">
+                      <p className="text-[11px] font-medium text-gray-500 mb-2">Hãng vận chuyển</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['SPX', 'Grab', 'SOF'] as const).map((carrier) => {
+                          const isSel = shipCarrier === carrier;
+                          const cfg = carrierConfig[carrier];
+                          const aCls =
+                            carrier === 'SPX'
+                              ? 'border-orange-400 bg-orange-50'
+                              : carrier === 'Grab'
+                                ? 'border-emerald-400 bg-emerald-50'
+                                : 'border-blue-400 bg-blue-50';
+                          return (
+                            <button
+                              type="button"
+                              key={carrier}
+                              onClick={() => setShipCarrier(carrier)}
+                              className={`relative p-2.5 rounded-lg border-2 transition-all text-left ${isSel ? aCls : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {cfg.isBrand ? (
+                                  <BrandIcon brand={cfg.icon as 'grab' | 'shopee'} size={22} />
+                                ) : (
+                                  <div
+                                    className={`w-6 h-6 rounded bg-gradient-to-br ${cfg.gradient} flex items-center justify-center text-white`}
+                                  >
+                                    <FlaticonIcon name={cfg.icon} size="xs" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p
+                                    className={`text-[11px] font-semibold ${isSel ? cfg.color : 'text-gray-700'}`}
+                                  >
+                                    {cfg.label}
+                                  </p>
+                                  <p className="text-[9px] text-gray-400 truncate">
+                                    {carrier === 'SPX'
+                                      ? 'Shopee Express'
+                                      : carrier === 'Grab'
+                                        ? 'GrabExpress'
+                                        : 'Tự giao'}
+                                  </p>
+                                </div>
+                              </div>
+                              {isSel && (
+                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-[8px]">
+                                  ✓
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    {editingShipmentId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const orig = originalShipForm.current;
-                          if (orig && (orig.trackingNumber !== shipForm.trackingNumber || orig.trackingUrl !== shipForm.trackingUrl || orig.eta !== shipForm.eta || orig.sofType !== shipForm.sofType || orig.cost !== shipForm.cost)) {
-                            setShowCancelEditConfirm(true);
-                          } else {
-                            setShowShipForm(false);
-                            setEditingShipmentId(null);
-                            setSpxValid('idle');
-                            setShipForm({ trackingNumber: '', trackingUrl: '', eta: '', sofType: 'pickup', cost: 0 });
-                          }
-                        }}
-                        className="btn-secondary btn-sm"
-                      >
-                        Hủy
-                      </button>
+
+                    {/* Expandable delivery form */}
+                    {showShipForm && (
+                      <div className="pt-3 border-t border-gray-200 space-y-3">
+                        {/* SPX fields */}
+                        {shipCarrier === 'SPX' && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-medium text-gray-500 mb-1 block">
+                                Mã vận đơn SPX
+                              </label>
+                              <div className="relative">
+                                <input
+                                  className={`input text-sm pr-8 ${spxValid === 'invalid' ? 'border-red-300 bg-red-50' : spxValid === 'valid' ? 'border-emerald-300 bg-emerald-50' : ''}`}
+                                  value={shipForm.trackingNumber}
+                                  onChange={(e) => {
+                                    setShipForm({ ...shipForm, trackingNumber: e.target.value });
+                                    setSpxValid('idle');
+                                  }}
+                                  placeholder="SPXVN..."
+                                />
+                                {spxValid !== 'idle' && shipForm.trackingNumber.length >= 10 && (
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                                    {spxValid === 'loading' ? (
+                                      <span className="w-3.5 h-3.5 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin inline-block" />
+                                    ) : spxValid === 'valid' ? (
+                                      <FlaticonIcon
+                                        name="badge-check"
+                                        size="xs"
+                                        className="text-emerald-500"
+                                      />
+                                    ) : (
+                                      <FlaticonIcon
+                                        name="circle-xmark"
+                                        size="xs"
+                                        className="text-red-400"
+                                      />
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              {spxValid === 'invalid' && (
+                                <p className="mt-1 text-[10px] text-red-500">
+                                  Mã vận đơn không hợp lệ
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-medium text-gray-500 mb-1 block">
+                                Dự kiến giao
+                              </label>
+                              <input
+                                type="date"
+                                className="input text-sm"
+                                value={shipForm.eta}
+                                onChange={(e) => setShipForm({ ...shipForm, eta: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Grab fields */}
+                        {shipCarrier === 'Grab' && (
+                          <div>
+                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">
+                              Link tracking Grab
+                            </label>
+                            <input
+                              className="input text-sm"
+                              value={shipForm.trackingUrl}
+                              onChange={(e) =>
+                                setShipForm({ ...shipForm, trackingUrl: e.target.value })
+                              }
+                              placeholder="https://grab.com/track/..."
+                            />
+                          </div>
+                        )}
+
+                        {/* SOF fields */}
+                        {shipCarrier === 'SOF' && (
+                          <div>
+                            <label className="text-[10px] font-medium text-gray-500 mb-2 block">
+                              Hình thức giao hàng
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                              {[
+                                {
+                                  value: 'pickup',
+                                  label: 'Khách đến lấy',
+                                  desc: 'Tự đến cửa hàng nhận',
+                                  icon: 'store-alt',
+                                },
+                                {
+                                  value: 'delivery',
+                                  label: 'Shop giao hàng',
+                                  desc: 'Chủ shop tự vận chuyển',
+                                  icon: 'truck-side',
+                                },
+                              ].map((opt) => (
+                                <button
+                                  type="button"
+                                  key={opt.value}
+                                  onClick={() =>
+                                    setShipForm({
+                                      ...shipForm,
+                                      sofType: opt.value as 'pickup' | 'delivery',
+                                    })
+                                  }
+                                  className={`p-2.5 rounded-lg border-2 text-left transition-all ${shipForm.sofType === opt.value ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white">
+                                      <FlaticonIcon name={opt.icon} size="xs" />
+                                    </div>
+                                    <div>
+                                      <p
+                                        className={`text-xs font-medium ${shipForm.sofType === opt.value ? 'text-blue-700' : 'text-gray-700'}`}
+                                      >
+                                        {opt.label}
+                                      </p>
+                                      <p className="text-[9px] text-gray-400">{opt.desc}</p>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Cost & Submit */}
+                        <div className="flex items-end gap-3 pt-2 border-t border-gray-200">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-medium text-gray-500 mb-1 block">
+                              Phí giao hàng (VNĐ)
+                            </label>
+                            <NumberInput
+                              className="input text-sm"
+                              value={shipForm.cost}
+                              onChange={(val) => setShipForm({ ...shipForm, cost: val })}
+                              step={1000}
+                              placeholder="0"
+                            />
+                          </div>
+                          {editingShipmentId && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const orig = originalShipForm.current;
+                                if (
+                                  orig &&
+                                  (orig.trackingNumber !== shipForm.trackingNumber ||
+                                    orig.trackingUrl !== shipForm.trackingUrl ||
+                                    orig.eta !== shipForm.eta ||
+                                    orig.sofType !== shipForm.sofType ||
+                                    orig.cost !== shipForm.cost)
+                                ) {
+                                  setShowCancelEditConfirm(true);
+                                } else {
+                                  setShowShipForm(false);
+                                  setEditingShipmentId(null);
+                                  setSpxValid('idle');
+                                  setShipForm({
+                                    trackingNumber: '',
+                                    trackingUrl: '',
+                                    eta: '',
+                                    sofType: 'pickup',
+                                    cost: 0,
+                                  });
+                                }
+                              }}
+                              className="btn-secondary btn-sm"
+                            >
+                              Hủy
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (!token) return;
+                              if (
+                                shipForm.cost === undefined ||
+                                shipForm.cost === null ||
+                                Number(shipForm.cost) < 0
+                              ) {
+                                if (showToast)
+                                  showToast('Vui lòng nhập phí giao hàng hợp lệ', 'error');
+                                return;
+                              }
+                              setCreatingShipment(true);
+                              try {
+                                setLocalShippingCost(shipForm.cost);
+                                const body: any = {
+                                  orderId: order.id,
+                                  carrier: shipCarrier,
+                                  deliveryType:
+                                    shipCarrier === 'SPX' ? 'SPX Express' : 'GrabExpress',
+                                  shippingMethod:
+                                    shipCarrier === 'SPX' ? 'SPX Express' : 'GrabExpress',
+                                  cost: Number(shipForm.cost),
+                                };
+                                if (shipCarrier === 'SPX') {
+                                  body.trackingNumber = shipForm.trackingNumber || undefined;
+                                  body.eta = shipForm.eta
+                                    ? new Date(shipForm.eta).toISOString()
+                                    : undefined;
+                                } else {
+                                  if (shipCarrier === 'SOF') {
+                                    body.deliveryType =
+                                      shipForm.sofType === 'pickup'
+                                        ? 'Khách đến lấy hàng'
+                                        : 'Người bán giao hàng';
+                                    body.shippingMethod = body.deliveryType;
+                                  } else if (shipCarrier === 'Grab') {
+                                    body.trackingUrl = shipForm.trackingUrl || undefined;
+                                  }
+                                }
+                                const isEdit = editingShipmentId !== null;
+                                if (isEdit) {
+                                  await apiClient(`/shipping/${editingShipmentId}`, {
+                                    method: 'PUT',
+                                    body,
+                                    token,
+                                  });
+                                  if (showToast) showToast('Đã cập nhật đơn giao hàng', 'success');
+                                } else {
+                                  await apiClient('/shipping', { method: 'POST', body, token });
+                                  if (showToast) showToast('Đã tạo đơn giao hàng', 'success');
+                                }
+                                setShowShipForm(false);
+                                setEditingShipmentId(null);
+                                setSpxValid('idle');
+                                setShipForm({
+                                  trackingNumber: '',
+                                  trackingUrl: '',
+                                  eta: '',
+                                  sofType: 'pickup',
+                                  cost: 0,
+                                });
+                                loadOrderShipments();
+                              } catch (e: any) {
+                                if (showToast)
+                                  showToast(
+                                    e.message ||
+                                      (editingShipmentId
+                                        ? 'Cập nhật thất bại'
+                                        : 'Tạo không thành công'),
+                                    'error',
+                                  );
+                              }
+                              setCreatingShipment(false);
+                            }}
+                            disabled={creatingShipment}
+                            className="btn-primary disabled:opacity-50"
+                          >
+                            {creatingShipment ? (
+                              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                <FlaticonIcon name="check" size="sm" />{' '}
+                                {editingShipmentId ? 'Lưu' : 'Tạo đơn'}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     )}
-                    <button
-                      onClick={async () => {
-                        if (!token) return;
-                        if (shipForm.cost === undefined || shipForm.cost === null || Number(shipForm.cost) < 0) {
-                          if (showToast) showToast('Vui lòng nhập phí giao hàng hợp lệ', 'error');
-                          return;
-                        }
-                        setCreatingShipment(true);
-                        try {
-                          setLocalShippingCost(shipForm.cost);
-                          const body: any = {
-                            orderId: order.id,
-                            carrier: shipCarrier,
-                            deliveryType: shipCarrier === 'SPX' ? 'SPX Express' : 'GrabExpress',
-                            shippingMethod: shipCarrier === 'SPX' ? 'SPX Express' : 'GrabExpress',
-                            cost: Number(shipForm.cost),
-                          };
-                          if (shipCarrier === 'SPX') {
-                            body.trackingNumber = shipForm.trackingNumber || undefined;
-                            body.eta = shipForm.eta ? new Date(shipForm.eta).toISOString() : undefined;
-                          } else {
-                            if (shipCarrier === 'SOF') {
-                              body.deliveryType = shipForm.sofType === 'pickup' ? 'Khách đến lấy hàng' : 'Người bán giao hàng';
-                              body.shippingMethod = body.deliveryType;
-                            } else if (shipCarrier === 'Grab') {
-                              body.trackingUrl = shipForm.trackingUrl || undefined;
-                            }
-                          }
-                          const isEdit = editingShipmentId !== null;
-                          if (isEdit) {
-                            await apiClient(`/shipping/${editingShipmentId}`, { method: 'PUT', body, token });
-                            if (showToast) showToast('Đã cập nhật đơn giao hàng', 'success');
-                          } else {
-                            await apiClient('/shipping', { method: 'POST', body, token });
-                            if (showToast) showToast('Đã tạo đơn giao hàng', 'success');
-                          }
-                          setShowShipForm(false);
-                          setEditingShipmentId(null);
-                          setSpxValid('idle');
-                          setShipForm({ trackingNumber: '', trackingUrl: '', eta: '', sofType: 'pickup', cost: 0 });
-                          loadOrderShipments();
-                        } catch (e: any) {
-                          if (showToast) showToast(e.message || (editingShipmentId ? 'Cập nhật thất bại' : 'Tạo không thành công'), 'error');
-                        }
-                        setCreatingShipment(false);
-                      }}
-                      disabled={creatingShipment}
-                      className="btn-primary disabled:opacity-50"
-                    >
-                      {creatingShipment ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><FlaticonIcon name="check" size="sm" /> {editingShipmentId ? 'Lưu' : 'Tạo đơn'}</>}
-                    </button>
-                  </div>
-                </div>
-              )}
-              </>}
+                  </>
+                )}
             </div>
           )}
 
@@ -1171,7 +1503,10 @@ export default function OrderDetail({
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi tiết chi phí</h3>
             <div className="space-y-2">
               <div className="detail-row py-1.5">
-                <span className="detail-label">                   <FlaticonIcon name="diamond" size="xs" className="inline-flex" /> Giá vốn nguyên liệu ({order.items?.length || 0} sản phẩm)
+                <span className="detail-label">
+                  {' '}
+                  <FlaticonIcon name="diamond" size="xs" className="inline-flex" /> Giá vốn nguyên
+                  liệu ({order.items?.length || 0} sản phẩm)
                 </span>
                 <span className="detail-value">{formatCurrency(itemTotal)}</span>
               </div>
@@ -1187,10 +1522,25 @@ export default function OrderDetail({
               </div>
               <div className="detail-row py-1.5 border-b border-dashed border-gray-100 pb-2 mb-2">
                 <span className="detail-label text-[10px] flex items-center gap-1">
-                  <FlaticonIcon name={shippingPaidBy === 'shop' ? 'store-alt' : shippingPaidBy === 'prepaid' ? 'user' : 'truck-side'} size="xs" />
-                  {shippingPaidBy === 'prepaid' ? 'Khách trả trước' : shippingPaidBy === 'cod' ? 'Khách trả sau (COD)' : 'Shop trả ship'}
+                  <FlaticonIcon
+                    name={
+                      shippingPaidBy === 'shop'
+                        ? 'store-alt'
+                        : shippingPaidBy === 'prepaid'
+                          ? 'user'
+                          : 'truck-side'
+                    }
+                    size="xs"
+                  />
+                  {shippingPaidBy === 'prepaid'
+                    ? 'Khách trả trước'
+                    : shippingPaidBy === 'cod'
+                      ? 'Khách trả sau (COD)'
+                      : 'Shop trả ship'}
                 </span>
-                <span className={`text-[10px] font-medium ${shippingPaidBy === 'shop' ? 'text-red-500' : 'text-emerald-600'}`}>
+                <span
+                  className={`text-[10px] font-medium ${shippingPaidBy === 'shop' ? 'text-red-500' : 'text-emerald-600'}`}
+                >
                   {shippingPaidBy === 'shop' ? '− tính vào chi phí' : 'không tính vào chi phí'}
                 </span>
               </div>
@@ -1227,7 +1577,10 @@ export default function OrderDetail({
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-amber-100 pt-1">
-                    <span className="text-gray-500 font-medium"><FlaticonIcon name="usd-circle" size="xs" className="inline-flex mr-1" /> Lợi nhuận (snapshot)</span>
+                    <span className="text-gray-500 font-medium">
+                      <FlaticonIcon name="usd-circle" size="xs" className="inline-flex mr-1" /> Lợi
+                      nhuận (snapshot)
+                    </span>
                     <span
                       className={`font-bold ${profit > 0 ? 'text-emerald-600' : profit < 0 ? 'text-red-600' : 'text-gray-500'}`}
                     >
@@ -1238,7 +1591,8 @@ export default function OrderDetail({
                   {order.recipeSnapshot && (
                     <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
                       <p className="text-xs font-medium text-amber-800 mb-1">
-                        <FlaticonIcon name="receipt" size="xs" className="inline-flex mr-1" /> Công thức: {order.recipeSnapshot.name}
+                        <FlaticonIcon name="receipt" size="xs" className="inline-flex mr-1" /> Công
+                        thức: {order.recipeSnapshot.name}
                       </p>
                       {order.recipeSnapshot.products?.map((p: any, i: number) => (
                         <div key={i} className="flex justify-between text-[10px] text-amber-700">
@@ -1352,9 +1706,7 @@ export default function OrderDetail({
                   <FlaticonIcon name="user" size="sm" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900">
-                    {order.customer.name}
-                  </h2>
+                  <h2 className="text-base font-semibold text-gray-900">{order.customer.name}</h2>
                   <p className="text-[11px] text-gray-400">Thông tin khách hàng</p>
                 </div>
               </div>
@@ -1392,7 +1744,10 @@ export default function OrderDetail({
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-400">Email</p>
-                      <a href={`mailto:${order.customer.email}`} className="text-gray-700 hover:text-purple-600 transition-colors font-medium">
+                      <a
+                        href={`mailto:${order.customer.email}`}
+                        className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
+                      >
                         {order.customer.email}
                       </a>
                     </div>
@@ -1405,7 +1760,10 @@ export default function OrderDetail({
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-400">Số điện thoại</p>
-                      <a href={`tel:${order.customer.phone}`} className="text-gray-700 hover:text-purple-600 transition-colors font-medium">
+                      <a
+                        href={`tel:${order.customer.phone}`}
+                        className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
+                      >
                         {order.customer.phone}
                       </a>
                     </div>
@@ -1425,7 +1783,10 @@ export default function OrderDetail({
               </div>
 
               {/* Social Links */}
-              {(order.customer.facebook || order.customer.instagram || order.customer.tiktok || order.customer.threads) && (
+              {(order.customer.facebook ||
+                order.customer.instagram ||
+                order.customer.tiktok ||
+                order.customer.threads) && (
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                     <span className="w-1 h-3.5 rounded-full bg-purple-400 inline-block" />
@@ -1435,7 +1796,9 @@ export default function OrderDetail({
                     {SOCIAL_PLATFORMS.filter((p) => !p.phoneBased).map((platform) => {
                       const val = order.customer?.[platform.key];
                       if (!val) return null;
-                      const href = val.startsWith('http') ? val : `${platform.domain}${val.replace(/^@/, '')}`;
+                      const href = val.startsWith('http')
+                        ? val
+                        : `${platform.domain}${val.replace(/^@/, '')}`;
                       return (
                         <a
                           key={platform.key}

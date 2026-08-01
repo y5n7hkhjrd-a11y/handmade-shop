@@ -76,9 +76,7 @@ describe('PATCH /api/orders/:id/payment', () => {
 
   it('should return 400 when paidAmount is missing', async () => {
     const app = createApp();
-    const res = await request(app)
-      .patch('/api/orders/order-123/payment')
-      .send({});
+    const res = await request(app).patch('/api/orders/order-123/payment').send({});
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
@@ -87,9 +85,7 @@ describe('PATCH /api/orders/:id/payment', () => {
   });
 
   it('should return 404 when order is not found', async () => {
-    vi.mocked(orderService.markPaid).mockRejectedValue(
-      new AppError('Order not found', 404),
-    );
+    vi.mocked(orderService.markPaid).mockRejectedValue(new AppError('Order not found', 404));
 
     const app = createApp();
     const res = await request(app)

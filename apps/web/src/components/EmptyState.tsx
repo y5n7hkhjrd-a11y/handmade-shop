@@ -10,7 +10,13 @@ interface EmptyStateProps {
   action?: { label: string; onClick: () => void };
 }
 
-export default function EmptyState({ icon, emoji = '📋', title, message, action }: EmptyStateProps) {
+export default function EmptyState({
+  icon,
+  emoji = '📋',
+  title,
+  message,
+  action,
+}: EmptyStateProps) {
   return (
     <tr>
       <td colSpan={99} className="text-center py-12">

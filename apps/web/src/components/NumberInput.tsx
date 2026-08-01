@@ -2,11 +2,10 @@
 
 import { useState, type InputHTMLAttributes, type KeyboardEvent } from 'react';
 
-interface NumberInputProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    'type' | 'value' | 'onChange' | 'inputMode'
-  > {
+interface NumberInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'value' | 'onChange' | 'inputMode'
+> {
   value: number;
   onChange: (value: number) => void;
   /** If true, allow floating point numbers (keeps '.' in filter). Default false. */
@@ -42,7 +41,7 @@ export function NumberInput({
   const [rawInput, setRawInput] = useState<string | null>(null);
 
   // When the controlled value changes externally, reset raw input
-  const displayValue = rawInput !== null ? rawInput : (value === 0 && hideZero ? '' : String(value));
+  const displayValue = rawInput !== null ? rawInput : value === 0 && hideZero ? '' : String(value);
 
   const filterInput = (raw: string): string => {
     return allowDecimal ? raw.replace(/[^0-9.]/g, '') : raw.replace(/\D/g, '');
@@ -96,9 +95,14 @@ export function NumberInput({
       if (rawInput !== null) {
         commitValue(rawInput);
       }
-      const stepVal = step ? (typeof step === 'number' ? step : parseInt(step as string, 10) || 1) : 1;
+      const stepVal = step
+        ? typeof step === 'number'
+          ? step
+          : parseInt(step as string, 10) || 1
+        : 1;
       const delta = e.key === 'ArrowUp' ? stepVal : -stepVal;
-      const minVal = min != null ? (typeof min === 'number' ? min : parseInt(String(min), 10) || 0) : 0;
+      const minVal =
+        min != null ? (typeof min === 'number' ? min : parseInt(String(min), 10) || 0) : 0;
       onChange(Math.max(minVal, value + delta));
     }
   };

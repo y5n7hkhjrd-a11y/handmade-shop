@@ -40,7 +40,11 @@ export default function ConfirmModal({
 
   return (
     <div className="modal-overlay !items-center !pt-0" onKeyDown={handleKeyDown}>
-      <div className="max-w-sm mx-4 w-full" onClick={(e) => e.stopPropagation()} style={{ animation: 'modalSlideScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+      <div
+        className="max-w-sm mx-4 w-full"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: 'modalSlideScale 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+      >
         <div className="bg-white shadow-lg rounded-2xl p-6 text-center">
           <div
             className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center"

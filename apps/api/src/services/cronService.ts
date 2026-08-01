@@ -117,7 +117,9 @@ async function processActiveShipments(): Promise<void> {
           }
           await shippingService.update(shipment.id, updateBody);
           updatedCount++;
-          console.log(`[Cron] Updated shipment ${shipment.id} (${shipment.orderId}): ${shipment.status} → ${fetchedStatus}`);
+          console.log(
+            `[Cron] Updated shipment ${shipment.id} (${shipment.orderId}): ${shipment.status} → ${fetchedStatus}`,
+          );
         }
       } catch {
         // Silently skip individual failures — don't let one bad shipment block the rest

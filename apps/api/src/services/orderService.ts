@@ -86,17 +86,17 @@ export const orderService = {
           if (!product) throw new AppError(`Product ${line.productId} not found`, 404);
 
           const qty = line.quantity || 1;
-          const salePrice = line.unitPrice || 0;  // User-entered sale price (giá bán)
-          const productCost = Number(product.cost);  // Actual cost (giá vốn)
+          const salePrice = line.unitPrice || 0; // User-entered sale price (giá bán)
+          const productCost = Number(product.cost); // Actual cost (giá vốn)
 
           allItems.push({
             productId: line.productId!,
             quantity: qty,
-            unitPrice: productCost,  // Store cost price for OrderItem cost tracking
+            unitPrice: productCost, // Store cost price for OrderItem cost tracking
             notes: line.notes,
           });
-          totalSubtotal += salePrice * qty;  // Subtotal uses sale price
-          totalMaterialCost += productCost * qty;  // Track actual material cost
+          totalSubtotal += salePrice * qty; // Subtotal uses sale price
+          totalMaterialCost += productCost * qty; // Track actual material cost
         }
       }
 
@@ -196,7 +196,7 @@ export const orderService = {
       fixedItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: cost,  // Cost price for OrderItem cost tracking
+        unitPrice: cost, // Cost price for OrderItem cost tracking
         packagingTemplateId: item.packagingTemplateId,
         notes: item.notes,
       });
@@ -204,7 +204,7 @@ export const orderService = {
         type: 'PRODUCT' as const,
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: salePrice,  // Sale price for display
+        unitPrice: salePrice, // Sale price for display
         packagingTemplateId: item.packagingTemplateId,
         notes: item.notes,
       });
@@ -246,7 +246,9 @@ export const orderService = {
         Number(order.shippingCost || 0);
       const remaining = salePriceTotal - paid;
       if (remaining > 0) {
-        throw new AppError('Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói');
+        throw new AppError(
+          'Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói',
+        );
       }
     }
 
@@ -278,8 +280,8 @@ export const orderService = {
     return orderRepository.addItem(id, {
       productId: data.productId,
       quantity: data.quantity,
-      unitPrice: data.unitPrice || 0,  // Sale price (0 if not entered)
-      unitCost: Number(product.cost),   // Actual cost for OrderItem tracking
+      unitPrice: data.unitPrice || 0, // Sale price (0 if not entered)
+      unitCost: Number(product.cost), // Actual cost for OrderItem tracking
       notes: data.notes,
     });
   },
@@ -328,18 +330,18 @@ export const orderService = {
         if (!product) throw new AppError(`Product ${line.productId} not found`, 404);
 
         const qty = line.quantity || 1;
-        const salePrice = line.unitPrice || 0;  // User-entered sale price
-        const productCost = Number(product.cost);  // Actual cost
+        const salePrice = line.unitPrice || 0; // User-entered sale price
+        const productCost = Number(product.cost); // Actual cost
 
         items.push({
           productId: line.productId,
           quantity: qty,
-          unitPrice: productCost,  // Store cost price for OrderItem cost tracking
-          totalPrice: productCost * qty,  // Cost * qty for cost tracking
+          unitPrice: productCost, // Store cost price for OrderItem cost tracking
+          totalPrice: productCost * qty, // Cost * qty for cost tracking
           notes: line.notes,
         });
-        subtotal += salePrice * qty;  // Subtotal uses sale price
-        materialCost += productCost * qty;  // Track material cost
+        subtotal += salePrice * qty; // Subtotal uses sale price
+        materialCost += productCost * qty; // Track material cost
       } else if (line.type === 'RECIPE' && line.recipeId) {
         // Use cost engine for accurate material cost including CHARM matching rules
         if (!line.customInput) throw new AppError('Custom input is required for recipe lines', 400);
@@ -368,14 +370,30 @@ export const orderService = {
     return orderRepository.replaceLines(id, data, items, subtotal, materialCost);
   },
 
-  async update(id: string, data: { discount?: number; paidAmount?: number; deadline?: string; shippingCost?: number; shippingPaidBy?: string; notes?: string }) {
+  async update(
+    id: string,
+    data: {
+      discount?: number;
+      paidAmount?: number;
+      deadline?: string;
+      shippingCost?: number;
+      shippingPaidBy?: string;
+      notes?: string;
+    },
+  ) {
     const order = await orderRepository.findById(id);
     if (!order) {
       throw new AppError('Order not found', 404);
     }
     // Allow shipping-related fields to be updated at any status; block other field changes post-confirmation
-    const shippingOnly = Object.keys(data).every(k => ['shippingCost', 'shippingPaidBy'].includes(k));
-    if (!shippingOnly && order.status !== OrderStatus.Draft && order.status !== OrderStatus.WaitingConfirm) {
+    const shippingOnly = Object.keys(data).every((k) =>
+      ['shippingCost', 'shippingPaidBy'].includes(k),
+    );
+    if (
+      !shippingOnly &&
+      order.status !== OrderStatus.Draft &&
+      order.status !== OrderStatus.WaitingConfirm
+    ) {
       throw new AppError('Cannot modify order after it has been confirmed');
     }
     return orderRepository.update(id, data);

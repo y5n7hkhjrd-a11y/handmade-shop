@@ -116,8 +116,9 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
     const response = await fetch(apiUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        Accept: 'application/json',
       },
     });
     clearTimeout(timeout);
@@ -126,7 +127,7 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
       throw new AppError('Không thể tra cứu đơn Grab', 502);
     }
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
     const details = result?.webTrackingDetails?.[0];
     if (!details) {
       throw new AppError('Không tìm thấy thông tin đơn Grab', 404);
@@ -138,60 +139,60 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
     const orderStatus: string = dynamicTracking?.orderStatus || 'PENDING';
     const statusMap: Record<string, string> = {
       // Pending
-      'BOOKED': 'Pending',
-      'ALLOCATING': 'Pending',
-      'LOOKING_FOR_DRIVER': 'Pending',
-      'ORDER_PLACED': 'Pending',
-      'PENDING': 'Pending',
+      BOOKED: 'Pending',
+      ALLOCATING: 'Pending',
+      LOOKING_FOR_DRIVER: 'Pending',
+      ORDER_PLACED: 'Pending',
+      PENDING: 'Pending',
       // Shipped (picked up)
       // Pre-pickup stages (driver assigned, en route, arrived) map to Pending
-      'DRIVER_ASSIGNED': 'Pending',
-      'DRIVER_EN_ROUTE_TO_PICKUP': 'Pending',
-      'DRIVER_ARRIVED_AT_PICKUP': 'Pending',
-      'PICKED_UP': 'Shipped',
-      'DRIVER_ALLOCATED': 'Shipped',
-      'DRIVER_ARRIVED': 'Shipped',
+      DRIVER_ASSIGNED: 'Pending',
+      DRIVER_EN_ROUTE_TO_PICKUP: 'Pending',
+      DRIVER_ARRIVED_AT_PICKUP: 'Pending',
+      PICKED_UP: 'Shipped',
+      DRIVER_ALLOCATED: 'Shipped',
+      DRIVER_ARRIVED: 'Shipped',
       // In Transit
-      'DELIVERING': 'InTransit',
-      'DRIVER_ARRIVED_AT_DROPOFF': 'InTransit',
-      'IN_TRANSIT': 'InTransit',
+      DELIVERING: 'InTransit',
+      DRIVER_ARRIVED_AT_DROPOFF: 'InTransit',
+      IN_TRANSIT: 'InTransit',
       // Delivered
-      'DELIVERED': 'Delivered',
-      'COMPLETED': 'Delivered',
+      DELIVERED: 'Delivered',
+      COMPLETED: 'Delivered',
       // Failed
-      'FAILED': 'Failed',
-      'CANCELLED': 'Failed',
-      'SENDER_CANCELLED': 'Failed',
-      'EXPIRED': 'Failed',
-      'RETURNING': 'Failed',
-      'RETURNED': 'Failed',
+      FAILED: 'Failed',
+      CANCELLED: 'Failed',
+      SENDER_CANCELLED: 'Failed',
+      EXPIRED: 'Failed',
+      RETURNING: 'Failed',
+      RETURNED: 'Failed',
     };
     const status = statusMap[orderStatus] || 'Pending';
 
     // ── Status text (human-readable) ──
     const statusTextMap: Record<string, string> = {
-      'BOOKED': 'Đơn đã được tạo',
-      'ALLOCATING': 'Đang tìm tài xế',
-      'LOOKING_FOR_DRIVER': 'Đang tìm tài xế',
-      'ORDER_PLACED': 'Đã đặt đơn',
-      'PENDING': 'Chờ xử lý',
-      'DRIVER_ASSIGNED': 'Đã có tài xế nhận đơn',
-      'DRIVER_EN_ROUTE_TO_PICKUP': 'Tài xế đang đến điểm lấy hàng',
-      'DRIVER_ARRIVED_AT_PICKUP': 'Tài xế đã đến điểm lấy',
-      'PICKED_UP': 'Đã lấy hàng',
-      'DRIVER_ALLOCATED': 'Đã có tài xế',
-      'DRIVER_ARRIVED': 'Tài xế đã đến',
-      'DELIVERING': 'Đang giao hàng',
-      'DRIVER_ARRIVED_AT_DROPOFF': 'Tài xế đã đến điểm giao',
-      'IN_TRANSIT': 'Đang giao hàng',
-      'DELIVERED': 'Giao thành công',
-      'COMPLETED': 'Giao hàng thành công',
-      'FAILED': 'Giao thất bại',
-      'CANCELLED': 'Đơn bị hủy',
-      'SENDER_CANCELLED': 'Đã huỷ đơn giao hàng',
-      'EXPIRED': 'Đơn hết hạn',
-      'RETURNING': 'Đang hoàn hàng',
-      'RETURNED': 'Đã hoàn hàng',
+      BOOKED: 'Đơn đã được tạo',
+      ALLOCATING: 'Đang tìm tài xế',
+      LOOKING_FOR_DRIVER: 'Đang tìm tài xế',
+      ORDER_PLACED: 'Đã đặt đơn',
+      PENDING: 'Chờ xử lý',
+      DRIVER_ASSIGNED: 'Đã có tài xế nhận đơn',
+      DRIVER_EN_ROUTE_TO_PICKUP: 'Tài xế đang đến điểm lấy hàng',
+      DRIVER_ARRIVED_AT_PICKUP: 'Tài xế đã đến điểm lấy',
+      PICKED_UP: 'Đã lấy hàng',
+      DRIVER_ALLOCATED: 'Đã có tài xế',
+      DRIVER_ARRIVED: 'Tài xế đã đến',
+      DELIVERING: 'Đang giao hàng',
+      DRIVER_ARRIVED_AT_DROPOFF: 'Tài xế đã đến điểm giao',
+      IN_TRANSIT: 'Đang giao hàng',
+      DELIVERED: 'Giao thành công',
+      COMPLETED: 'Giao hàng thành công',
+      FAILED: 'Giao thất bại',
+      CANCELLED: 'Đơn bị hủy',
+      SENDER_CANCELLED: 'Đã huỷ đơn giao hàng',
+      EXPIRED: 'Đơn hết hạn',
+      RETURNING: 'Đang hoàn hàng',
+      RETURNED: 'Đã hoàn hàng',
     };
     const statusText = statusTextMap[orderStatus] || orderStatus;
 
@@ -200,7 +201,20 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
     let timestamp: string | null = null;
     if (unixTs) {
       const date = new Date(unixTs * 1000);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const day = date.getDate();
       const month = months[date.getMonth()]!;
       const year = date.getFullYear();
@@ -232,12 +246,14 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
     const deliveryAddr = destination?.address || '';
 
     // Combine name + address for display
-    const pickupAddress = pickupName && pickupAddr !== pickupName
-      ? `${pickupName}, ${pickupAddr}`
-      : pickupAddr || pickupName || null;
-    const deliveryAddress = deliveryName && deliveryAddr !== deliveryName
-      ? `${deliveryName}, ${deliveryAddr}`
-      : deliveryAddr || deliveryName || null;
+    const pickupAddress =
+      pickupName && pickupAddr !== pickupName
+        ? `${pickupName}, ${pickupAddr}`
+        : pickupAddr || pickupName || null;
+    const deliveryAddress =
+      deliveryName && deliveryAddr !== deliveryName
+        ? `${deliveryName}, ${deliveryAddr}`
+        : deliveryAddr || deliveryName || null;
 
     res.json({
       success: true,
@@ -278,7 +294,7 @@ shippingRouter.post('/track-spx', async (req: Request, res: Response, next: Next
       throw new AppError('Không thể tra cứu mã vận đơn SPX', 502);
     }
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
     if (result.retcode !== 0 || !result.data) {
       throw new AppError('Mã vận đơn không hợp lệ hoặc không tìm thấy', 404);
     }
@@ -287,13 +303,13 @@ shippingRouter.post('/track-spx', async (req: Request, res: Response, next: Next
 
     // Map SPX status to our shipping status
     const statusMap: Record<string, string> = {
-      'Delivered': 'Delivered',
+      Delivered: 'Delivered',
       'Out For Delivery': 'InTransit',
       'In Transit': 'InTransit',
       'Picking Up': 'Shipped',
-      'Pending': 'Pending',
-      'Failed': 'Failed',
-      'Cancelled': 'Failed',
+      Pending: 'Pending',
+      Failed: 'Failed',
+      Cancelled: 'Failed',
     };
     const spxStatus = order_info?.tracking_code_group_name || 'Pending';
     const status = statusMap[spxStatus] || 'Pending';

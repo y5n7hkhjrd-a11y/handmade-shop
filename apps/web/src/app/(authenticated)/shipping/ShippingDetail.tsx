@@ -5,7 +5,20 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { copyToClipboard } from '@/lib/clipboard';
-import { DotProgress, getCarrier, getStatusLabel, statusBgs, statusColors, statusFlow, carrierConfig, carrierStatusLabels, nextActions, type SpxRecord, type Shipping, type CarrierType } from './shippingConstants';
+import {
+  DotProgress,
+  getCarrier,
+  getStatusLabel,
+  statusBgs,
+  statusColors,
+  statusFlow,
+  carrierConfig,
+  carrierStatusLabels,
+  nextActions,
+  type SpxRecord,
+  type Shipping,
+  type CarrierType,
+} from './shippingConstants';
 import { CarrierLogo } from './shippingConstants';
 
 export default function ShippingDetail({
@@ -46,7 +59,11 @@ export default function ShippingDetail({
 
     if (crr === 'SPX' && shipment.trackingNumber) {
       setSpxRecordsLoading(true);
-      apiClient<any>('/shipping/track-spx', { method: 'POST', body: { trackingNumber: shipment.trackingNumber }, token })
+      apiClient<any>('/shipping/track-spx', {
+        method: 'POST',
+        body: { trackingNumber: shipment.trackingNumber },
+        token,
+      })
         .then((res) => {
           const records = res.data?.records || [];
           setSpxRecords(records);
@@ -63,12 +80,18 @@ export default function ShippingDetail({
               .catch(() => {});
           }
         })
-        .catch(() => { setSpxRecords([]); })
+        .catch(() => {
+          setSpxRecords([]);
+        })
         .finally(() => setSpxRecordsLoading(false));
     } else if (crr === 'Grab' && shipment.trackingUrl) {
       setSpxRecordsLoading(true);
       setGrabTrackingInfo(null);
-      apiClient<any>('/shipping/track-grab', { method: 'POST', body: { trackingUrl: shipment.trackingUrl }, token })
+      apiClient<any>('/shipping/track-grab', {
+        method: 'POST',
+        body: { trackingUrl: shipment.trackingUrl },
+        token,
+      })
         .then((res) => {
           const data = res.data;
           setGrabTrackingInfo(data);
@@ -76,12 +99,16 @@ export default function ShippingDetail({
             const updateBody: any = { status: data.status };
             apiClient(`/shipping/${shipment.id}`, { method: 'PUT', body: updateBody, token })
               .then(() => {
-                showToast(`Grab: ${carrierStatusLabels[crr]?.[data.status] || data.status} — tự động cập nhật`);
+                showToast(
+                  `Grab: ${carrierStatusLabels[crr]?.[data.status] || data.status} — tự động cập nhật`,
+                );
               })
               .catch(() => {});
           }
         })
-        .catch(() => { setGrabTrackingInfo(null); })
+        .catch(() => {
+          setGrabTrackingInfo(null);
+        })
         .finally(() => setSpxRecordsLoading(false));
     } else {
       setSpxRecords([]);
@@ -104,8 +131,12 @@ export default function ShippingDetail({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">#{shipment.orderId}</h2>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${statusBgs[shipment.status] || 'bg-gray-100 text-gray-600'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${statusColors[shipment.status] || 'bg-gray-400'}`} />
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${statusBgs[shipment.status] || 'bg-gray-100 text-gray-600'}`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${statusColors[shipment.status] || 'bg-gray-400'}`}
+                />
                 {getStatusLabel(carrier, shipment.status)}
               </span>
             </div>
@@ -117,7 +148,10 @@ export default function ShippingDetail({
               })()}
             </p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          >
             <FlaticonIcon name="circle-xmark" size="sm" />
           </button>
         </div>
@@ -133,11 +167,15 @@ export default function ShippingDetail({
                 <p className="text-sm font-bold text-red-800">Vận chuyển thất bại!</p>
                 <p className="text-xs text-red-600 mt-0.5">
                   Đơn giao hàng không thành công. Xóa đơn cũ và tạo đơn giao mới.{' '}
-                  <a href={`/orders`} className="font-semibold underline hover:text-red-700">Quay lại đơn hàng</a>.
+                  <a href={`/orders`} className="font-semibold underline hover:text-red-700">
+                    Quay lại đơn hàng
+                  </a>
+                  .
                 </p>
                 <div className="flex items-center gap-2 mt-2 text-[10px] text-red-500">
                   <span className="inline-flex items-center gap-1">
-                    <FlaticonIcon name="clock" size="xs" /> Trạng thái: <strong>{getStatusLabel(carrier, shipment.status)}</strong>
+                    <FlaticonIcon name="clock" size="xs" /> Trạng thái:{' '}
+                    <strong>{getStatusLabel(carrier, shipment.status)}</strong>
                   </span>
                 </div>
               </div>
@@ -154,7 +192,11 @@ export default function ShippingDetail({
           {/* Timeline */}
           <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
             <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-              {carrier === 'SPX' && shipment.trackingNumber ? 'Lịch sử vận đơn SPX' : carrier === 'Grab' && shipment.trackingUrl ? 'Thông tin Grab' : 'Dòng thời gian'}
+              {carrier === 'SPX' && shipment.trackingNumber
+                ? 'Lịch sử vận đơn SPX'
+                : carrier === 'Grab' && shipment.trackingUrl
+                  ? 'Thông tin Grab'
+                  : 'Dòng thời gian'}
             </h3>
             <div className="space-y-2">
               {carrier === 'SPX' && shipment.trackingNumber ? (
@@ -169,16 +211,39 @@ export default function ShippingDetail({
                     <div className="space-y-3">
                       {spxRecords.map((rec, i) => (
                         <div key={i} className="flex items-start gap-3">
-                          <div className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 z-10 relative ${
-                            i === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-white border-2 border-gray-200 text-gray-400'
-                          }`}>
-                            {i === 0 ? <FlaticonIcon name="badge-check" size="xs" /> : <div className="w-2 h-2 rounded-full bg-gray-300" />}
+                          <div
+                            className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 z-10 relative ${
+                              i === 0
+                                ? 'bg-emerald-100 text-emerald-600'
+                                : 'bg-white border-2 border-gray-200 text-gray-400'
+                            }`}
+                          >
+                            {i === 0 ? (
+                              <FlaticonIcon name="badge-check" size="xs" />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-gray-300" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0 pt-0.5">
                             <p className="text-xs font-medium text-gray-700">{rec.name}</p>
-                            {rec.timestamp && <p className="text-[10px] text-gray-400 mt-0.5">{formatDateTime(rec.timestamp)}</p>}
-                            {rec.description && <p className="text-[10px] text-gray-500 mt-0.5">{rec.description}</p>}
-                            {rec.location && <p className="text-[10px] text-blue-400 mt-0.5"><FlaticonIcon name="map-pin" size="xs" className="inline-flex mr-0.5" />{rec.location}</p>}
+                            {rec.timestamp && (
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                {formatDateTime(rec.timestamp)}
+                              </p>
+                            )}
+                            {rec.description && (
+                              <p className="text-[10px] text-gray-500 mt-0.5">{rec.description}</p>
+                            )}
+                            {rec.location && (
+                              <p className="text-[10px] text-blue-400 mt-0.5">
+                                <FlaticonIcon
+                                  name="map-pin"
+                                  size="xs"
+                                  className="inline-flex mr-0.5"
+                                />
+                                {rec.location}
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -200,21 +265,34 @@ export default function ShippingDetail({
                   <div className="space-y-3">
                     {grabTrackingInfo.statusText && (
                       <div className="flex items-start gap-2.5">
-                        <div className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 ${
-                          grabTrackingInfo.status === 'Delivered' ? 'bg-emerald-100 text-emerald-600' :
-                          grabTrackingInfo.status === 'Failed' ? 'bg-red-100 text-red-500' :
-                          'bg-blue-100 text-blue-600'
-                        }`}>
-                          <FlaticonIcon name={
-                            grabTrackingInfo.status === 'Delivered' ? 'badge-check' :
-                            grabTrackingInfo.status === 'Failed' ? 'circle-xmark' : 'truck-moving'
-                          } size="xs" />
+                        <div
+                          className={`w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 ${
+                            grabTrackingInfo.status === 'Delivered'
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : grabTrackingInfo.status === 'Failed'
+                                ? 'bg-red-100 text-red-500'
+                                : 'bg-blue-100 text-blue-600'
+                          }`}
+                        >
+                          <FlaticonIcon
+                            name={
+                              grabTrackingInfo.status === 'Delivered'
+                                ? 'badge-check'
+                                : grabTrackingInfo.status === 'Failed'
+                                  ? 'circle-xmark'
+                                  : 'truck-moving'
+                            }
+                            size="xs"
+                          />
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-gray-700">{grabTrackingInfo.statusText}</p>
+                          <p className="text-xs font-medium text-gray-700">
+                            {grabTrackingInfo.statusText}
+                          </p>
                           {grabTrackingInfo.timestamp && (
                             <p className="text-[10px] text-gray-400 mt-0.5">
-                              <FlaticonIcon name="clock" size="xs" className="inline-flex mr-0.5" />{grabTrackingInfo.timestamp}
+                              <FlaticonIcon name="clock" size="xs" className="inline-flex mr-0.5" />
+                              {grabTrackingInfo.timestamp}
                             </p>
                           )}
                         </div>
@@ -226,8 +304,12 @@ export default function ShippingDetail({
                           <FlaticonIcon name="store" size="xs" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-medium text-gray-400 uppercase">Lấy hàng từ</p>
-                          <p className="text-xs text-gray-700 mt-0.5">{grabTrackingInfo.pickupAddress}</p>
+                          <p className="text-[10px] font-medium text-gray-400 uppercase">
+                            Lấy hàng từ
+                          </p>
+                          <p className="text-xs text-gray-700 mt-0.5">
+                            {grabTrackingInfo.pickupAddress}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -237,17 +319,35 @@ export default function ShippingDetail({
                           <FlaticonIcon name="marker" size="xs" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-medium text-gray-400 uppercase">Giao đến</p>
-                          <p className="text-xs text-gray-700 mt-0.5">{grabTrackingInfo.deliveryAddress}</p>
+                          <p className="text-[10px] font-medium text-gray-400 uppercase">
+                            Giao đến
+                          </p>
+                          <p className="text-xs text-gray-700 mt-0.5">
+                            {grabTrackingInfo.deliveryAddress}
+                          </p>
                         </div>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 border-t border-gray-200/60 mt-1">
                       {grabTrackingInfo.serviceType && (
                         <div className="flex items-center gap-1.5">
-                          <FlaticonIcon name={grabTrackingInfo.serviceType === 'BIKE' ? 'motorcycle' : grabTrackingInfo.serviceType === 'CAR' ? 'car-side' : 'truck-side'} size="xs" className="text-gray-400" />
+                          <FlaticonIcon
+                            name={
+                              grabTrackingInfo.serviceType === 'BIKE'
+                                ? 'motorcycle'
+                                : grabTrackingInfo.serviceType === 'CAR'
+                                  ? 'car-side'
+                                  : 'truck-side'
+                            }
+                            size="xs"
+                            className="text-gray-400"
+                          />
                           <span className="text-[10px] font-medium text-gray-500">
-                            {grabTrackingInfo.serviceType === 'BIKE' ? 'Xe máy' : grabTrackingInfo.serviceType === 'CAR' ? 'Ô tô' : grabTrackingInfo.serviceType}
+                            {grabTrackingInfo.serviceType === 'BIKE'
+                              ? 'Xe máy'
+                              : grabTrackingInfo.serviceType === 'CAR'
+                                ? 'Ô tô'
+                                : grabTrackingInfo.serviceType}
                           </span>
                         </div>
                       )}
@@ -255,14 +355,17 @@ export default function ShippingDetail({
                         <div className="flex items-center gap-1.5">
                           <FlaticonIcon name="clock" size="xs" className="text-gray-400" />
                           <span className="text-[10px] text-gray-500">
-                            {grabTrackingInfo.scheduleFrom}{grabTrackingInfo.scheduleTo ? ` - ${grabTrackingInfo.scheduleTo}` : ''}
+                            {grabTrackingInfo.scheduleFrom}
+                            {grabTrackingInfo.scheduleTo ? ` - ${grabTrackingInfo.scheduleTo}` : ''}
                           </span>
                         </div>
                       )}
                       {grabTrackingInfo.orderBookingCode && (
                         <div className="flex items-center gap-1.5">
                           <FlaticonIcon name="tag" size="xs" className="text-gray-400" />
-                          <span className="text-[10px] font-mono text-gray-500">{grabTrackingInfo.orderBookingCode}</span>
+                          <span className="text-[10px] font-mono text-gray-500">
+                            {grabTrackingInfo.orderBookingCode}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -281,20 +384,41 @@ export default function ShippingDetail({
                   const statusIdx = statusFlow.indexOf(shipment.status);
                   const timelineSteps = [
                     { label: 'Chờ lấy hàng', icon: 'clock', date: shipment.createdAt, stepIdx: 0 },
-                    { label: 'Đã lấy hàng', icon: 'box-open', date: shipment.shippedAt, stepIdx: 1 },
-                    { label: 'Đang giao', icon: 'truck-moving', date: shipment.shippedAt, stepIdx: 2 },
-                    { label: 'Đã giao hàng', icon: 'badge-check', date: shipment.deliveredAt, stepIdx: 3 },
+                    {
+                      label: 'Đã lấy hàng',
+                      icon: 'box-open',
+                      date: shipment.shippedAt,
+                      stepIdx: 1,
+                    },
+                    {
+                      label: 'Đang giao',
+                      icon: 'truck-moving',
+                      date: shipment.shippedAt,
+                      stepIdx: 2,
+                    },
+                    {
+                      label: 'Đã giao hàng',
+                      icon: 'badge-check',
+                      date: shipment.deliveredAt,
+                      stepIdx: 3,
+                    },
                   ];
                   return timelineSteps.map((item, i) => {
                     const isDone = statusIdx >= item.stepIdx && !shipment.status.includes('Failed');
                     const dateStr = item.date ? formatDateTime(item.date) : null;
                     return (
                       <div key={i} className="flex items-center gap-2.5">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}
+                        >
                           <FlaticonIcon name={item.icon} size="xs" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>{item.label}</p>
+                          <p
+                            className={`text-xs font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}
+                          >
+                            {item.label}
+                          </p>
                           <p className="text-[10px] text-gray-400">{dateStr || '—'}</p>
                         </div>
                       </div>
@@ -307,26 +431,42 @@ export default function ShippingDetail({
 
           {/* Tracking details */}
           <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
-            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Thông tin giao hàng</h3>
+            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              Thông tin giao hàng
+            </h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[10px] text-gray-400 font-medium">Hãng vận chuyển</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <CarrierLogo carrier={carrier} size="xs" />
-                  <span className="text-xs font-medium text-gray-700">{carrierConfig[carrier]?.label || carrier}</span>
+                  <span className="text-xs font-medium text-gray-700">
+                    {carrierConfig[carrier]?.label || carrier}
+                  </span>
                 </div>
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 font-medium">Phí giao hàng</p>
-                <p className="text-xs font-bold text-gray-800 mt-1">{formatCurrency(Number(shipment.cost))}</p>
-                {shipment.deliveredAt && <p className="text-[10px] text-emerald-500 font-medium"><FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5" />Đã thanh toán</p>}
+                <p className="text-xs font-bold text-gray-800 mt-1">
+                  {formatCurrency(Number(shipment.cost))}
+                </p>
+                {shipment.deliveredAt && (
+                  <p className="text-[10px] text-emerald-500 font-medium">
+                    <FlaticonIcon name="badge-check" size="xs" className="inline-flex mr-0.5" />
+                    Đã thanh toán
+                  </p>
+                )}
               </div>
               {shipment.trackingNumber && (
                 <div className="col-span-2">
                   <p className="text-[10px] text-gray-400 font-medium">Mã vận đơn</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="font-mono text-xs text-gray-700">{shipment.trackingNumber}</span>
-                    <button onClick={() => copyToClipboard(shipment.trackingNumber!)} className="copy-btn">
+                    <span className="font-mono text-xs text-gray-700">
+                      {shipment.trackingNumber}
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard(shipment.trackingNumber!)}
+                      className="copy-btn"
+                    >
                       <FlaticonIcon name="clipboard" size="xs" />
                     </button>
                   </div>
@@ -342,10 +482,19 @@ export default function ShippingDetail({
                 <div className="col-span-2">
                   <p className="text-[10px] text-gray-400 font-medium">Tài xế</p>
                   <div className="flex items-center gap-2 mt-1">
-                    {shipment.driverName && <span className="text-xs text-gray-700"><FlaticonIcon name="user" size="xs" className="inline-flex mr-1" />{shipment.driverName}</span>}
+                    {shipment.driverName && (
+                      <span className="text-xs text-gray-700">
+                        <FlaticonIcon name="user" size="xs" className="inline-flex mr-1" />
+                        {shipment.driverName}
+                      </span>
+                    )}
                     {shipment.driverPhone && (
-                      <a href={`tel:${shipment.driverPhone}`} className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1">
-                        <FlaticonIcon name="phone" size="xs" />{shipment.driverPhone}
+                      <a
+                        href={`tel:${shipment.driverPhone}`}
+                        className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
+                      >
+                        <FlaticonIcon name="phone" size="xs" />
+                        {shipment.driverPhone}
                       </a>
                     )}
                   </div>
@@ -355,7 +504,9 @@ export default function ShippingDetail({
                 <div className="col-span-2">
                   <p className="text-[10px] text-gray-400 font-medium">Link tracking</p>
                   <button
-                    onClick={() => window.open(shipment.trackingUrl!, '_blank', 'noopener,noreferrer')}
+                    onClick={() =>
+                      window.open(shipment.trackingUrl!, '_blank', 'noopener,noreferrer')
+                    }
                     className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
                   >
                     <FlaticonIcon name="external-link" size="xs" />
@@ -375,16 +526,28 @@ export default function ShippingDetail({
                 <>
                   {act && (
                     <button
-                      onClick={async () => { await onUpdateStatus(shipment.id, act.status); onClose(); }}
+                      onClick={async () => {
+                        await onUpdateStatus(shipment.id, act.status);
+                        onClose();
+                      }}
                       disabled={isAnim}
                       className={`btn-sm ${act.btn} disabled:opacity-50`}
                     >
-                      {isAnim ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><FlaticonIcon name="chevron-right" size="xs" /> {act.label}</>}
+                      {isAnim ? (
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <FlaticonIcon name="chevron-right" size="xs" /> {act.label}
+                        </>
+                      )}
                     </button>
                   )}
                   {shipment.status === 'InTransit' && (
                     <button
-                      onClick={async () => { await onUpdateStatus(shipment.id, 'Failed'); onClose(); }}
+                      onClick={async () => {
+                        await onUpdateStatus(shipment.id, 'Failed');
+                        onClose();
+                      }}
                       disabled={isAnim}
                       className="btn-sm btn-danger disabled:opacity-50"
                     >
@@ -393,7 +556,10 @@ export default function ShippingDetail({
                   )}
                   {crr === 'SPX' && shipment.trackingNumber && (
                     <button
-                      onClick={async () => { await onUpdateSpx(shipment); onClose(); }}
+                      onClick={async () => {
+                        await onUpdateSpx(shipment);
+                        onClose();
+                      }}
                       disabled={spxUpdating === shipment.id}
                       className="btn-sm btn-ghost disabled:opacity-50"
                       title="Cập nhật từ SPX"
@@ -401,13 +567,18 @@ export default function ShippingDetail({
                       {spxUpdating === shipment.id ? (
                         <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
                       ) : (
-                        <><FlaticonIcon name="refresh" size="xs" /> Cập nhật SPX</>
+                        <>
+                          <FlaticonIcon name="refresh" size="xs" /> Cập nhật SPX
+                        </>
                       )}
                     </button>
                   )}
                   {crr === 'Grab' && shipment.trackingUrl && (
                     <button
-                      onClick={async () => { await onUpdateGrab(shipment); onClose(); }}
+                      onClick={async () => {
+                        await onUpdateGrab(shipment);
+                        onClose();
+                      }}
                       disabled={grabUpdating === shipment.id}
                       className="btn-sm btn-ghost disabled:opacity-50"
                       title="Cập nhật từ Grab"
@@ -415,7 +586,9 @@ export default function ShippingDetail({
                       {grabUpdating === shipment.id ? (
                         <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />
                       ) : (
-                        <><FlaticonIcon name="refresh" size="xs" /> Cập nhật Grab</>
+                        <>
+                          <FlaticonIcon name="refresh" size="xs" /> Cập nhật Grab
+                        </>
                       )}
                     </button>
                   )}

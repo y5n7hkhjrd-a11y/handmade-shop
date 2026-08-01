@@ -32,10 +32,48 @@ export interface Shipping {
 
 export type CarrierType = 'SPX' | 'Grab' | 'SOF' | '';
 
-export const carrierConfig: Record<string, { label: string; icon: string; isBrand?: boolean; color: string; gradient: string; badge: string; accent: string; progress: string }> = {
-  SPX: { label: 'SPX', icon: 'shopee', isBrand: true, color: 'text-orange-700', gradient: 'from-orange-500 to-orange-600', badge: 'bg-orange-50 text-orange-700 border-orange-200', accent: 'border-l-orange-400', progress: 'bg-orange-400' },
-  Grab: { label: 'Grab', icon: 'grab', isBrand: true, color: 'text-emerald-700', gradient: 'from-emerald-500 to-green-600', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', accent: 'border-l-emerald-400', progress: 'bg-emerald-400' },
-  SOF: { label: 'SOF', icon: 'truck-side', color: 'text-blue-600', gradient: 'from-blue-400 to-blue-500', badge: 'bg-blue-50 text-blue-600 border-blue-200', accent: 'border-l-blue-400', progress: 'bg-blue-400' },
+export const carrierConfig: Record<
+  string,
+  {
+    label: string;
+    icon: string;
+    isBrand?: boolean;
+    color: string;
+    gradient: string;
+    badge: string;
+    accent: string;
+    progress: string;
+  }
+> = {
+  SPX: {
+    label: 'SPX',
+    icon: 'shopee',
+    isBrand: true,
+    color: 'text-orange-700',
+    gradient: 'from-orange-500 to-orange-600',
+    badge: 'bg-orange-50 text-orange-700 border-orange-200',
+    accent: 'border-l-orange-400',
+    progress: 'bg-orange-400',
+  },
+  Grab: {
+    label: 'Grab',
+    icon: 'grab',
+    isBrand: true,
+    color: 'text-emerald-700',
+    gradient: 'from-emerald-500 to-green-600',
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    accent: 'border-l-emerald-400',
+    progress: 'bg-emerald-400',
+  },
+  SOF: {
+    label: 'SOF',
+    icon: 'truck-side',
+    color: 'text-blue-600',
+    gradient: 'from-blue-400 to-blue-500',
+    badge: 'bg-blue-50 text-blue-600 border-blue-200',
+    accent: 'border-l-blue-400',
+    progress: 'bg-blue-400',
+  },
 };
 
 export const statusLabels: Record<string, string> = {
@@ -71,9 +109,27 @@ export const statusIcons: Record<string, string> = {
 };
 
 export const carrierStatusLabels: Record<string, Record<string, string>> = {
-  SPX: { Pending: 'Chờ lấy hàng', Shipped: 'Đã nhận hàng', InTransit: 'Đang vận chuyển', Delivered: 'Đã giao hàng', Failed: 'Thất bại' },
-  Grab: { Pending: 'Đang tìm tài xế', Shipped: 'Đã lấy hàng', InTransit: 'Đang giao', Delivered: 'Đã giao', Failed: 'Thất bại' },
-  SOF: { Pending: 'Chờ giao', Shipped: 'Đang giao', InTransit: 'Đang giao', Delivered: 'Đã giao', Failed: 'Thất bại' },
+  SPX: {
+    Pending: 'Chờ lấy hàng',
+    Shipped: 'Đã nhận hàng',
+    InTransit: 'Đang vận chuyển',
+    Delivered: 'Đã giao hàng',
+    Failed: 'Thất bại',
+  },
+  Grab: {
+    Pending: 'Đang tìm tài xế',
+    Shipped: 'Đã lấy hàng',
+    InTransit: 'Đang giao',
+    Delivered: 'Đã giao',
+    Failed: 'Thất bại',
+  },
+  SOF: {
+    Pending: 'Chờ giao',
+    Shipped: 'Đang giao',
+    InTransit: 'Đang giao',
+    Delivered: 'Đã giao',
+    Failed: 'Thất bại',
+  },
 };
 
 export const statusFlow = ['Pending', 'Shipped', 'InTransit', 'Delivered'];
@@ -133,16 +189,24 @@ export function DotProgress({ status, isFailed }: { status: string; isFailed: bo
                   <FlaticonIcon name={stepIcons[i]} size="xs" className="text-gray-300" />
                 )}
               </div>
-              <span className={`text-[8px] mt-0.5 font-medium ${
-                isFailed ? 'text-red-400' : isDone || isCurrent ? 'text-gray-600' : 'text-gray-300'
-              }`}>
+              <span
+                className={`text-[8px] mt-0.5 font-medium ${
+                  isFailed
+                    ? 'text-red-400'
+                    : isDone || isCurrent
+                      ? 'text-gray-600'
+                      : 'text-gray-300'
+                }`}
+              >
                 {stepShortLabels[i]}
               </span>
             </div>
             {i < statusFlow.length - 1 && (
-              <div className={`w-3 h-[2px] mt-[11px] mx-0.5 rounded-full transition-all duration-500 ${
-                isFailed ? 'bg-red-200' : isDone ? 'bg-gray-400' : 'bg-gray-200'
-              }`} />
+              <div
+                className={`w-3 h-[2px] mt-[11px] mx-0.5 rounded-full transition-all duration-500 ${
+                  isFailed ? 'bg-red-200' : isDone ? 'bg-gray-400' : 'bg-gray-200'
+                }`}
+              />
             )}
           </div>
         );
@@ -151,7 +215,13 @@ export function DotProgress({ status, isFailed }: { status: string; isFailed: bo
   );
 }
 
-export function CarrierLogo({ carrier, size = 'sm' }: { carrier: string; size?: 'xs' | 'sm' | 'md' }) {
+export function CarrierLogo({
+  carrier,
+  size = 'sm',
+}: {
+  carrier: string;
+  size?: 'xs' | 'sm' | 'md';
+}) {
   const cfg = carrierConfig[carrier];
   if (!cfg) return <FlaticonIcon name="box-open" size={size} />;
   const brandSize = { xs: 12, sm: 14, md: 32 }[size] || 14;

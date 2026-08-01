@@ -172,13 +172,12 @@ export default function ProductsPage() {
     document.body.appendChild(overlay);
   };
 
-  const filteredProducts = products
-    .filter(
-      (p) =>
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && p.isActive) ||
-        (statusFilter === 'inactive' && !p.isActive),
-    );
+  const filteredProducts = products.filter(
+    (p) =>
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && p.isActive) ||
+      (statusFilter === 'inactive' && !p.isActive),
+  );
   const { sortedData, sortKey, sortDir, toggleSort } = useSort(filteredProducts, 'name', 'asc');
 
   const handleToggleStatus = async (product: Product) => {
@@ -205,10 +204,13 @@ export default function ProductsPage() {
         <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
         <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative px-4 py-3 sm:px-6 sm:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -231,7 +233,9 @@ export default function ProductsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mt-0.5">Định nghĩa giá trị (giá vốn) cho các thành phần</p>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    Định nghĩa giá trị (giá vốn) cho các thành phần
+                  </p>
                 </div>
               </div>
             </div>
@@ -254,7 +258,11 @@ export default function ProductsPage() {
 
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <FlaticonIcon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <FlaticonIcon
+            name="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm..."
@@ -440,9 +448,24 @@ export default function ProductsPage() {
             <table>
               <thead>
                 <tr>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('name')}>Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} /></th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('type')}>Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} /></th>
-                  <th className="text-left cursor-pointer select-none group" onClick={() => toggleSort('cost')}>Giá vốn <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('name')}
+                  >
+                    Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} />
+                  </th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('type')}
+                  >
+                    Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
+                  </th>
+                  <th
+                    className="text-left cursor-pointer select-none group"
+                    onClick={() => toggleSort('cost')}
+                  >
+                    Giá vốn <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
+                  </th>
                   <th>Kho</th>
                   <th>Trạng thái</th>
                   <th className="text-left">Thao tác</th>
@@ -450,84 +473,88 @@ export default function ProductsPage() {
               </thead>
               <tbody>
                 {sortedData.map((p) => (
-                    <tr key={p.id} className="group">
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
-                              p.type === 'BASE'
-                                ? 'from-blue-50 to-blue-100'
-                                : 'from-pink-50 to-pink-100'
-                            } flex items-center justify-center text-lg shadow-sm`}
-                          >
-                            {typeConfig[p.type]?.icon ? <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" /> : '📦'}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{p.name}</p>
-                            {p.description && (
-                              <p className="text-xs text-gray-500 truncate max-w-[200px]">
-                                {p.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={typeConfig[p.type]?.badge || 'badge-gray'}>{p.type}</span>
-                      </td>
-                      <td className="font-semibold tabular-nums text-left">
-                        {formatCurrency(Number(p.cost))}
-                      </td>
-                      <td>
-                        {p.trackInventory !== false ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Có
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                            Không
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => handleToggleStatus(p)}
-                          className={`badge cursor-pointer transition-all duration-200 ${
-                            p.isActive
-                              ? 'badge-green hover:bg-emerald-200'
-                              : 'badge-gray hover:bg-gray-200'
-                          }`}
+                  <tr key={p.id} className="group">
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
+                            p.type === 'BASE'
+                              ? 'from-blue-50 to-blue-100'
+                              : 'from-pink-50 to-pink-100'
+                          } flex items-center justify-center text-lg shadow-sm`}
                         >
-                          <span
-                            className={`status-dot ${p.isActive ? 'status-dot-active' : 'status-dot-inactive'}`}
-                          />
-                          {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
-                        </button>
-                      </td>
-                      <td className="text-left">
-                        <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
-                          <button
-                            onClick={() => handleEdit(p)}
-                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-blue-50 hover:text-blue-600 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
-                            title="Sửa"
-                            aria-label="Chỉnh sửa"
-                          >
-                            <FlaticonIcon name="pencil" size="xs" />
-                          </button>
-                          <button
-                            onClick={() => confirmDelete(p)}
-                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-red-50 hover:text-red-500 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
-                            title="Xóa"
-                            aria-label="Xóa"
-                          >
-                            <FlaticonIcon name="trash" size="xs" />
-                          </button>
+                          {typeConfig[p.type]?.icon ? (
+                            <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
+                          ) : (
+                            '📦'
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                  ))}
+                        <div>
+                          <p className="font-medium text-gray-900">{p.name}</p>
+                          {p.description && (
+                            <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                              {p.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={typeConfig[p.type]?.badge || 'badge-gray'}>{p.type}</span>
+                    </td>
+                    <td className="font-semibold tabular-nums text-left">
+                      {formatCurrency(Number(p.cost))}
+                    </td>
+                    <td>
+                      {p.trackInventory !== false ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Có
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                          Không
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleToggleStatus(p)}
+                        className={`badge cursor-pointer transition-all duration-200 ${
+                          p.isActive
+                            ? 'badge-green hover:bg-emerald-200'
+                            : 'badge-gray hover:bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`status-dot ${p.isActive ? 'status-dot-active' : 'status-dot-inactive'}`}
+                        />
+                        {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
+                      </button>
+                    </td>
+                    <td className="text-left">
+                      <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
+                        <button
+                          onClick={() => handleEdit(p)}
+                          className="flex items-center justify-center w-[28px] h-[28px] hover:bg-blue-50 hover:text-blue-600 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
+                          title="Sửa"
+                          aria-label="Chỉnh sửa"
+                        >
+                          <FlaticonIcon name="pencil" size="xs" />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(p)}
+                          className="flex items-center justify-center w-[28px] h-[28px] hover:bg-red-50 hover:text-red-500 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
+                          title="Xóa"
+                          aria-label="Xóa"
+                        >
+                          <FlaticonIcon name="trash" size="xs" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
                 {products.length === 0 && (
                   <EmptyState
                     emoji="📦"

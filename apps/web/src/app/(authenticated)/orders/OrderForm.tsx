@@ -86,7 +86,17 @@ export default function OrderForm({
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const NEW_CUSTOMER_INIT = { name: '', email: '', phone: '', address: '', notes: '', facebook: '', instagram: '', tiktok: '', threads: '' };
+  const NEW_CUSTOMER_INIT = {
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: '',
+    facebook: '',
+    instagram: '',
+    tiktok: '',
+    threads: '',
+  };
   const [newCustomer, setNewCustomer] = useState({ ...NEW_CUSTOMER_INIT });
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const formMousedownOnContent = useRef(false);
@@ -259,14 +269,18 @@ export default function OrderForm({
           }
           formMousedownOnContent.current = false;
         }}
-        onMouseDown={() => { formMousedownOnContent.current = false; }}
+        onMouseDown={() => {
+          formMousedownOnContent.current = false;
+        }}
         role="dialog"
         aria-modal="true"
       >
         <div
           className="modal-content max-w-2xl"
           onClick={(e) => e.stopPropagation()}
-          onMouseDown={() => { formMousedownOnContent.current = true; }}
+          onMouseDown={() => {
+            formMousedownOnContent.current = true;
+          }}
         >
           <div className="p-6 border-b flex items-center justify-between">
             <div>
@@ -311,7 +325,9 @@ export default function OrderForm({
                   >
                     <option value="">Chọn khách hàng...</option>
                     {customers.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                   <button
@@ -350,7 +366,10 @@ export default function OrderForm({
               {form.orderLines.map((line, idx) => {
                 const type = line.type;
                 return (
-                  <div key={idx} className="p-4 mb-3 bg-white border border-gray-200 rounded-xl relative group/line">
+                  <div
+                    key={idx}
+                    className="p-4 mb-3 bg-white border border-gray-200 rounded-xl relative group/line"
+                  >
                     <button
                       type="button"
                       onClick={() => {
@@ -369,7 +388,16 @@ export default function OrderForm({
                         type="button"
                         onClick={() => {
                           const lines = [...form.orderLines];
-                          lines[idx] = { ...lines[idx]!, type: 'RECIPE', recipeId: line.recipeId || '', customInput: line.customInput || '', salePrice: line.salePrice || 0, productId: '', quantity: 1, unitPrice: 0 };
+                          lines[idx] = {
+                            ...lines[idx]!,
+                            type: 'RECIPE',
+                            recipeId: line.recipeId || '',
+                            customInput: line.customInput || '',
+                            salePrice: line.salePrice || 0,
+                            productId: '',
+                            quantity: 1,
+                            unitPrice: 0,
+                          };
                           setForm({ ...form, orderLines: lines });
                         }}
                         className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'RECIPE' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
@@ -380,7 +408,16 @@ export default function OrderForm({
                         type="button"
                         onClick={() => {
                           const lines = [...form.orderLines];
-                          lines[idx] = { ...lines[idx]!, type: 'PRODUCT', recipeId: '', customInput: '', salePrice: 0, productId: line.productId || '', quantity: line.quantity || 1, unitPrice: line.unitPrice || 0 };
+                          lines[idx] = {
+                            ...lines[idx]!,
+                            type: 'PRODUCT',
+                            recipeId: '',
+                            customInput: '',
+                            salePrice: 0,
+                            productId: line.productId || '',
+                            quantity: line.quantity || 1,
+                            unitPrice: line.unitPrice || 0,
+                          };
                           setForm({ ...form, orderLines: lines });
                         }}
                         className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'PRODUCT' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
@@ -394,7 +431,9 @@ export default function OrderForm({
                       <div className="space-y-3">
                         <div className="grid grid-cols-3 gap-3">
                           <div className="col-span-2">
-                            <label className="text-[10px] text-gray-500 font-medium">Công thức</label>
+                            <label className="text-[10px] text-gray-500 font-medium">
+                              Công thức
+                            </label>
                             <select
                               className="input text-sm"
                               value={line.recipeId}
@@ -406,17 +445,27 @@ export default function OrderForm({
                             >
                               <option value="">Chọn...</option>
                               {recipes.map((r: any) => (
-                                <option key={r.id} value={r.id}>{r.name}</option>
+                                <option key={r.id} value={r.id}>
+                                  {r.name}
+                                </option>
                               ))}
                             </select>
                           </div>
                           <div>
-                            <label className="text-[10px] text-gray-500 font-medium">Số lượng</label>
-                            <NumberInput className="input text-sm" value={line.quantity} onChange={(val) => {
-                              const lines = [...form.orderLines];
-                              lines[idx] = { ...lines[idx]!, quantity: val };
-                              setForm({ ...form, orderLines: lines });
-                            }} min={1} step={1} />
+                            <label className="text-[10px] text-gray-500 font-medium">
+                              Số lượng
+                            </label>
+                            <NumberInput
+                              className="input text-sm"
+                              value={line.quantity}
+                              onChange={(val) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, quantity: val };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              min={1}
+                              step={1}
+                            />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -429,7 +478,10 @@ export default function OrderForm({
                               value={line.customInput}
                               onChange={(e) => {
                                 const lines = [...form.orderLines];
-                                lines[idx] = { ...lines[idx]!, customInput: e.target.value.toUpperCase() };
+                                lines[idx] = {
+                                  ...lines[idx]!,
+                                  customInput: e.target.value.toUpperCase(),
+                                };
                                 setForm({ ...form, orderLines: lines });
                               }}
                               placeholder="VD: ABCD"
@@ -439,47 +491,71 @@ export default function OrderForm({
                             <label className="text-[10px] text-gray-500 font-medium">
                               Giá bán <span className="text-red-500">*</span>
                             </label>
-                            <NumberInput className="input text-sm" value={line.salePrice} onChange={(val) => {
-                              const lines = [...form.orderLines];
-                              lines[idx] = { ...lines[idx]!, salePrice: val };
-                              setForm({ ...form, orderLines: lines });
-                            }} step={1000} placeholder="0" />
+                            <NumberInput
+                              className="input text-sm"
+                              value={line.salePrice}
+                              onChange={(val) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, salePrice: val };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              step={1000}
+                              placeholder="0"
+                            />
                           </div>
                         </div>
                         {/* Cost preview — each line shows the charm's matching rule inline */}
-                        {line.recipeId && line.customInput && (() => {
-                          const info = getRecipeLineCost({ recipeId: line.recipeId, customInput: line.customInput });
-                          if (!info) return null;
-                          return (
-                            <div className="p-2 bg-purple-50 rounded-lg border border-purple-100">
-                              <p className="text-[10px] font-medium text-purple-700 mb-1">
-                                Chi phí vật liệu ước tính: <strong>{formatCurrency(info.materialCost)}</strong>
-                              </p>
-                              <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-2.5 items-center text-[10px] text-purple-600">
-                                {info.items.map((item: any, ii: number) => {
-                                  const ruleInfo = item.ruleInfo;
-                                  return (
-                                    <Fragment key={ii}>
-                                      <span className="truncate font-medium text-purple-800 min-w-0 max-w-44 py-0.5">{item.product?.name || '?'}</span>
-                                      <span className="flex items-center gap-1 min-w-0 py-0.5">
-                                        {ruleInfo ? (
-                                          <>
-                                            <span className="truncate min-w-0 max-w-40">{ruleInfo.name}</span>
-                                            <code className="text-[9px] font-mono px-1 py-px rounded bg-white border border-purple-100 text-purple-400 flex-shrink-0">{ruleInfo.code}</code>
-                                          </>
-                                        ) : null}
-                                      </span>
-                                      <span className="flex-shrink-0 tabular-nums text-right py-0.5">
-                                        {ruleInfo ? <><strong>{ruleInfo.count}</strong> ký tự</> : null}
-                                      </span>
-                                      <span className="flex-shrink-0 tabular-nums text-right py-0.5">{formatCurrency(item.estimatedCost)}</span>
-                                    </Fragment>
-                                  );
-                                })}
+                        {line.recipeId &&
+                          line.customInput &&
+                          (() => {
+                            const info = getRecipeLineCost({
+                              recipeId: line.recipeId,
+                              customInput: line.customInput,
+                            });
+                            if (!info) return null;
+                            return (
+                              <div className="p-2 bg-purple-50 rounded-lg border border-purple-100">
+                                <p className="text-[10px] font-medium text-purple-700 mb-1">
+                                  Chi phí vật liệu ước tính:{' '}
+                                  <strong>{formatCurrency(info.materialCost)}</strong>
+                                </p>
+                                <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-2.5 items-center text-[10px] text-purple-600">
+                                  {info.items.map((item: any, ii: number) => {
+                                    const ruleInfo = item.ruleInfo;
+                                    return (
+                                      <Fragment key={ii}>
+                                        <span className="truncate font-medium text-purple-800 min-w-0 max-w-44 py-0.5">
+                                          {item.product?.name || '?'}
+                                        </span>
+                                        <span className="flex items-center gap-1 min-w-0 py-0.5">
+                                          {ruleInfo ? (
+                                            <>
+                                              <span className="truncate min-w-0 max-w-40">
+                                                {ruleInfo.name}
+                                              </span>
+                                              <code className="text-[9px] font-mono px-1 py-px rounded bg-white border border-purple-100 text-purple-400 flex-shrink-0">
+                                                {ruleInfo.code}
+                                              </code>
+                                            </>
+                                          ) : null}
+                                        </span>
+                                        <span className="flex-shrink-0 tabular-nums text-right py-0.5">
+                                          {ruleInfo ? (
+                                            <>
+                                              <strong>{ruleInfo.count}</strong> ký tự
+                                            </>
+                                          ) : null}
+                                        </span>
+                                        <span className="flex-shrink-0 tabular-nums text-right py-0.5">
+                                          {formatCurrency(item.estimatedCost)}
+                                        </span>
+                                      </Fragment>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })()}
                       </div>
                     )}
 
@@ -497,23 +573,35 @@ export default function OrderForm({
                                 const p = products.find((p: any) => p.id === e.target.value);
                                 return p ? Number(p.cost || 0) : 0;
                               })();
-                              lines[idx] = { ...lines[idx]!, productId: e.target.value, unitPrice: line.unitPrice || defaultPrice };
+                              lines[idx] = {
+                                ...lines[idx]!,
+                                productId: e.target.value,
+                                unitPrice: line.unitPrice || defaultPrice,
+                              };
                               setForm({ ...form, orderLines: lines });
                             }}
                           >
                             <option value="">Chọn...</option>
                             {products.map((p: any) => (
-                              <option key={p.id} value={p.id}>{p.name} ({formatCurrency(Number(p.cost))})</option>
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({formatCurrency(Number(p.cost))})
+                              </option>
                             ))}
                           </select>
                         </div>
                         <div>
                           <label className="text-[10px] text-gray-500 font-medium">Giá bán</label>
-                          <NumberInput className="input text-sm" value={line.unitPrice} onChange={(val) => {
-                            const lines = [...form.orderLines];
-                            lines[idx] = { ...lines[idx]!, unitPrice: val };
-                            setForm({ ...form, orderLines: lines });
-                          }} step={1000} placeholder="0" />
+                          <NumberInput
+                            className="input text-sm"
+                            value={line.unitPrice}
+                            onChange={(val) => {
+                              const lines = [...form.orderLines];
+                              lines[idx] = { ...lines[idx]!, unitPrice: val };
+                              setForm({ ...form, orderLines: lines });
+                            }}
+                            step={1000}
+                            placeholder="0"
+                          />
                         </div>
                       </div>
                     )}
@@ -544,7 +632,16 @@ export default function OrderForm({
                     ...form,
                     orderLines: [
                       ...form.orderLines,
-                      { type: 'PRODUCT', productId: '', quantity: 1, unitPrice: 0, recipeId: '', customInput: '', salePrice: 0, notes: '' },
+                      {
+                        type: 'PRODUCT',
+                        productId: '',
+                        quantity: 1,
+                        unitPrice: 0,
+                        recipeId: '',
+                        customInput: '',
+                        salePrice: 0,
+                        notes: '',
+                      },
                     ],
                   })
                 }
@@ -570,12 +667,18 @@ export default function OrderForm({
               return (
                 <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-50/30 rounded-xl border border-purple-100">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700">Tổng giá trị đơn hàng</span>
-                    <span className="text-lg font-bold text-purple-600">{formatCurrency(totalSalePrice)}</span>
+                    <span className="text-sm font-semibold text-gray-700">
+                      Tổng giá trị đơn hàng
+                    </span>
+                    <span className="text-lg font-bold text-purple-600">
+                      {formatCurrency(totalSalePrice)}
+                    </span>
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">
-                    {form.orderLines.filter((l) => l.type === 'RECIPE' && l.recipeId).length} công thức,{' '}
-                    {form.orderLines.filter((l) => l.type === 'PRODUCT' && l.productId).length} sản phẩm
+                    {form.orderLines.filter((l) => l.type === 'RECIPE' && l.recipeId).length} công
+                    thức,{' '}
+                    {form.orderLines.filter((l) => l.type === 'PRODUCT' && l.productId).length} sản
+                    phẩm
                   </p>
                 </div>
               );
@@ -595,7 +698,9 @@ export default function OrderForm({
             </div>
 
             <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
-              <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
+              <button type="button" onClick={onClose} className="btn-secondary">
+                Hủy
+              </button>
               <button type="submit" className="btn-primary">
                 {editingOrder ? 'Lưu thay đổi' : 'Tạo đơn hàng'}
               </button>
@@ -614,7 +719,9 @@ export default function OrderForm({
         >
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold flex items-center gap-2">👤 Thêm khách hàng mới</h2>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                👤 Thêm khách hàng mới
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowAddCustomer(false)}
@@ -638,20 +745,42 @@ export default function OrderForm({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Email</label>
-                  <input className="input" type="email" value={newCustomer.email} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} placeholder="Email" />
+                  <input
+                    className="input"
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    placeholder="Email"
+                  />
                 </div>
                 <div>
                   <label className="label">Số điện thoại</label>
-                  <input className="input" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} placeholder="Số điện thoại" />
+                  <input
+                    className="input"
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    placeholder="Số điện thoại"
+                  />
                 </div>
               </div>
               <div>
                 <label className="label">Địa chỉ</label>
-                <input className="input" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} placeholder="Địa chỉ" />
+                <input
+                  className="input"
+                  value={newCustomer.address}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                  placeholder="Địa chỉ"
+                />
               </div>
               <div>
                 <label className="label">Ghi chú</label>
-                <textarea className="input" rows={2} value={newCustomer.notes} onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })} placeholder="Ghi chú về khách hàng" />
+                <textarea
+                  className="input"
+                  rows={2}
+                  value={newCustomer.notes}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })}
+                  placeholder="Ghi chú về khách hàng"
+                />
               </div>
             </div>
 
@@ -671,7 +800,9 @@ export default function OrderForm({
                     <input
                       className="input text-sm"
                       value={(newCustomer as any)[platform.key] || ''}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, [platform.key]: e.target.value })}
+                      onChange={(e) =>
+                        setNewCustomer({ ...newCustomer, [platform.key]: e.target.value })
+                      }
                       placeholder="URL hoặc username"
                     />
                   </div>
@@ -688,7 +819,12 @@ export default function OrderForm({
             </div>
 
             <div className="p-5 border-t flex justify-end gap-3">
-              <button type="button" onClick={() => setShowAddCustomer(false)} className="btn-secondary" disabled={creatingCustomer}>
+              <button
+                type="button"
+                onClick={() => setShowAddCustomer(false)}
+                className="btn-secondary"
+                disabled={creatingCustomer}
+              >
                 Hủy
               </button>
               <button

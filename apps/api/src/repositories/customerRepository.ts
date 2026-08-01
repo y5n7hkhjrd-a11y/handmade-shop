@@ -57,7 +57,17 @@ export const customerRepository = {
 
   async update(
     id: string,
-    data: { name?: string; email?: string; phone?: string; address?: string; facebook?: string; instagram?: string; tiktok?: string; threads?: string; notes?: string },
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      facebook?: string;
+      instagram?: string;
+      tiktok?: string;
+      threads?: string;
+      notes?: string;
+    },
   ) {
     return prisma.customer.update({ where: { id }, data: cleanOptionalStrings(data) as any });
   },

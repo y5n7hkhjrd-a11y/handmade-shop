@@ -41,7 +41,13 @@ export const authService = {
     };
   },
 
-  async createUser(data: { username: string; password: string; name: string; role?: UserRole; email?: string }) {
+  async createUser(data: {
+    username: string;
+    password: string;
+    name: string;
+    role?: UserRole;
+    email?: string;
+  }) {
     const existing = await userRepository.findByUsername(data.username);
     if (existing) {
       throw new AppError('Username already in use', 409);

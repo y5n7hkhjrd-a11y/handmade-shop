@@ -45,8 +45,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/');
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
     <>
@@ -74,7 +73,9 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-pink-300/40 via-purple-300/20 to-transparent" />
 
         {/* Logo */}
-        <div className={`p-4 border-b border-gray-100 flex-shrink-0 ${collapsed ? 'text-center' : ''}`}>
+        <div
+          className={`p-4 border-b border-gray-100 flex-shrink-0 ${collapsed ? 'text-center' : ''}`}
+        >
           <div className="flex items-center justify-center relative">
             <Link href="/dashboard" className="flex items-center justify-center group">
               <img
@@ -88,7 +89,13 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
               className="lg:hidden btn-ghost absolute right-0 p-1.5 text-gray-400 hover:text-pink-500 transition-colors"
               aria-label="Đóng menu"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -139,9 +146,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
                       {/* Icon */}
                       <span
                         className={`relative flex-shrink-0 w-5 h-5 flex items-center justify-center transition-all duration-200 ${
-                          active
-                            ? 'text-purple-600'
-                            : 'text-gray-400 group-hover:scale-110'
+                          active ? 'text-purple-600' : 'text-gray-400 group-hover:scale-110'
                         }`}
                       >
                         <FlaticonIcon name={item.icon} size="sm" />
@@ -150,9 +155,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
                         )}
                       </span>
 
-                      {!collapsed && (
-                        <span className="truncate">{item.label}</span>
-                      )}
+                      {!collapsed && <span className="truncate">{item.label}</span>}
 
                       {collapsed && (
                         <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-white text-gray-600 text-xs rounded-lg whitespace-nowrap z-50 shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
@@ -168,7 +171,9 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         </nav>
 
         {/* User section */}
-        <div className={`p-3 border-t border-gray-100 flex-shrink-0 bg-gradient-to-t from-gray-50/80 to-transparent ${collapsed ? 'text-center' : ''}`}>
+        <div
+          className={`p-3 border-t border-gray-100 flex-shrink-0 bg-gradient-to-t from-gray-50/80 to-transparent ${collapsed ? 'text-center' : ''}`}
+        >
           <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : ''}`}>
             <div className="relative w-8 h-8 flex-shrink-0">
               <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">

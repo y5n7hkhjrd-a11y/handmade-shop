@@ -7,14 +7,32 @@ import { SOCIAL_PLATFORMS, initialForm } from './customerConstants';
 
 interface CustomerFormProps {
   isOpen: boolean;
-  editingCustomer: { id: string; name: string; email?: string; phone?: string; address?: string; facebook?: string; instagram?: string; tiktok?: string; threads?: string; notes?: string } | null;
+  editingCustomer: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+    threads?: string;
+    notes?: string;
+  } | null;
   token: string | null;
   showToast: (message: string, type?: 'success' | 'error') => void;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function CustomerForm({ isOpen, editingCustomer, token, showToast, onClose, onSuccess }: CustomerFormProps) {
+export default function CustomerForm({
+  isOpen,
+  editingCustomer,
+  token,
+  showToast,
+  onClose,
+  onSuccess,
+}: CustomerFormProps) {
   const [form, setForm] = useState(initialForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -46,8 +64,10 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!form.name.trim()) errors.name = 'Vui lòng nhập tên khách hàng';
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Email không hợp lệ';
-    if (form.phone && !/^[0-9+\-\s()]{7,20}$/.test(form.phone)) errors.phone = 'Số điện thoại không hợp lệ';
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errors.email = 'Email không hợp lệ';
+    if (form.phone && !/^[0-9+\-\s()]{7,20}$/.test(form.phone))
+      errors.phone = 'Số điện thoại không hợp lệ';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -84,12 +104,22 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-pink-50/50 to-white">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-sm shadow-sm">
-              {editingCustomer ? <FlaticonIcon name="pencil" size="sm" /> : <FlaticonIcon name="plus" size="sm" />}
+              {editingCustomer ? (
+                <FlaticonIcon name="pencil" size="sm" />
+              ) : (
+                <FlaticonIcon name="plus" size="sm" />
+              )}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">                  {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng'}
+              <h2 className="text-base font-semibold text-gray-900">
+                {' '}
+                {editingCustomer ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng'}
               </h2>
-              <p className="text-[11px] text-gray-400">                    {editingCustomer ? 'Cập nhật thông tin khách hàng' : 'Nhập thông tin khách hàng mới'}
+              <p className="text-[11px] text-gray-400">
+                {' '}
+                {editingCustomer
+                  ? 'Cập nhật thông tin khách hàng'
+                  : 'Nhập thông tin khách hàng mới'}
               </p>
             </div>
           </div>
@@ -123,7 +153,8 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
               />
               {formErrors.name && (
                 <p className="text-xs text-red-500 mt-1 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                  <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" /> {formErrors.name}
+                  <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" />{' '}
+                  {formErrors.name}
                 </p>
               )}
             </div>
@@ -131,7 +162,11 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
               <div>
                 <label className="label">Email</label>
                 <div className="relative">
-                  <FlaticonIcon name="envelope" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FlaticonIcon
+                    name="envelope"
+                    size="xs"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     className={`input !pl-9 ${formErrors.email ? 'input-error' : ''}`}
                     type="email"
@@ -145,14 +180,19 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
                 </div>
                 {formErrors.email && (
                   <p className="text-xs text-red-500 mt-1 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                    <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" /> {formErrors.email}
+                    <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" />{' '}
+                    {formErrors.email}
                   </p>
                 )}
               </div>
               <div>
                 <label className="label">Số điện thoại</label>
                 <div className="relative">
-                  <FlaticonIcon name="phone" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FlaticonIcon
+                    name="phone"
+                    size="xs"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     className={`input !pl-9 ${formErrors.phone ? 'input-error' : ''}`}
                     value={form.phone}
@@ -165,7 +205,8 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
                 </div>
                 {formErrors.phone && (
                   <p className="text-xs text-red-500 mt-1 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                    <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" /> {formErrors.phone}
+                    <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" />{' '}
+                    {formErrors.phone}
                   </p>
                 )}
               </div>
@@ -182,13 +223,29 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
               <div>
                 <label className="label">Địa chỉ</label>
                 <div className="relative">
-                  <FlaticonIcon name="map-pin" size="xs" className="absolute left-3 top-3 text-gray-400" />
-                  <textarea className="input !pl-9" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Địa chỉ khách hàng..." />
+                  <FlaticonIcon
+                    name="map-pin"
+                    size="xs"
+                    className="absolute left-3 top-3 text-gray-400"
+                  />
+                  <textarea
+                    className="input !pl-9"
+                    rows={2}
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Địa chỉ khách hàng..."
+                  />
                 </div>
               </div>
               <div>
                 <label className="label">Ghi chú</label>
-                <textarea className="input" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Ghi chú về khách hàng..." />
+                <textarea
+                  className="input"
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Ghi chú về khách hàng..."
+                />
               </div>
             </div>
           </div>
@@ -206,7 +263,12 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
                     <span className="w-3.5 h-3.5">{platform.svg}</span>
                     {platform.label}
                   </label>
-                  <input className="input text-sm" value={(form as any)[platform.key] || ''} onChange={(e) => setForm({ ...form, [platform.key]: e.target.value })} placeholder="URL hoặc username" />
+                  <input
+                    className="input text-sm"
+                    value={(form as any)[platform.key] || ''}
+                    onChange={(e) => setForm({ ...form, [platform.key]: e.target.value })}
+                    placeholder="URL hoặc username"
+                  />
                 </div>
               ))}
             </div>
@@ -226,17 +288,34 @@ export default function CustomerForm({ isOpen, editingCustomer, token, showToast
               <kbd className="kbd">Esc</kbd> để đóng
             </span>
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
+              <button type="button" onClick={onClose} className="btn-secondary">
+                Hủy
+              </button>
               <button type="submit" className="btn-primary min-w-[100px]" disabled={saving}>
                 {saving ? (
                   <span className="flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     Đang lưu...
                   </span>
-                ) : editingCustomer ? 'Cập nhật' : 'Thêm khách hàng'}
+                ) : editingCustomer ? (
+                  'Cập nhật'
+                ) : (
+                  'Thêm khách hàng'
+                )}
               </button>
             </div>
           </div>

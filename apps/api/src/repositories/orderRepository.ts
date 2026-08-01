@@ -7,9 +7,7 @@ function pad(num: number, size: number): string {
 async function generateOrderId(): Promise<string> {
   const now = new Date();
   const yymmdd =
-    now.getFullYear().toString().slice(2) +
-    pad(now.getMonth() + 1, 2) +
-    pad(now.getDate(), 2);
+    now.getFullYear().toString().slice(2) + pad(now.getMonth() + 1, 2) + pad(now.getDate(), 2);
 
   // Atomically increment the daily counter using upsert
   const seq = await prisma.orderSequence.upsert({
@@ -264,16 +262,22 @@ export const orderRepository = {
 
   async addItem(
     id: string,
-    data: { productId: string; quantity: number; unitPrice: number; unitCost?: number; notes?: string },
+    data: {
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      unitCost?: number;
+      notes?: string;
+    },
   ) {
-    const salePrice = data.unitPrice || 0;  // User-entered sale price
-    const itemCost = data.unitCost ?? salePrice;  // Actual cost per unit (passed from service or fallback)
-    const totalPrice = itemCost * data.quantity;  // Cost * qty for OrderItem
+    const salePrice = data.unitPrice || 0; // User-entered sale price
+    const itemCost = data.unitCost ?? salePrice; // Actual cost per unit (passed from service or fallback)
+    const totalPrice = itemCost * data.quantity; // Cost * qty for OrderItem
     const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
     if (!order) return null;
 
     const existingItemTotal = order.items.reduce((sum, i) => sum + Number(i.totalPrice), 0);
-    const newSubtotal = Number(order.subtotal) + salePrice * data.quantity;  // Use sale price for subtotal
+    const newSubtotal = Number(order.subtotal) + salePrice * data.quantity; // Use sale price for subtotal
     const newTotal =
       existingItemTotal +
       totalPrice +
@@ -286,7 +290,7 @@ export const orderRepository = {
         orderId: id,
         productId: data.productId,
         quantity: data.quantity,
-        unitPrice: itemCost,  // Store cost price for cost tracking
+        unitPrice: itemCost, // Store cost price for cost tracking
         totalPrice,
         notes: data.notes,
       },
@@ -298,7 +302,7 @@ export const orderRepository = {
         type: 'PRODUCT',
         productId: data.productId,
         quantity: data.quantity,
-        unitPrice: salePrice,  // Store sale price for display
+        unitPrice: salePrice, // Store sale price for display
         notes: data.notes,
       },
     });
@@ -381,7 +385,18 @@ export const orderRepository = {
         orderLines: { include: { recipe: true, product: true } },
       },
     });
-  },    async update(id: string, data: { discount?: number; paidAmount?: number; deadline?: string; shippingCost?: number; shippingPaidBy?: string; notes?: string }) {
+  },
+  async update(
+    id: string,
+    data: {
+      discount?: number;
+      paidAmount?: number;
+      deadline?: string;
+      shippingCost?: number;
+      shippingPaidBy?: string;
+      notes?: string;
+    },
+  ) {
     const order = await prisma.order.findUnique({
       where: { id },
       include: { items: true },

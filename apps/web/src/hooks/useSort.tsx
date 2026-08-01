@@ -85,12 +85,22 @@ export function useSort<T>(data: T[], defaultKey?: string, defaultDir?: SortDir)
 /**
  * Sort indicator arrow component for column headers.
  */
-export function SortIcon({ sortKey, currentKey, dir }: { sortKey: string; currentKey: string; dir: SortDir }) {
+export function SortIcon({
+  sortKey,
+  currentKey,
+  dir,
+}: {
+  sortKey: string;
+  currentKey: string;
+  dir: SortDir;
+}) {
   const isActive = sortKey === currentKey;
   return (
-    <span className={`inline-flex items-center ml-1 text-[10px] leading-none transition-colors duration-150 ${
-      isActive ? 'text-blue-500' : 'text-gray-300 opacity-40 group-hover:opacity-80'
-    }`}>
+    <span
+      className={`inline-flex items-center ml-1 text-[10px] leading-none transition-colors duration-150 ${
+        isActive ? 'text-blue-500' : 'text-gray-300 opacity-40 group-hover:opacity-80'
+      }`}
+    >
       {isActive && dir === 'desc' ? '▼' : '▲'}
     </span>
   );

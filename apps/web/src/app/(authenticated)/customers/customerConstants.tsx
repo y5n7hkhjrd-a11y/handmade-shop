@@ -100,14 +100,24 @@ export const SOCIAL_PLATFORMS = [
   },
 ];
 
-export function buildSocialUrl(platform: typeof SOCIAL_PLATFORMS[number], val: string, phone?: string) {
+export function buildSocialUrl(
+  platform: (typeof SOCIAL_PLATFORMS)[number],
+  val: string,
+  phone?: string,
+) {
   if (platform.phoneBased) return phone ? platform.getHref!(phone) : null;
   if (val.startsWith('http')) return val;
   const clean = val.replace(/^@/, '');
   return `${platform.domain}${clean}`;
 }
 
-export function SocialIconsRow({ customer, size = 'md' }: { customer: Customer; size?: 'sm' | 'md' }) {
+export function SocialIconsRow({
+  customer,
+  size = 'md',
+}: {
+  customer: Customer;
+  size?: 'sm' | 'md';
+}) {
   const iconSize = size === 'sm' ? 'w-[18px] h-[18px]' : 'w-[22px] h-[22px]';
   const platforms = SOCIAL_PLATFORMS.map((p) => {
     if (p.phoneBased) return { platform: p, url: buildSocialUrl(p, '', customer.phone) };
@@ -149,4 +159,14 @@ export function hasSocial(customer: Customer): boolean {
   });
 }
 
-export const initialForm = { name: '', email: '', phone: '', address: '', facebook: '', instagram: '', tiktok: '', threads: '', notes: '' };
+export const initialForm = {
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  facebook: '',
+  instagram: '',
+  tiktok: '',
+  threads: '',
+  notes: '',
+};

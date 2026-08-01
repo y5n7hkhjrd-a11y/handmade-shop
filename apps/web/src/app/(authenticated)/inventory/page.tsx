@@ -116,7 +116,13 @@ export default function InventoryPage() {
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
         <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
@@ -135,7 +141,10 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowStockView(!showStockView)} className="btn-secondary btn-sm">
+            <button
+              onClick={() => setShowStockView(!showStockView)}
+              className="btn-secondary btn-sm"
+            >
               <span className="mr-1.5">{showStockView ? '📋' : '📊'}</span>
               {showStockView ? 'Giao dịch' : 'Tồn kho'}
             </button>
@@ -339,11 +348,32 @@ export default function InventoryPage() {
             <table>
               <thead>
                 <tr>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('type')}>Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} /></th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('product.name')}>Sản phẩm / Nguyên liệu <SortIcon sortKey="product.name" currentKey={sortKey} dir={sortDir} /></th>
-                  <th className="text-left cursor-pointer select-none group" onClick={() => toggleSort('quantity')}>Số lượng <SortIcon sortKey="quantity" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('type')}
+                  >
+                    Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
+                  </th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('product.name')}
+                  >
+                    Sản phẩm / Nguyên liệu{' '}
+                    <SortIcon sortKey="product.name" currentKey={sortKey} dir={sortDir} />
+                  </th>
+                  <th
+                    className="text-left cursor-pointer select-none group"
+                    onClick={() => toggleSort('quantity')}
+                  >
+                    Số lượng <SortIcon sortKey="quantity" currentKey={sortKey} dir={sortDir} />
+                  </th>
                   <th>Tham chiếu</th>
-                  <th className="cursor-pointer select-none group" onClick={() => toggleSort('createdAt')}>Ngày <SortIcon sortKey="createdAt" currentKey={sortKey} dir={sortDir} /></th>
+                  <th
+                    className="cursor-pointer select-none group"
+                    onClick={() => toggleSort('createdAt')}
+                  >
+                    Ngày <SortIcon sortKey="createdAt" currentKey={sortKey} dir={sortDir} />
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -351,7 +381,10 @@ export default function InventoryPage() {
                   <tr key={tx.id} className="group">
                     <td>
                       <span className={typeConfig[tx.type]?.badge || 'badge-gray'}>
-                        {typeConfig[tx.type]?.icon ? <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" /> : null} {typeConfig[tx.type]?.label || tx.type}
+                        {typeConfig[tx.type]?.icon ? (
+                          <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" />
+                        ) : null}{' '}
+                        {typeConfig[tx.type]?.label || tx.type}
                       </span>
                     </td>
                     <td>

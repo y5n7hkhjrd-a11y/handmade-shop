@@ -13,7 +13,10 @@ async function autoAdvanceOrder(shipping: { orderId: string; status: string }): 
   const order = await orderRepository.findById(shipping.orderId);
   if (!order || order.deletedAt) return;
 
-  if ((shipping.status === 'Shipped' || shipping.status === 'InTransit') && order.status === 'Packaging') {
+  if (
+    (shipping.status === 'Shipped' || shipping.status === 'InTransit') &&
+    order.status === 'Packaging'
+  ) {
     await orderRepository.updateStatus(shipping.orderId, 'ReadyToShip');
   } else if (shipping.status === 'Delivered' && order.status === 'ReadyToShip') {
     await orderRepository.updateStatus(shipping.orderId, 'Completed');

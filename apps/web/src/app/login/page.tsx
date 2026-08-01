@@ -6,9 +6,21 @@ import { useAuth } from '@/lib/auth-context';
 import FlaticonIcon from '@/components/FlaticonIcon';
 
 const FEATURES = [
-  { icon: 'clipboard', title: 'Quản lý đơn hàng', desc: 'Theo dõi toàn bộ quy trình từ nhập đơn đến hoàn thành' },
-  { icon: 'warehouse-alt', title: 'Kho hàng thông minh', desc: 'Nhập – xuất – tồn kho, tự động cập nhật theo đơn' },
-  { icon: 'stats', title: 'Báo cáo lợi nhuận', desc: 'Chi phí, doanh thu và lợi nhuận rõ ràng từng đơn' },
+  {
+    icon: 'clipboard',
+    title: 'Quản lý đơn hàng',
+    desc: 'Theo dõi toàn bộ quy trình từ nhập đơn đến hoàn thành',
+  },
+  {
+    icon: 'warehouse-alt',
+    title: 'Kho hàng thông minh',
+    desc: 'Nhập – xuất – tồn kho, tự động cập nhật theo đơn',
+  },
+  {
+    icon: 'stats',
+    title: 'Báo cáo lợi nhuận',
+    desc: 'Chi phí, doanh thu và lợi nhuận rõ ràng từng đơn',
+  },
 ];
 
 export default function LoginPage() {
@@ -71,10 +83,13 @@ export default function LoginPage() {
             <div className="absolute -top-16 -right-16 w-56 h-56 bg-white/10 rounded-full blur-2xl" />
             <div className="absolute top-1/3 -left-20 w-40 h-40 bg-white/10 rounded-full blur-xl" />
             <div className="absolute -bottom-20 left-1/3 w-64 h-64 bg-purple-900/20 rounded-full blur-3xl" />
-            <div className="absolute inset-0 opacity-[0.06]" style={{
-              backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-              backgroundSize: '22px 22px',
-            }} />
+            <div
+              className="absolute inset-0 opacity-[0.06]"
+              style={{
+                backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                backgroundSize: '22px 22px',
+              }}
+            />
 
             <div className="relative">
               <img
@@ -82,7 +97,9 @@ export default function LoginPage() {
                 alt="Linus"
                 className="w-full max-w-[280px] h-auto object-contain drop-shadow-lg"
               />
-              <p className="mt-3 text-xs text-white/70 font-medium tracking-wide">Hệ thống quản lý handmade</p>
+              <p className="mt-3 text-xs text-white/70 font-medium tracking-wide">
+                Hệ thống quản lý handmade
+              </p>
             </div>
 
             <div className="relative space-y-5 my-10">
@@ -131,7 +148,9 @@ export default function LoginPage() {
             {/* Desktop heading */}
             <div className="hidden lg:block mb-8">
               <h1 className="text-2xl font-bold text-[#1A1A2E]">Chào mừng trở lại 👋</h1>
-              <p className="text-sm text-gray-400 mt-1.5">Đăng nhập để tiếp tục quản lý cửa hàng của bạn</p>
+              <p className="text-sm text-gray-400 mt-1.5">
+                Đăng nhập để tiếp tục quản lý cửa hàng của bạn
+              </p>
             </div>
 
             {error && (
@@ -152,7 +171,10 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   Tên đăng nhập
                 </label>
                 <div className="relative group">
@@ -165,7 +187,9 @@ export default function LoginPage() {
                     type="text"
                     autoComplete="username"
                     className={`w-full bg-white border text-sm placeholder:text-gray-300 transition-all duration-150 pl-10 pr-4 py-2.5 rounded-xl ${
-                      fieldErrors.username ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]' : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
+                      fieldErrors.username
+                        ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]'
+                        : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
                     } focus:outline-none`}
                     value={username}
                     onChange={(e) => {
@@ -178,13 +202,17 @@ export default function LoginPage() {
                 </div>
                 {fieldErrors.username && (
                   <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                    <FlaticonIcon name="circle-xmark" size="xs" className="text-red-400" /> {fieldErrors.username}
+                    <FlaticonIcon name="circle-xmark" size="xs" className="text-red-400" />{' '}
+                    {fieldErrors.username}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
                   Mật khẩu
                 </label>
                 <div className="relative group">
@@ -195,7 +223,9 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     className={`w-full bg-white border text-sm placeholder:text-gray-300 transition-all duration-150 pl-10 pr-11 py-2.5 rounded-xl ${
-                      fieldErrors.password ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]' : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
+                      fieldErrors.password
+                        ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]'
+                        : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
                     } focus:outline-none`}
                     value={password}
                     onChange={(e) => {
@@ -218,7 +248,8 @@ export default function LoginPage() {
                 </div>
                 {fieldErrors.password && (
                   <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                    <FlaticonIcon name="circle-xmark" size="xs" className="text-red-400" /> {fieldErrors.password}
+                    <FlaticonIcon name="circle-xmark" size="xs" className="text-red-400" />{' '}
+                    {fieldErrors.password}
                   </p>
                 )}
               </div>
@@ -251,7 +282,10 @@ export default function LoginPage() {
                 Tài khoản dùng thử:{' '}
                 <button
                   type="button"
-                  onClick={() => { setUsername('admin'); setPassword('admin123'); }}
+                  onClick={() => {
+                    setUsername('admin');
+                    setPassword('admin123');
+                  }}
                   className="font-mono text-pink-500 hover:text-pink-600 hover:underline transition-colors cursor-pointer"
                 >
                   admin / admin123

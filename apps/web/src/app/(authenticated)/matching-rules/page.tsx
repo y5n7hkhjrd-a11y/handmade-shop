@@ -212,7 +212,13 @@ export default function MatchingRulesPage() {
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
         <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
@@ -233,7 +239,9 @@ export default function MatchingRulesPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">Cách nhận diện ký tự cho sản phẩm CHARM</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Cách nhận diện ký tự cho sản phẩm CHARM
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -267,7 +275,11 @@ export default function MatchingRulesPage() {
       {/* Search */}
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <FlaticonIcon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <FlaticonIcon
+            name="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm quy tắc..."

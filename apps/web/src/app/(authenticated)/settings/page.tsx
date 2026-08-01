@@ -18,10 +18,13 @@ export default function SettingsPage() {
         <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
         <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
         <div className="relative px-4 py-3 sm:px-6 sm:py-5">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -60,8 +63,7 @@ export default function SettingsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mt-4">{user?.name || 'User'}</h2>
             <div className="mt-2.5 flex items-center justify-center gap-1.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200/70 text-[#D97D9E] font-semibold text-sm shadow-sm">
-                <FlaticonIcon name="user" size="xs" />
-                @{user?.username || user?.email || '—'}
+                <FlaticonIcon name="user" size="xs" />@{user?.username || user?.email || '—'}
               </span>
               {user?.username && (
                 <button
@@ -82,9 +84,7 @@ export default function SettingsPage() {
               <div className="detail-row">
                 <span className="detail-label">Tên đăng nhập</span>
                 <div className="flex items-center gap-1">
-                  <span className="detail-value text-xs font-mono">
-                    {user?.username || '—'}
-                  </span>
+                  <span className="detail-value text-xs font-mono">{user?.username || '—'}</span>
                   {user?.username && (
                     <button
                       onClick={() => copyToClipboard(user.username!)}
