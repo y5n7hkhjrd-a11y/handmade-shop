@@ -5,12 +5,16 @@ version: 2.1
 # =============================================================================
 # Project activated via CircleCI API (following: true)
 # Branches:
-#   main     → PRODUCTION  (push → approve → deploy → migrate DB)
+#   main     → PRODUCTION  (push → approve → deploy)
 #   staging  → STAGING     (push → test → approve → deploy → migrate DB → seed)
 #   other    → test only
 #
 # All deployments require manual approval in the CircleCI dashboard.
-# Database migrations run after deploy (backward-compatible schema required).
+#
+# Database migrations:
+#   Staging     – run automatically after deploy (backward-compatible schema required)
+#   Production  – MANUAL. Run `prisma migrate deploy` yourself after verifying on staging.
+#                 (docs/deployment-database.md §6.3)
 #
 # Required CircleCI Project Environment Variables:
 #   VERCEL_TOKEN                     – Vercel API token
@@ -21,10 +25,12 @@ version: 2.1
 #   VERCEL_PROJECT_ID_API_PROD       – Vercel project ID for Production API
 #   DATABASE_URL_STAGING             – Staging Postgres connection string (pooled, for Vercel)
 #   DATABASE_URL_STAGING_DIRECT      – Staging Postgres direct connection (for migrations)
-#   DATABASE_URL_PROD                – Production Postgres connection string (pooled, for Vercel)
-#   DATABASE_URL_PROD_DIRECT         – Production Postgres direct connection (for migrations)
 #   NEXT_PUBLIC_API_URL_STAGING      – Public API URL for staging
 #   NEXT_PUBLIC_API_URL_PROD         – Public API URL for production
+#
+# Used for MANUAL production migrations only (not required by CI):
+#   DATABASE_URL_PROD                – Production Postgres pooled connection string (for Vercel)
+#   DATABASE_URL_PROD_DIRECT         – Production Postgres direct connection (for `prisma migrate deploy`)
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -66,21 +72,25 @@ commands:
           command: pnpm --filter @handmade-shop/api prisma:generate
 
   # ----- Deploy a specific app directory to Vercel ---------------------------
-  # Deploys from the monorepo root. Uses --project flag to specify the Vercel
-  # project by name (Root Directory is configured in project settings).
+  # Writes the .vercel/project.json link (from CircleCI env vars) inside the
+  # app directory, then deploys from there so Vercel uploads the app's own
+  # files and picks up its vercel.json. --yes avoids npx prompts in CI.
   deploy-vercel:
     parameters:
       app-dir:
         description: "App directory to deploy (apps/web or apps/api)"
         type: string
-      project-name:
-        description: "Vercel project name (e.g. handmade-shop-web-staging)"
+      project-id-env:
+        description: "CircleCI env var holding the Vercel project ID (e.g. VERCEL_PROJECT_ID_WEB_STAGING)"
         type: string
     steps:
       - run:
           name: Deploy << parameters.app-dir >> to Vercel
           command: |
-            npx vercel deploy --prod --token=$VERCEL_TOKEN --project << parameters.project-name >> --yes
+            cd << parameters.app-dir >>
+            mkdir -p .vercel
+            echo "{\"projectId\":\"${<< parameters.project-id-env >>}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
+            npx --yes vercel@58 deploy --prod --token=$VERCEL_TOKEN --yes
 
 # ---------------------------------------------------------------------------
 # Executors
@@ -125,10 +135,10 @@ jobs:
               pnpm --filter @handmade-shop/web build
       - deploy-vercel:
           app-dir: apps/web
-          project-name: handmade-shop-web-staging
+          project-id-env: VERCEL_PROJECT_ID_WEB_STAGING
       - deploy-vercel:
           app-dir: apps/api
-          project-name: handmade-shop-api-staging
+          project-id-env: VERCEL_PROJECT_ID_API_STAGING
       - run:
           name: Run database migrations (Staging)
           # Uses direct connection (port 5432) instead of PgBouncer (port 6543)
@@ -162,18 +172,15 @@ jobs:
               pnpm --filter @handmade-shop/web build
       - deploy-vercel:
           app-dir: apps/web
-          project-name: handmade-shop-web-prod
+          project-id-env: VERCEL_PROJECT_ID_WEB_PROD
       - deploy-vercel:
           app-dir: apps/api
-          project-name: handmade-shop-api-prod
-      - run:
-          name: Run database migrations (Production)
-          # Uses the pooled URL for now; can switch to a direct URL if needed.
-          command: |
-            DATABASE_URL=$DATABASE_URL_PROD \
-              pnpm --filter @handmade-shop/api exec prisma migrate deploy
-          # Migration runs after deploy. The deployed code must be backward-
-          # compatible with the old schema to allow zero-downtime rollback.
+          project-id-env: VERCEL_PROJECT_ID_API_PROD
+
+      # Production DB migrations are MANUAL (docs/deployment-database.md §6.3).
+      # After verifying the deploy, run from the monorepo root:
+      #   DATABASE_URL=$DATABASE_URL_PROD_DIRECT \
+      #     pnpm --filter @handmade-shop/api exec prisma migrate deploy
 
 # ---------------------------------------------------------------------------
 # Workflows
