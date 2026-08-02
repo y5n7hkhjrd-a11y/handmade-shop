@@ -6,6 +6,8 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import { NumberInput } from '@/components/NumberInput';
 import { useToast } from '@/hooks/useToast';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import Toast from '@/components/Toast';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { useSort, SortIcon } from '@/hooks/useSort';
@@ -54,6 +56,9 @@ export default function ProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast, showToast } = useToast();
+
+  useEscapeClose(() => setShowForm(false), showForm);
+  useBodyScrollLock(showForm);
 
   const loadProducts = useCallback(async () => {
     if (!token) return;
@@ -161,12 +166,23 @@ export default function ProductsPage() {
     icon.appendChild(btnRow);
     dialog.appendChild(icon);
     overlay.appendChild(dialog);
-    cancelBtn.addEventListener('click', () => document.body.removeChild(overlay));
-    deleteBtn.addEventListener('click', () => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const removeOverlay = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
       document.body.removeChild(overlay);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') removeOverlay();
+    };
+    cancelBtn.addEventListener('click', () => removeOverlay());
+    deleteBtn.addEventListener('click', () => {
+      removeOverlay();
       handleDelete(product.id);
     });
     document.body.appendChild(overlay);
+    window.addEventListener('keydown', onKeyDown);
   };
 
   const filteredProducts = products.filter(

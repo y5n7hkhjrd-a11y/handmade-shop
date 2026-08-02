@@ -45,11 +45,20 @@ export const orderRepository = {
     limit: number;
     status?: string;
     customerId?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
     deadlineFilter?: string;
   }) {
     const where: any = { deletedAt: null };
+    if (params.search) {
+      const q = params.search.trim();
+      where.OR = [
+        { id: { contains: q, mode: 'insensitive' } },
+        { customer: { name: { contains: q, mode: 'insensitive' } } },
+        { customer: { phone: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
     if (params.status) {
       const statuses = params.status
         .split(',')

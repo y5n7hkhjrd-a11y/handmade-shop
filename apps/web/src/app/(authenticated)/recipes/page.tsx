@@ -113,15 +113,24 @@ export default function RecipesPage() {
         <button id="delete-btn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">Xóa</button>
       </div>
     `;
-    dialog
-      .querySelector('#cancel-btn')!
-      .addEventListener('click', () => document.body.removeChild(overlay));
-    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const removeOverlay = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
       document.body.removeChild(overlay);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') removeOverlay();
+    };
+    dialog.querySelector('#cancel-btn')!.addEventListener('click', () => removeOverlay());
+    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+      removeOverlay();
       handleDelete(recipe.id);
     });
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
+    window.addEventListener('keydown', onKeyDown);
   };
 
   const filteredRecipes = recipes.filter(

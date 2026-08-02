@@ -155,6 +155,11 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [deadlineFilter, setDeadlineFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -166,6 +171,15 @@ export default function OrdersPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
   const [matchingRules, setMatchingRules] = useState<any[]>([]);
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const loadCounts = useCallback(async () => {
     if (!token) return;
@@ -183,6 +197,10 @@ export default function OrdersPage() {
       const params: Record<string, string> = { page: String(page), limit: '20' };
       if (statusFilter.length) params.status = statusFilter.join(',');
       if (deadlineFilter) params.deadlineFilter = deadlineFilter;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (customerFilter) params.customerId = customerFilter;
+      if (dateFrom) params.startDate = new Date(dateFrom + 'T00:00:00').toISOString();
+      if (dateTo) params.endDate = new Date(dateTo + 'T23:59:59').toISOString();
       const res = await apiClient<any>(`/orders?${new URLSearchParams(params).toString()}`, {
         token,
       });
@@ -192,7 +210,17 @@ export default function OrdersPage() {
       showToast(e.message || 'Failed', 'error');
     }
     setLoading(false);
-  }, [token, page, statusFilter, deadlineFilter, showToast]);
+  }, [
+    token,
+    page,
+    statusFilter,
+    deadlineFilter,
+    debouncedSearch,
+    customerFilter,
+    dateFrom,
+    dateTo,
+    showToast,
+  ]);
 
   useEffect(() => {
     // Deep-link support: /orders?status=WaitingConfirm or /orders?id=...
@@ -294,12 +322,31 @@ export default function OrdersPage() {
     {} as Record<string, number>,
   );
   const effectiveCounts = Object.keys(statusCounts).length > 0 ? statusCounts : localCounts;
-  const emptyMessage =
-    statusFilter.length > 0
-      ? `Không có đơn hàng nào ở trạng thái ${statusFilter
-          .map((s) => `"${statusLabels[s] || s}"`)
-          .join(', ')}. Thử bộ lọc khác.`
-      : 'Hãy tạo đơn hàng đầu tiên.';
+  const hasActiveFilters =
+    statusFilter.length > 0 ||
+    !!deadlineFilter ||
+    !!debouncedSearch.trim() ||
+    !!customerFilter ||
+    !!dateFrom ||
+    !!dateTo;
+  const activeFilterCount =
+    statusFilter.length +
+    (deadlineFilter ? 1 : 0) +
+    (debouncedSearch.trim() ? 1 : 0) +
+    (customerFilter ? 1 : 0) +
+    (dateFrom || dateTo ? 1 : 0);
+  const clearAllFilters = () => {
+    setStatusFilter([]);
+    setDeadlineFilter('');
+    setSearch('');
+    setCustomerFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setPage(1);
+  };
+  const emptyMessage = hasActiveFilters
+    ? 'Không có đơn hàng nào phù hợp với bộ lọc hiện tại. Thử thay đổi điều kiện lọc.'
+    : 'Hãy tạo đơn hàng đầu tiên.';
 
   return (
     <div className="page-enter">
@@ -355,72 +402,204 @@ export default function OrdersPage() {
         <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
-      {/* Status summary chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => {
-            setStatusFilter([]);
-            setPage(1);
-          }}
-          className={`filter-chip ${statusFilter.length === 0 ? 'filter-chip-active' : ''}`}
-        >
-          Tất cả <span className="text-gray-400 ml-1">({orders.length})</span>
-        </button>
-        {statusFlow.map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              setStatusFilter((prev) =>
-                prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
-              );
-              setPage(1);
-            }}
-            className={`filter-chip ${statusFilter.includes(s) ? 'filter-chip-active' : ''} ${
-              statusFilter.includes(s) && filterChipActiveColors[s]
-                ? filterChipActiveColors[s]
-                : filterChipHoverColors[s] || ''
-            }`}
-          >
-            {statusIcons[s] ? (
-              <FlaticonIcon name={statusIcons[s]} size="sm" className="inline-flex" />
-            ) : null}
-            <span>{statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}</span>
-            <span className="text-gray-400 ml-1">({effectiveCounts[s] || 0})</span>
-          </button>
-        ))}
-      </div>
+      {/* ─── Filter bar ─── */}
+      <div className="relative overflow-hidden rounded-xl bg-white border border-gray-200/80 shadow-sm mb-4 sm:mb-6">
+        {/* Header */}
+        <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center text-white shadow-sm">
+              <FlaticonIcon name="bars-filter" size="sm" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800">Bộ lọc</h2>
+              <p className="text-[11px] text-gray-400">
+                Lọc theo trạng thái, hạn chót, khách hàng và ngày tạo
+              </p>
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-pink-600 bg-pink-50 hover:bg-pink-100 border border-pink-200/70 rounded-full px-3 py-1.5 transition-colors flex-shrink-0"
+            >
+              <FlaticonIcon name="refresh" size="xs" />
+              Xóa bộ lọc ({activeFilterCount})
+            </button>
+          )}
+        </div>
 
-      {/* Deadline filter chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => {
-            setDeadlineFilter('');
-            setPage(1);
-          }}
-          className={`filter-chip text-xs ${!deadlineFilter ? 'filter-chip-active' : 'hover:!border-gray-200 hover:!text-gray-600'}`}
-        >
-          📅 Mọi hạn chót
-        </button>
-        <button
-          onClick={() => {
-            setDeadlineFilter('overdue');
-            setStatusFilter([]);
-            setPage(1);
-          }}
-          className={`filter-chip text-xs ${deadlineFilter === 'overdue' ? 'filter-chip-active !bg-red-50 !border-red-300 !text-red-700 !shadow-sm' : 'hover:!border-red-200 hover:!text-red-600 hover:!bg-red-50/50'}`}
-        >
-          🔴 Quá hạn
-        </button>
-        <button
-          onClick={() => {
-            setDeadlineFilter('soon');
-            setStatusFilter([]);
-            setPage(1);
-          }}
-          className={`filter-chip text-xs ${deadlineFilter === 'soon' ? 'filter-chip-active !bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm' : 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50'}`}
-        >
-          🟡 Sắp hết hạn
-        </button>
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* Search + customer + date range */}
+          <div className="flex flex-col xl:flex-row gap-3">
+            <div className="filter-search flex-1 !max-w-none">
+              <span className="search-icon">
+                <FlaticonIcon name="search" size="sm" />
+              </span>
+              <input
+                className="input !pl-9 !pr-9"
+                placeholder="Tìm khách hàng, SĐT hoặc mã đơn..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <select
+                className="input sm:w-56"
+                value={customerFilter}
+                onChange={(e) => {
+                  setCustomerFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Tất cả khách hàng</option>
+                {customers.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:flex-none">
+                  <input
+                    type="date"
+                    className="input !py-2 w-full"
+                    value={dateFrom}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setPage(1);
+                    }}
+                    title="Từ ngày"
+                  />
+                  {dateFrom && (
+                    <button
+                      onClick={() => {
+                        setDateFrom('');
+                        setPage(1);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center text-[9px] transition-colors"
+                      title="Xóa ngày bắt đầu"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <span className="text-gray-400 text-sm flex-shrink-0">→</span>
+                <div className="relative flex-1 sm:flex-none">
+                  <input
+                    type="date"
+                    className="input !py-2 w-full"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setPage(1);
+                    }}
+                    title="Đến ngày"
+                  />
+                  {dateTo && (
+                    <button
+                      onClick={() => {
+                        setDateTo('');
+                        setPage(1);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center text-[9px] transition-colors"
+                      title="Xóa ngày kết thúc"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status chips — swipeable on mobile, wrap on desktop */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="w-1 h-3.5 rounded-full bg-pink-400 inline-block" />
+              Trạng thái
+            </p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+              <button
+                onClick={() => {
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip flex-shrink-0 ${statusFilter.length === 0 ? 'filter-chip-active' : ''}`}
+              >
+                Tất cả <span className="text-gray-400 ml-1">({orders.length})</span>
+              </button>
+              {statusFlow.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setStatusFilter((prev) =>
+                      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+                    );
+                    setPage(1);
+                  }}
+                  className={`filter-chip flex-shrink-0 ${statusFilter.includes(s) ? 'filter-chip-active' : ''} ${
+                    statusFilter.includes(s) && filterChipActiveColors[s]
+                      ? filterChipActiveColors[s]
+                      : filterChipHoverColors[s] || ''
+                  }`}
+                >
+                  {statusIcons[s] ? (
+                    <FlaticonIcon name={statusIcons[s]} size="sm" className="inline-flex" />
+                  ) : null}
+                  <span>{statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <span className="text-gray-400 ml-1">({effectiveCounts[s] || 0})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Deadline chips */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="w-1 h-3.5 rounded-full bg-amber-400 inline-block" />
+              Hạn chót
+            </p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+              <button
+                onClick={() => {
+                  setDeadlineFilter('');
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${!deadlineFilter ? 'filter-chip-active' : 'hover:!border-gray-200 hover:!text-gray-600'}`}
+              >
+                📅 Mọi hạn chót
+              </button>
+              <button
+                onClick={() => {
+                  setDeadlineFilter('overdue');
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${deadlineFilter === 'overdue' ? 'filter-chip-active !bg-red-50 !border-red-300 !text-red-700 !shadow-sm' : 'hover:!border-red-200 hover:!text-red-600 hover:!bg-red-50/50'}`}
+              >
+                🔴 Quá hạn
+              </button>
+              <button
+                onClick={() => {
+                  setDeadlineFilter('soon');
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${deadlineFilter === 'soon' ? 'filter-chip-active !bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm' : 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50'}`}
+              >
+                🟡 Sắp hết hạn
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Create/Edit Order Form */}

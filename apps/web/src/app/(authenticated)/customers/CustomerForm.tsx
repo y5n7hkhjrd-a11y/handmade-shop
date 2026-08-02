@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api';
 import FlaticonIcon from '@/components/FlaticonIcon';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { SOCIAL_PLATFORMS, initialForm } from './customerConstants';
 
 interface CustomerFormProps {
@@ -37,6 +39,9 @@ export default function CustomerForm({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEscapeClose(onClose, isOpen);
+  useBodyScrollLock(isOpen);
 
   // Initialize form when opening
   useEffect(() => {

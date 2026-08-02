@@ -6,6 +6,8 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import { NumberInput } from '@/components/NumberInput';
 import { useToast } from '@/hooks/useToast';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import Toast from '@/components/Toast';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
@@ -50,6 +52,9 @@ export default function PackagingPage() {
     components: [{ name: '', quantity: 0, unit: 'pieces', cost: 0 }],
   });
   const { toast, showToast } = useToast();
+
+  useEscapeClose(() => setShowForm(false), showForm);
+  useBodyScrollLock(showForm);
 
   const loadTemplates = useCallback(async () => {
     if (!token) return;

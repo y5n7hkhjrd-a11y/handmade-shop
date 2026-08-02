@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { type Product, type MatchingRule } from './recipeConstants';
 
 interface RecipeFormProps {
@@ -48,6 +50,9 @@ export default function RecipeForm({
     baseProductId: '',
     charmProducts: [] as Array<{ productId: string; matchingRuleId: string }>,
   });
+
+  useEscapeClose(onClose, isOpen);
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

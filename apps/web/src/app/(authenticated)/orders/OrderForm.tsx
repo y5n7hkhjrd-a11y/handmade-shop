@@ -5,6 +5,8 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { NumberInput } from '@/components/NumberInput';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { SOCIAL_PLATFORMS } from './orderConstants';
 
 interface OrderLineInput {
@@ -100,6 +102,11 @@ export default function OrderForm({
   const [newCustomer, setNewCustomer] = useState({ ...NEW_CUSTOMER_INIT });
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const advanceAfterSave = useRef(false);
+
+  // Escape closes only the top-most modal (AddCustomer first, then the main form)
+  useEscapeClose(onClose, isOpen && !showAddCustomer);
+  useEscapeClose(() => setShowAddCustomer(false), showAddCustomer);
+  useBodyScrollLock(isOpen);
 
   // Initialize form when opening
   useEffect(() => {
@@ -290,37 +297,37 @@ export default function OrderForm({
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">
-                  Khách hàng <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    className={`input flex-1 ${formErrors.customerId ? 'input-error' : ''}`}
-                    value={form.customerId}
-                    onChange={(e) => {
-                      setForm({ ...form, customerId: e.target.value });
-                      if (formErrors.customerId) setFormErrors({ ...formErrors, customerId: '' });
-                    }}
-                  >
-                    <option value="">Chọn khách hàng...</option>
-                    {customers.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="label !mb-0">
+                    Khách hàng <span className="text-red-500">*</span>
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
                       setShowAddCustomer(true);
                       setNewCustomer({ ...NEW_CUSTOMER_INIT });
                     }}
-                    className="btn-secondary btn-sm flex-shrink-0"
+                    className="text-xs font-medium text-avocado-600 hover:text-avocado-700 flex items-center gap-1 transition-colors"
                     title="Thêm khách hàng mới"
                   >
-                    <FlaticonIcon name="plus" size="xs" />
+                    <FlaticonIcon name="plus" size="xs" /> Thêm mới
                   </button>
                 </div>
+                <select
+                  className={`input w-full ${formErrors.customerId ? 'input-error' : ''}`}
+                  value={form.customerId}
+                  onChange={(e) => {
+                    setForm({ ...form, customerId: e.target.value });
+                    if (formErrors.customerId) setFormErrors({ ...formErrors, customerId: '' });
+                  }}
+                >
+                  <option value="">Chọn khách hàng...</option>
+                  {customers.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
                 {formErrors.customerId && (
                   <p className="text-xs text-red-600 mt-1">{formErrors.customerId}</p>
                 )}

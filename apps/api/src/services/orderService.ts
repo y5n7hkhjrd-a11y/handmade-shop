@@ -404,6 +404,7 @@ export const orderService = {
     limit: number;
     status?: string;
     customerId?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
     deadlineFilter?: string;

@@ -428,6 +428,8 @@ body {
   .modal-overlay {
     @apply fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-[10vh];
     animation: fadeIn 0.25s ease-out;
+    overscroll-behavior: contain;
+    overflow-y: auto;
   }
   .modal-content {
     @apply bg-white mx-4 w-full shadow-lg;
@@ -577,6 +579,15 @@ body {
     font-size: 13px;
   }
 
+  /* Hide scrollbar on horizontally swipeable chip rows */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* ─── Filter chips ─── */
   .filter-chip {
     @apply inline-flex items-center gap-1 font-medium border cursor-pointer select-none transition-all duration-150;
@@ -625,6 +636,7 @@ body {
   .confirm-overlay {
     @apply fixed inset-0 bg-black/30 flex items-center justify-center z-[60];
     animation: fadeIn 0.1s ease-out;
+    overscroll-behavior: contain;
   }
   .confirm-dialog {
     @apply bg-white mx-4 w-full max-w-sm p-5 shadow-lg;
@@ -759,6 +771,7 @@ a {
     max-height: 92vh;
     padding-bottom: env(safe-area-inset-bottom);
     animation: modalSheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
   }
 
   /* Toasts slide up from the bottom edge */

@@ -161,15 +161,24 @@ export default function MatchingRulesPage() {
       </div>
     `;
 
-    dialog
-      .querySelector('#cancel-btn')!
-      .addEventListener('click', () => document.body.removeChild(overlay));
-    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const removeOverlay = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
       document.body.removeChild(overlay);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') removeOverlay();
+    };
+    dialog.querySelector('#cancel-btn')!.addEventListener('click', () => removeOverlay());
+    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+      removeOverlay();
       handleDelete(rule.id);
     });
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
+    window.addEventListener('keydown', onKeyDown);
   };
 
   const handleToggleStatus = async (rule: MatchingRule) => {

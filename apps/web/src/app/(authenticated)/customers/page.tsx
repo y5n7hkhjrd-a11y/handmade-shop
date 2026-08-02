@@ -113,18 +113,6 @@ export default function CustomersPage() {
     setDeleteTarget(null);
   };
 
-  // Keyboard: Escape to close modal
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showForm) {
-        setShowForm(false);
-        setEditingCustomer(null);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [showForm]);
-
   return (
     <div className="page-enter">
       <Toast toast={toast} />

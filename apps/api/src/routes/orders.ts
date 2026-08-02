@@ -12,13 +12,14 @@ orderRouter.get(
   validate(listOrdersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit, status, customerId, startDate, endDate, deadlineFilter } =
+      const { page, limit, status, customerId, search, startDate, endDate, deadlineFilter } =
         req.query as any;
       const result = await orderService.list({
         page,
         limit,
         status,
         customerId,
+        search,
         startDate,
         endDate,
         deadlineFilter,

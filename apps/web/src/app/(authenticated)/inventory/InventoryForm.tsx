@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { apiClient } from '@/lib/api';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { NumberInput } from '@/components/NumberInput';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface InventoryFormProps {
   isOpen: boolean;
@@ -32,6 +34,9 @@ export default function InventoryForm({
     notes: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  useEscapeClose(onClose, isOpen);
+  useBodyScrollLock(isOpen);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

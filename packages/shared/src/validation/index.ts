@@ -215,6 +215,7 @@ export const listOrdersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: z.string().optional(),
   customerId: z.string().optional(),
+  search: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   deadlineFilter: z.enum(['overdue', 'soon']).optional(),

@@ -5,6 +5,8 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency, formatDate, formatDateTime } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { copyToClipboard } from '@/lib/clipboard';
 import { NumberInput } from '@/components/NumberInput';
 import BrandIcon from '@/components/BrandIcon';
@@ -214,6 +216,18 @@ export default function OrderDetail({
   const [showCancelEditConfirm, setShowCancelEditConfirm] = useState(false);
   const [showRetryConfirm, setShowRetryConfirm] = useState(false);
   const [retryShipmentId, setRetryShipmentId] = useState<string | null>(null);
+
+  // Escape closes only the top-most modal (nested confirms/customer first, then the detail)
+  const hasNestedModal =
+    showConfirmAdvance ||
+    showConfirmReturn ||
+    showConfirmPaid ||
+    showCancelEditConfirm ||
+    showRetryConfirm ||
+    showCustomerDetail;
+  useEscapeClose(onClose, !hasNestedModal);
+  useEscapeClose(() => setShowCustomerDetail(false), showCustomerDetail);
+  useBodyScrollLock(true);
   const [retryingShipment, setRetryingShipment] = useState(false);
 
   const handleRetryShipment = async () => {

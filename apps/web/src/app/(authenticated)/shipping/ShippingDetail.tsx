@@ -5,6 +5,8 @@ import { apiClient } from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { copyToClipboard } from '@/lib/clipboard';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import {
   DotProgress,
   getCarrier,
@@ -47,6 +49,9 @@ export default function ShippingDetail({
   const [spxRecords, setSpxRecords] = useState<SpxRecord[]>([]);
   const [spxRecordsLoading, setSpxRecordsLoading] = useState(false);
   const [grabTrackingInfo, setGrabTrackingInfo] = useState<any>(null);
+
+  useEscapeClose(onClose, true);
+  useBodyScrollLock(true);
 
   useEffect(() => {
     if (!token || !shipment) {

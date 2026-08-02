@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import FlaticonIcon from '@/components/FlaticonIcon';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -32,14 +34,13 @@ export default function ConfirmModal({
     }
   }, [isOpen]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-  };
+  useEscapeClose(onClose, isOpen);
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay !items-center !pt-0" onKeyDown={handleKeyDown}>
+    <div className="modal-overlay !items-center !pt-0">
       <div
         className="max-w-sm mx-4 w-full"
         onClick={(e) => e.stopPropagation()}
