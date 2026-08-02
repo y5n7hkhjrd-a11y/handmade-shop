@@ -13,12 +13,12 @@ This guide walks through setting up **four Vercel projects** — two per environ
 
 We deploy **two separate Vercel projects** per environment because the web (Next.js) and API (Express) are independent apps with different build commands, environment variables, and lifecycles.
 
-| Environment    | Vercel Project              | App              | Root Directory | Framework       |
-| -------------- | --------------------------- | ---------------- | -------------- | --------------- |
-| **STAGING**    | `handmade-shop-web-staging` | Next.js frontend | `apps/web`     | Next.js         |
-| **STAGING**    | `handmade-shop-api-staging` | Express API      | `apps/api`     | Express         |
-| **PRODUCTION** | `handmade-shop-web-prod`    | Next.js frontend | `apps/web`     | Next.js         |
-| **PRODUCTION** | `handmade-shop-api-prod`    | Express API      | `apps/api`     | Express         |
+| Environment    | Vercel Project              | App              | Root Directory | Framework |
+| -------------- | --------------------------- | ---------------- | -------------- | --------- |
+| **STAGING**    | `handmade-shop-web-staging` | Next.js frontend | `apps/web`     | Next.js   |
+| **STAGING**    | `handmade-shop-api-staging` | Express API      | `apps/api`     | Express   |
+| **PRODUCTION** | `handmade-shop-web-prod`    | Next.js frontend | `apps/web`     | Next.js   |
+| **PRODUCTION** | `handmade-shop-api-prod`    | Express API      | `apps/api`     | Express   |
 
 ### URL Structure
 
