@@ -117,8 +117,8 @@ function StatusBadge({ status }: { status: string }) {
     Draft: { badge: 'badge-gray', label: 'Nhập đơn' },
     WaitingConfirm: { badge: 'badge-yellow', label: 'Đơn chờ làm' },
     InProgress: { badge: 'badge-blue', label: 'Đơn đã xong' },
-    Packaging: { badge: 'badge-purple', label: 'Đơn đã gói' },
-    ReadyToShip: { badge: 'badge-purple', label: 'Đã gửi' },
+    Packaging: { badge: 'badge-avocado', label: 'Đơn đã gói' },
+    ReadyToShip: { badge: 'badge-avocado', label: 'Đã gửi' },
     Completed: { badge: 'badge-green', label: 'Hoàn thành' },
   };
   const info = statusMap[status];
@@ -128,9 +128,9 @@ function StatusBadge({ status }: { status: string }) {
 const STATUS_PIPELINE: Array<{ key: string; label: string; color: string; dot: string }> = [
   { key: 'Draft', label: 'Nhập đơn', color: 'text-gray-600', dot: 'bg-gray-300' },
   { key: 'WaitingConfirm', label: 'Chờ làm', color: 'text-amber-600', dot: 'bg-amber-400' },
-  { key: 'InProgress', label: 'Đang làm', color: 'text-blue-600', dot: 'bg-blue-500' },
-  { key: 'Packaging', label: 'Đã gói', color: 'text-purple-600', dot: 'bg-purple-500' },
-  { key: 'ReadyToShip', label: 'Đã gửi', color: 'text-cyan-600', dot: 'bg-cyan-500' },
+  { key: 'InProgress', label: 'Đang làm', color: 'text-mint-600', dot: 'bg-mint-500' },
+  { key: 'Packaging', label: 'Đã gói', color: 'text-pink-600', dot: 'bg-pink-500' },
+  { key: 'ReadyToShip', label: 'Đã gửi', color: 'text-avocado-600', dot: 'bg-avocado-500' },
   { key: 'Completed', label: 'Hoàn thành', color: 'text-emerald-600', dot: 'bg-emerald-500' },
 ];
 
@@ -204,8 +204,8 @@ export default function DashboardPage() {
       title: 'Tổng đơn hàng',
       value: totalOrders,
       icon: 'clipboard',
-      color: 'bg-purple-50 text-purple-700',
-      barColor: 'bg-purple-500',
+      color: 'bg-avocado-50 text-avocado-700',
+      barColor: 'bg-avocado-500',
       caption: `${completedOrders} hoàn thành · ${activeOrders} đang xử lý`,
       percent: completionRate,
     },
@@ -220,8 +220,8 @@ export default function DashboardPage() {
       title: 'Lợi nhuận',
       value: formatCurrency(totalProfit),
       icon: 'arrow-trend-up',
-      color: 'bg-blue-50 text-blue-700',
-      barColor: 'bg-blue-500',
+      color: 'bg-mint-50 text-mint-700',
+      barColor: 'bg-mint-500',
       caption: `Biên lợi nhuận ${marginRate}%`,
       percent: Math.min(marginRate, 100),
     },
@@ -244,14 +244,14 @@ export default function DashboardPage() {
       <Toast toast={toast} />
 
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-purple-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)] mb-4 sm:mb-6">
-        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/70 border border-avocado-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-avocado-200/25 to-mint-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-avocado-100/10 rounded-full blur-xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(circle at 25% 25%, #cddda9 1px, transparent 1px)`,
             backgroundSize: '24px 24px',
           }}
         />
@@ -260,10 +260,10 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-avocado-400 via-avocado-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="analyse" size="lg" />
                   </div>
-                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-purple-300/30 blur-sm -z-10" />
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-avocado-300/30 to-mint-300/30 blur-sm -z-10" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -295,7 +295,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-avocado-200/80 to-transparent" />
       </div>
 
       {/* Stats Cards */}
@@ -359,7 +359,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/orders"
-            className="btn-ghost btn-sm text-purple-600 hover:text-purple-700 font-medium"
+            className="btn-ghost btn-sm text-avocado-600 hover:text-avocado-700 font-medium"
           >
             Xem tất cả <span className="ml-1">→</span>
           </Link>
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                 onClick={() => router.push(`/orders?status=${s.key}`)}
                 className={`relative flex flex-col items-center gap-1 rounded-xl border p-2.5 transition-all duration-200 group ${
                   count > 0
-                    ? 'border-purple-200 bg-purple-50/50 hover:bg-purple-50 hover:border-purple-300 hover:shadow-sm'
+                    ? 'border-avocado-200 bg-avocado-50/50 hover:bg-avocado-50 hover:border-avocado-300 hover:shadow-sm'
                     : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                 }`}
               >
@@ -406,7 +406,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/orders"
-              className="btn-ghost btn-sm text-purple-600 hover:text-purple-700 font-medium"
+              className="btn-ghost btn-sm text-avocado-600 hover:text-avocado-700 font-medium"
             >
               Xem tất cả <span className="ml-1">→</span>
             </Link>
@@ -422,15 +422,15 @@ export default function DashboardPage() {
                     tabIndex={0}
                     onClick={() => router.push(`/orders?id=${order.id}`)}
                     onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders?id=${order.id}`)}
-                    className="flex items-center gap-3 px-4 py-3.5 active:bg-purple-50/60 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-avocado-50/60 transition-colors cursor-pointer"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-avocado-400 to-mint-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
                       {order.customer?.name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-medium text-gray-900 text-sm truncate flex items-center gap-1.5">
-                          <span className="text-[10px] font-semibold text-purple-500 bg-purple-50 rounded px-1.5 py-0.5 ring-1 ring-purple-100 flex-shrink-0">
+                          <span className="text-[10px] font-semibold text-avocado-500 bg-avocado-50 rounded px-1.5 py-0.5 ring-1 ring-avocado-100 flex-shrink-0">
                             {order.id}
                           </span>
                           {order.customer?.name || 'N/A'}
@@ -475,17 +475,17 @@ export default function DashboardPage() {
                     {stats.recentOrders.map((order: any) => (
                       <tr
                         key={order.id}
-                        className="cursor-pointer hover:bg-purple-50/30 transition-colors"
+                        className="cursor-pointer hover:bg-avocado-50/30 transition-colors"
                         onClick={() => router.push(`/orders?id=${order.id}`)}
                       >
                         <td>
-                          <span className="text-xs font-semibold text-purple-600 bg-purple-50 rounded px-1.5 py-0.5 ring-1 ring-purple-100 whitespace-nowrap">
+                          <span className="text-xs font-semibold text-avocado-600 bg-avocado-50 rounded px-1.5 py-0.5 ring-1 ring-avocado-100 whitespace-nowrap">
                             {order.id}
                           </span>
                         </td>
                         <td>
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-avocado-400 to-mint-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
                               {order.customer?.name?.charAt(0) || '?'}
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -528,14 +528,14 @@ export default function DashboardPage() {
                   icon: 'plus',
                   label: 'Đơn hàng mới',
                   href: '/orders',
-                  color: 'bg-purple-50 text-purple-700',
+                  color: 'bg-avocado-50 text-avocado-700',
                   desc: 'Tạo đơn mới',
                 },
                 {
                   icon: 'box-open',
                   label: 'Hàng hóa',
                   href: '/products',
-                  color: 'bg-blue-50 text-blue-700',
+                  color: 'bg-mint-50 text-mint-700',
                   desc: 'Quản lý sản phẩm',
                 },
                 {
@@ -563,21 +563,21 @@ export default function DashboardPage() {
                   icon: 'truck-side',
                   label: 'Giao hàng',
                   href: '/shipping',
-                  color: 'bg-rose-50 text-rose-700',
+                  color: 'bg-pink-50 text-pink-700',
                   desc: 'Theo dõi vận đơn',
                 },
               ].map((action) => (
                 <Link
                   key={action.label}
                   href={action.href}
-                  className="flex flex-col items-center gap-1.5 p-3.5 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/30 transition-all duration-200 group text-center"
+                  className="flex flex-col items-center gap-1.5 p-3.5 rounded-xl border border-gray-100 hover:border-avocado-200 hover:bg-avocado-50/30 transition-all duration-200 group text-center"
                 >
                   <div
                     className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center text-base shadow-sm group-hover:scale-110 transition-transform`}
                   >
                     <FlaticonIcon name={action.icon} size="md" className="text-inherit" />
                   </div>
-                  <span className="text-xs font-semibold text-gray-700 group-hover:text-purple-700">
+                  <span className="text-xs font-semibold text-gray-700 group-hover:text-avocado-700">
                     {action.label}
                   </span>
                   <span className="text-[10px] text-gray-400">{action.desc}</span>
@@ -658,7 +658,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-avocado-50 flex items-center justify-center text-sm">
                     <FlaticonIcon name="clipboard" size="sm" />
                   </div>
                   <div>

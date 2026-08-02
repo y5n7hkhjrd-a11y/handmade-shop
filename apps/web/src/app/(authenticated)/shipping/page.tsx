@@ -76,13 +76,13 @@ function TrackingBadge({ s, carrier }: { s: Shipping; carrier: CarrierType }) {
   }
   if (carrier === 'SOF') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-mint-50 border border-mint-200 shadow-sm">
         <FlaticonIcon
           name={s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'}
           size="xs"
-          className="text-blue-500"
+          className="text-mint-500"
         />
-        <span className="text-xs font-medium text-blue-600">
+        <span className="text-xs font-medium text-mint-600">
           {s.deliveryType === 'Khách đến lấy hàng' ? 'Lấy tại shop' : 'Shop giao'}
         </span>
       </span>
@@ -410,10 +410,10 @@ export default function ShippingPage() {
       `}</style>
 
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50/80 via-white to-purple-50/40 border border-pink-100/40 px-5 py-4 shadow-sm">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50/80 via-white to-avocado-50/40 border border-avocado-100/40 px-5 py-4 shadow-sm">
         <div className="relative flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-mint-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">
               <FlaticonIcon name="truck-side" size="sm" />
             </div>
             <div>
@@ -448,7 +448,7 @@ export default function ShippingPage() {
                 setCarrierFilter(c);
                 setPage(1);
               }}
-              className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === c ? (c === 'SPX' ? 'bg-orange-500 text-white shadow-sm' : c === 'Grab' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-blue-500 text-white shadow-sm') : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}
+              className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${carrierFilter === c ? (c === 'SPX' ? 'bg-orange-500 text-white shadow-sm' : c === 'Grab' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-mint-500 text-white shadow-sm') : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm'}`}
             >
               <CarrierLogo carrier={c} size="xs" /> {carrierConfig[c].label}
               <span
@@ -539,8 +539,8 @@ export default function ShippingPage() {
         </>
       ) : filtered.length === 0 ? (
         <div className="relative overflow-hidden flex flex-col items-center justify-center py-20 text-center">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-100/40 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-100/30 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-avocado-100/40 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-avocado-100/30 rounded-full blur-3xl" />
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 flex items-center justify-center mb-4 shadow-inner">
             <FlaticonIcon name="truck-side" size="lg" className="text-gray-300" />
           </div>
@@ -569,7 +569,7 @@ export default function ShippingPage() {
                   tabIndex={0}
                   onClick={() => setDetailShipment(s)}
                   onKeyDown={(e) => e.key === 'Enter' && setDetailShipment(s)}
-                  className="px-4 py-3.5 active:bg-blue-50/60 transition-colors cursor-pointer"
+                  className="px-4 py-3.5 active:bg-mint-50/60 transition-colors cursor-pointer"
                 >
                   {/* Carrier + order + cost */}
                   <div className="flex items-center justify-between gap-2">
@@ -690,7 +690,7 @@ export default function ShippingPage() {
                               : isAnimating
                                 ? 'opacity-70'
                                 : ''
-                        } ${isAnimating ? 'pointer-events-none' : ''} hover:bg-blue-50/40`}
+                        } ${isAnimating ? 'pointer-events-none' : ''} hover:bg-mint-50/40`}
                       >
                         <td>
                           <div className="flex items-center gap-2">
@@ -717,7 +717,7 @@ export default function ShippingPage() {
                             </p>
                           )}
                           {carrier === 'SOF' && (s.driverName || s.driverPhone) && (
-                            <p className="text-[10px] text-blue-500 mt-0.5 font-medium">
+                            <p className="text-[10px] text-mint-500 mt-0.5 font-medium">
                               {s.driverName && (
                                 <>
                                   <FlaticonIcon

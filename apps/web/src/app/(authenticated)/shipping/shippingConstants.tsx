@@ -68,11 +68,11 @@ export const carrierConfig: Record<
   SOF: {
     label: 'SOF',
     icon: 'truck-side',
-    color: 'text-blue-600',
-    gradient: 'from-blue-400 to-blue-500',
-    badge: 'bg-blue-50 text-blue-600 border-blue-200',
+    color: 'text-mint-600',
+    gradient: 'from-mint-400 to-mint-500',
+    badge: 'bg-mint-50 text-mint-600 border-mint-200',
     accent: 'border-l-blue-400',
-    progress: 'bg-blue-400',
+    progress: 'bg-mint-400',
   },
 };
 
@@ -86,16 +86,16 @@ export const statusLabels: Record<string, string> = {
 
 export const statusColors: Record<string, string> = {
   Pending: 'bg-amber-500',
-  Shipped: 'bg-blue-500',
-  InTransit: 'bg-purple-500',
+  Shipped: 'bg-mint-500',
+  InTransit: 'bg-avocado-500',
   Delivered: 'bg-emerald-500',
   Failed: 'bg-red-500',
 };
 
 export const statusBgs: Record<string, string> = {
   Pending: 'bg-amber-50 text-amber-700',
-  Shipped: 'bg-blue-50 text-blue-700',
-  InTransit: 'bg-purple-50 text-purple-700',
+  Shipped: 'bg-mint-50 text-mint-700',
+  InTransit: 'bg-avocado-50 text-avocado-700',
   Delivered: 'bg-emerald-50 text-emerald-700',
   Failed: 'bg-red-50 text-red-700',
 };

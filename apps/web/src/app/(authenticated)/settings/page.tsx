@@ -14,14 +14,14 @@ export default function SettingsPage() {
     <div className="page-enter">
       <Toast toast={toast} />
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-purple-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)] mb-4 sm:mb-6">
-        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/70 border border-avocado-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-avocado-200/25 to-mint-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-avocado-100/10 rounded-full blur-xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(circle at 25% 25%, #cddda9 1px, transparent 1px)`,
             backgroundSize: '24px 24px',
           }}
         />
@@ -30,10 +30,10 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-avocado-400 via-avocado-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="settings" size="lg" />
                   </div>
-                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-purple-300/30 blur-sm -z-10" />
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-avocado-300/30 to-mint-300/30 blur-sm -z-10" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -47,7 +47,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-avocado-200/80 to-transparent" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -55,14 +55,14 @@ export default function SettingsPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="card text-center">
             <div className="relative inline-block">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#E88DAB] to-[#D97D9E] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#7FA345] to-[#66863A] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mt-4">{user?.name || 'User'}</h2>
             <div className="mt-2.5 flex items-center justify-center gap-1.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200/70 text-[#D97D9E] font-semibold text-sm shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-mint-50 to-avocado-50 border border-avocado-200/70 text-[#66863A] font-semibold text-sm shadow-sm">
                 <FlaticonIcon name="user" size="xs" />@{user?.username || user?.email || '—'}
               </span>
               {user?.username && (
@@ -134,12 +134,12 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <div className="p-3 bg-[#FCE7F3] rounded-lg border border-[#F9D6E5]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-[#D97D9E]">Admin</span>
+                  <span className="text-xs font-semibold text-[#66863A]">Admin</span>
                   <span className="badge-pink text-[10px]">Toàn quyền</span>
                 </div>
-                <p className="text-xs text-[#E88DAB] font-mono">admin</p>
+                <p className="text-xs text-[#7FA345] font-mono">admin</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-xs text-[#D97D9E] font-mono">admin123</p>
+                  <p className="text-xs text-[#66863A] font-mono">admin123</p>
                   <button
                     onClick={() => copyToClipboard('admin / admin123')}
                     className="copy-btn"
@@ -149,14 +149,14 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="p-3 bg-mint-50 rounded-lg border border-mint-100">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-blue-700">Nhân viên</span>
+                  <span className="text-xs font-semibold text-mint-700">Nhân viên</span>
                   <span className="badge-blue text-[10px]">Hạn chế</span>
                 </div>
-                <p className="text-xs text-blue-600 font-mono">staff</p>
+                <p className="text-xs text-mint-600 font-mono">staff</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-xs text-blue-500 font-mono">staff123</p>
+                  <p className="text-xs text-mint-500 font-mono">staff123</p>
                   <button
                     onClick={() => copyToClipboard('staff / staff123')}
                     className="copy-btn"
@@ -250,7 +250,7 @@ export default function SettingsPage() {
                   method: 'POST',
                   path: '/api/auth/login',
                   desc: 'Đăng nhập',
-                  color: 'text-[#D97D9E]',
+                  color: 'text-[#66863A]',
                 },
                 {
                   method: 'GET',

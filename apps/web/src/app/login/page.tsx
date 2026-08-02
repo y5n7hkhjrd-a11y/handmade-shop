@@ -71,18 +71,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#FAFAFA] flex items-center justify-center py-8 px-4">
       {/* Decorative background */}
-      <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-gradient-to-br from-pink-200/40 via-purple-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-32 w-[520px] h-[520px] bg-gradient-to-tr from-purple-200/40 via-pink-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-gradient-to-br from-mint-200/40 via-avocado-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -left-32 w-[520px] h-[520px] bg-gradient-to-tr from-avocado-200/40 via-mint-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-white/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative w-full max-w-4xl animate-[slideUp_0.4s_ease-out]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl shadow-[0_20px_60px_-20px_rgba(232,141,171,0.4)] border border-pink-100/70 bg-white">
+        <div className="grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl shadow-[0_20px_60px_-20px_rgba(127,163,69,0.35)] border border-avocado-100/70 bg-white">
           {/* ─── Left brand panel ─── */}
-          <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-gradient-to-br from-[#E88DAB] via-[#D97D9E] to-purple-500 text-white">
+          <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-gradient-to-br from-avocado-500 via-avocado-600 to-mint-600 text-white">
             {/* Decorative circles */}
             <div className="absolute -top-16 -right-16 w-56 h-56 bg-white/10 rounded-full blur-2xl" />
             <div className="absolute top-1/3 -left-20 w-40 h-40 bg-white/10 rounded-full blur-xl" />
-            <div className="absolute -bottom-20 left-1/3 w-64 h-64 bg-purple-900/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 left-1/3 w-64 h-64 bg-avocado-900/20 rounded-full blur-3xl" />
             <div
               className="absolute inset-0 opacity-[0.06]"
               style={{
@@ -180,7 +180,7 @@ export default function LoginPage() {
                   Tên đăng nhập
                 </label>
                 <div className="relative group">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200 group-focus-within:text-pink-500 pointer-events-none">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200 group-focus-within:text-avocado-500 pointer-events-none">
                     <FlaticonIcon name="user" size="sm" />
                   </span>
                   <input
@@ -191,7 +191,7 @@ export default function LoginPage() {
                     className={`w-full bg-white border text-sm placeholder:text-gray-300 transition-all duration-150 pl-10 pr-4 py-2.5 rounded-xl ${
                       fieldErrors.username
                         ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]'
-                        : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
+                        : 'border-[#E8E0E4] focus:border-avocado-400 focus:shadow-[0_0_0_3px_rgba(127,163,69,0.15)]'
                     } focus:outline-none`}
                     value={username}
                     onChange={(e) => {
@@ -218,7 +218,7 @@ export default function LoginPage() {
                   Mật khẩu
                 </label>
                 <div className="relative group">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200 group-focus-within:text-pink-500 pointer-events-none">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors duration-200 group-focus-within:text-avocado-500 pointer-events-none">
                     <FlaticonIcon name="lock" size="sm" />
                   </span>
                   <input
@@ -227,7 +227,7 @@ export default function LoginPage() {
                     className={`w-full bg-white border text-sm placeholder:text-gray-300 transition-all duration-150 pl-10 pr-11 py-2.5 rounded-xl ${
                       fieldErrors.password
                         ? 'border-red-300 focus:border-red-400 focus:shadow-[0_0_0_3px_#fef2f2]'
-                        : 'border-[#E8E0E4] focus:border-pink-400 focus:shadow-[0_0_0_3px_rgba(232,141,171,0.15)]'
+                        : 'border-[#E8E0E4] focus:border-avocado-400 focus:shadow-[0_0_0_3px_rgba(127,163,69,0.15)]'
                     } focus:outline-none`}
                     value={password}
                     onChange={(e) => {
@@ -241,7 +241,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-all duration-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-avocado-500 hover:bg-avocado-50 transition-all duration-200"
                     aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     tabIndex={-1}
                   >
@@ -259,8 +259,8 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-white font-semibold text-sm relative overflow-hidden group transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 shadow-lg shadow-pink-300/40 hover:shadow-pink-400/50 hover:-translate-y-0.5 active:translate-y-0"
-                style={{ background: 'linear-gradient(90deg, #E88DAB, #D97D9E, #A78BFA)' }}
+                className="w-full py-3 rounded-xl text-white font-semibold text-sm relative overflow-hidden group transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-avocado-300 focus:ring-offset-2 shadow-lg shadow-avocado-300/40 hover:shadow-avocado-400/50 hover:-translate-y-0.5 active:translate-y-0"
+                style={{ background: 'linear-gradient(90deg, #7FA345, #66863A, #5CBC9E)' }}
               >
                 <span className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-200" />
                 {loading ? (
@@ -288,7 +288,7 @@ export default function LoginPage() {
                     setUsername('admin');
                     setPassword('admin123');
                   }}
-                  className="font-mono text-pink-500 hover:text-pink-600 hover:underline transition-colors cursor-pointer"
+                  className="font-mono text-avocado-500 hover:text-avocado-600 hover:underline transition-colors cursor-pointer"
                 >
                   admin / admin123
                 </button>

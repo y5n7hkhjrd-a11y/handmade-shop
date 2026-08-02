@@ -7,23 +7,23 @@
 @import '@flaticon/flaticon-uicons/css/brands/all.css';
 
 :root {
-  --primary: #e88dab;
-  --primary-dark: #d97d9e;
-  --primary-light: #f9d6e5;
-  --primary-50: #fce7f3;
-  --success: #86d492;
-  --success-light: #d8f3dc;
+  --primary: #7fa345;
+  --primary-dark: #668339;
+  --primary-light: #e6eed3;
+  --primary-50: #f4f7ea;
+  --success: #5cc49d;
+  --success-light: #d7f2e6;
   --danger: #fca5a5;
   --warning: #fcd34d;
   --info: #bfdbfe;
   --surface: #ffffff;
-  --bg: #fafafa;
+  --bg: #fafaf7;
   --bg-card: #ffffff;
   --border: #f0f0f0;
   --border-light: #f5f5f5;
-  --text-primary: #1a1a2e;
-  --text-secondary: #8e8ea0;
-  --text-tertiary: #b8b8c8;
+  --text-primary: #1a2e23;
+  --text-secondary: #8e9a94;
+  --text-tertiary: #b8c2bd;
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 12px;
@@ -45,7 +45,7 @@ body {
     sans-serif;
   color: var(--text-primary);
   background-color: var(--bg);
-  background-image: radial-gradient(circle, rgba(139, 92, 246, 0.25) 2px, transparent 2px);
+  background-image: radial-gradient(circle, rgba(127, 163, 69, 0.16) 2px, transparent 2px);
   background-size: 32px 32px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -62,11 +62,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e8d0d8;
+  background: #dce5c8;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d8b8c4;
+  background: #c9d6a9;
 }
 
 /* Animations */
@@ -129,10 +129,10 @@ body {
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(232, 141, 171, 0.4);
+    box-shadow: 0 0 0 0 rgba(127, 163, 69, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(232, 141, 171, 0);
+    box-shadow: 0 0 0 6px rgba(127, 163, 69, 0);
   }
 }
 @keyframes checkPop {
@@ -234,10 +234,10 @@ body {
     @apply btn;
     background-color: var(--surface);
     color: var(--primary);
-    border: 1px solid #f0d4e0;
+    border: 1px solid #dce5c8;
   }
   .btn-secondary:hover {
-    background-color: #fdf2f6;
+    background-color: #f6f9ec;
   }
 
   .btn-danger {
@@ -262,7 +262,7 @@ body {
     background: transparent;
   }
   .btn-ghost:hover {
-    background-color: #fdf2f6;
+    background-color: #f6f9ec;
     color: var(--primary);
   }
 
@@ -280,7 +280,7 @@ body {
     @apply w-full bg-white border text-sm placeholder:text-gray-300
            transition-all duration-150 disabled:bg-gray-50 disabled:text-gray-400;
     padding: 9px 12px;
-    border-color: #e8e0e4;
+    border-color: #e3e8d7;
     border-radius: var(--radius);
     font-size: 13px;
   }
@@ -338,7 +338,7 @@ body {
     @apply text-left font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap;
     font-size: 11px;
     padding: 10px 20px;
-    background-color: #fff8fa;
+    background-color: #f6f9ec;
     border-bottom: 1px solid var(--border);
   }
   .table-wrap tbody tr {
@@ -349,7 +349,7 @@ body {
     border-bottom: none;
   }
   .table-wrap tbody tr:hover {
-    background-color: #fff5f8;
+    background-color: #f4f8e9;
   }
   .table-wrap tbody td {
     padding: 12px 20px;
@@ -370,8 +370,8 @@ body {
   }
   .badge-pink {
     @apply badge;
-    background-color: #fce7f3;
-    color: #d97d9e;
+    background-color: #fde7f0;
+    color: #d96b8e;
   }
   .badge-green {
     @apply badge;
@@ -388,15 +388,20 @@ body {
     background-color: #fee2e2;
     color: #e06060;
   }
+  .badge-mint {
+    @apply badge;
+    background-color: #d7f2e6;
+    color: #2c8c6b;
+  }
   .badge-blue {
     @apply badge;
     background-color: #e0effe;
     color: #5b8def;
   }
-  .badge-purple {
+  .badge-avocado {
     @apply badge;
-    background-color: #f3e8ff;
-    color: #9333ea;
+    background-color: #e6eed3;
+    color: #52692f;
   }
 
   /* ─── Status dots ─── */
@@ -456,7 +461,7 @@ body {
   .progress-bar {
     @apply w-full overflow-hidden;
     height: 4px;
-    background-color: #f0ecee;
+    background-color: #edf1df;
     border-radius: 4px;
   }
   .progress-fill {
@@ -577,26 +582,26 @@ body {
     @apply inline-flex items-center gap-1 font-medium border cursor-pointer select-none transition-all duration-150;
     font-size: 12px;
     padding: 4px 12px;
-    border-color: #e8e0e4;
+    border-color: #e3e8d7;
     border-radius: 20px;
     background: var(--surface);
     color: var(--text-secondary);
   }
   .filter-chip:hover {
-    border-color: #f0c8d4;
+    border-color: #d5e0b8;
     color: var(--primary);
-    background-color: #fef5f8;
+    background-color: #f8faef;
   }
   .filter-chip-active {
     @apply filter-chip;
     border-color: var(--primary);
     background-color: var(--primary-50);
-    color: #d97d9e;
+    color: #52692f;
   }
 
   /* ─── Skeleton ─── */
   .skeleton {
-    @apply bg-gradient-to-r from-[#F0EAEE] via-[#FAF5F7] to-[#F0EAEE] bg-[length:200%_100%] rounded;
+    @apply bg-gradient-to-r from-[#EDF2E1] via-[#F9FBF2] to-[#EDF2E1] bg-[length:200%_100%] rounded;
     animation: shimmer 1.5s infinite;
   }
   .skeleton-text {
@@ -642,7 +647,7 @@ body {
   }
   .step-dot-inactive {
     @apply step-dot;
-    background-color: #f0ecee;
+    background-color: #edf1df;
     color: #c8c0c4;
   }
   .step-line {
@@ -652,7 +657,7 @@ body {
     background-color: var(--primary);
   }
   .step-line-inactive {
-    background-color: #f0ecee;
+    background-color: #edf1df;
   }
 
   /* ─── KBD ─── */

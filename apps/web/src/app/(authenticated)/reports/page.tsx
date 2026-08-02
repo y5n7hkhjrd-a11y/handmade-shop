@@ -29,7 +29,7 @@ interface TopCustomer {
 }
 
 const CHART_COLORS = [
-  '#E88DAB',
+  '#7FA345',
   '#F9D6E5',
   '#D8F3DC',
   '#86D492',
@@ -37,7 +37,7 @@ const CHART_COLORS = [
   '#FCD34D',
   '#FCA5A5',
   '#F0ECEE',
-  '#D97D9E',
+  '#66863A',
   '#FCE7F3',
 ];
 const PRODUCT_COLORS = [
@@ -131,14 +131,14 @@ export default function ReportsPage() {
   return (
     <div className="page-enter space-y-6">
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-purple-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)] mb-4 sm:mb-6">
-        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-purple-200/25 rounded-full blur-3xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-purple-100/10 rounded-full blur-xl" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/70 border border-avocado-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-avocado-200/25 to-mint-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-avocado-100/10 rounded-full blur-xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #e88dab 1px, transparent 1px)`,
+            backgroundImage: `radial-gradient(circle at 25% 25%, #cddda9 1px, transparent 1px)`,
             backgroundSize: '24px 24px',
           }}
         />
@@ -147,10 +147,10 @@ export default function ReportsPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-avocado-400 via-avocado-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="analyse" size="lg" />
                   </div>
-                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-purple-300/30 blur-sm -z-10" />
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-avocado-300/30 to-mint-300/30 blur-sm -z-10" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -231,7 +231,7 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-avocado-200/80 to-transparent" />
       </div>
 
       <div className="tabs w-fit">
@@ -275,7 +275,7 @@ export default function ReportsPage() {
                     Tổng lợi nhuận
                   </p>
                   <p
-                    className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-[#D97D9E]' : 'text-red-600'}`}
+                    className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-[#66863A]' : 'text-red-600'}`}
                   >
                     {totalProfit >= 0 ? '+' : ''}
                     {formatCurrency(totalProfit)}
@@ -292,7 +292,7 @@ export default function ReportsPage() {
                   </p>
                   <div className="progress-bar mt-2">
                     <div
-                      className={`progress-bar-fill ${Number(profitMargin) >= 0 ? 'bg-gradient-to-r from-[#E88DAB] to-emerald-500' : 'bg-gradient-to-r from-red-500 to-red-400'}`}
+                      className={`progress-bar-fill ${Number(profitMargin) >= 0 ? 'bg-gradient-to-r from-[#7FA345] to-emerald-500' : 'bg-gradient-to-r from-red-500 to-red-400'}`}
                       style={{ width: `${Math.min(Math.max(Number(profitMargin), 0), 100)}%` }}
                     />
                   </div>
@@ -312,7 +312,7 @@ export default function ReportsPage() {
                             {formatCurrency(d.revenue)}
                           </div>
                           <div
-                            className="bar-chart-bar bg-gradient-to-t from-[#E88DAB] to-[#D97D9E] group-hover:from-[#D97D9E] group-hover:to-[#E88DAB]"
+                            className="bar-chart-bar bg-gradient-to-t from-[#7FA345] to-[#66863A] group-hover:from-[#66863A] group-hover:to-[#7FA345]"
                             style={{ height: `${heightPct}%` }}
                           />
                           <span className="bar-chart-label">{d.period}</span>
@@ -507,7 +507,7 @@ export default function ReportsPage() {
                             <td className="text-right font-semibold tabular-nums">
                               {p.totalSold.toLocaleString()}
                             </td>
-                            <td className="text-right font-medium text-[#D97D9E] tabular-nums">
+                            <td className="text-right font-medium text-[#66863A] tabular-nums">
                               {formatCurrency(p.totalRevenue)}
                             </td>
                             <td className="text-right text-gray-500 tabular-nums">{pct}%</td>
@@ -546,7 +546,7 @@ export default function ReportsPage() {
                     <div key={c.customerId} className="group">
                       <div className="flex items-center justify-between text-sm mb-1">
                         <span className="text-gray-700 truncate flex-1">
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 text-white text-[10px] font-bold mr-2">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 text-white text-[10px] font-bold mr-2">
                             {c.customerName.charAt(0)}
                           </span>
                           {c.customerName}
@@ -557,7 +557,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="progress-bar">
                         <div
-                          className="progress-bar-fill bg-gradient-to-r from-[#E88DAB] to-[#D97D9E]"
+                          className="progress-bar-fill bg-gradient-to-r from-[#7FA345] to-[#66863A]"
                           style={{ width: `${(c.totalSpent / maxCustomerSpent) * 100}%` }}
                         />
                       </div>
@@ -602,7 +602,7 @@ export default function ReportsPage() {
                             </td>
                             <td className="font-medium">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                                   {c.customerName.charAt(0)}
                                 </div>
                                 {c.customerName}
@@ -611,7 +611,7 @@ export default function ReportsPage() {
                             <td className="text-right font-semibold tabular-nums">
                               {c.totalOrders}
                             </td>
-                            <td className="text-right font-medium text-[#D97D9E] tabular-nums">
+                            <td className="text-right font-medium text-[#66863A] tabular-nums">
                               {formatCurrency(c.totalSpent)}
                             </td>
                             <td className="text-right text-gray-600 tabular-nums">

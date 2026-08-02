@@ -56,36 +56,36 @@ const carrierConfig: Record<
   SOF: {
     label: 'SOF',
     icon: 'truck-side',
-    color: 'text-blue-600',
-    gradient: 'from-blue-400 to-blue-500',
-    badge: 'bg-blue-50 text-blue-600 border-blue-200',
+    color: 'text-mint-600',
+    gradient: 'from-mint-400 to-mint-500',
+    badge: 'bg-mint-50 text-mint-600 border-mint-200',
     accent: 'border-l-blue-400',
-    progress: 'bg-blue-400',
+    progress: 'bg-mint-400',
   },
 };
 
 const TIMELINE_DOT_COLORS = [
   'bg-gray-400',
   'bg-amber-300',
-  'bg-blue-300',
+  'bg-mint-300',
   'bg-pink-300',
-  'bg-purple-300',
+  'bg-avocado-300',
   'bg-green-300',
 ];
 const TIMELINE_LINE_COLORS = [
   'bg-gray-400',
   'bg-amber-300',
-  'bg-blue-300',
+  'bg-mint-300',
   'bg-pink-300',
-  'bg-purple-300',
+  'bg-avocado-300',
   'bg-green-300',
 ];
 const TIMELINE_RING_COLORS = [
   'ring-gray-300',
   'ring-amber-200',
-  'ring-blue-200',
+  'ring-mint-200',
   'ring-pink-200',
-  'ring-purple-200',
+  'ring-avocado-200',
   'ring-green-200',
 ];
 
@@ -532,7 +532,7 @@ export default function OrderDetail({
               <div className="mt-0.5">
                 <button
                   onClick={() => setShowCustomerDetail(true)}
-                  className="font-medium text-gray-900 hover:text-purple-600 transition-colors text-left cursor-pointer"
+                  className="font-medium text-gray-900 hover:text-avocado-600 transition-colors text-left cursor-pointer"
                 >
                   {order.customer?.name || 'N/A'}
                 </button>
@@ -603,7 +603,7 @@ export default function OrderDetail({
               <span className="text-xs text-gray-500">
                 <FlaticonIcon name="usd-circle" size="xs" className="inline-flex mr-1" /> Tổng cộng
               </span>
-              <p className="font-bold text-lg text-purple-600 mt-0.5">
+              <p className="font-bold text-lg text-avocado-600 mt-0.5">
                 {formatCurrency(salePriceTotal)}
               </p>
               <p className="text-[10px] text-gray-400 mt-0.5">
@@ -673,7 +673,7 @@ export default function OrderDetail({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
             <div
               className={`p-3 rounded-xl border ${
-                order.confirmedAt ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100'
+                order.confirmedAt ? 'bg-mint-50 border-mint-200' : 'bg-gray-50 border-gray-100'
               }`}
             >
               <span className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
@@ -681,7 +681,7 @@ export default function OrderDetail({
                 <FlaticonIcon name="tools" size="xs" className="inline-flex" /> Ngày xác nhận
               </span>
               <p
-                className={`text-xs font-semibold mt-1 ${order.confirmedAt ? 'text-blue-700' : 'text-gray-400'}`}
+                className={`text-xs font-semibold mt-1 ${order.confirmedAt ? 'text-mint-700' : 'text-gray-400'}`}
               >
                 {order.confirmedAt ? formatDateTime(order.confirmedAt) : '—'}
               </p>
@@ -814,7 +814,7 @@ export default function OrderDetail({
                             className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
                               markingPaid
                                 ? 'border-gray-300 bg-gray-100'
-                                : 'border-blue-400 bg-white group-hover:border-blue-500 group-hover:bg-blue-50'
+                                : 'border-mint-400 bg-white group-hover:border-mint-500 group-hover:bg-mint-50'
                             }`}
                           >
                             {markingPaid && (
@@ -841,7 +841,7 @@ export default function OrderDetail({
                           </div>
                         </div>
                         <div className="flex-1">
-                          <span className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors">
+                          <span className="text-sm font-medium text-gray-800 group-hover:text-mint-700 transition-colors">
                             Khách hàng đã thanh toán phần còn lại
                           </span>
                           <p className="text-[11px] text-gray-400 mt-0.5">
@@ -888,7 +888,7 @@ export default function OrderDetail({
               {order.orderLines.map((ol: any, i: number) => (
                 <div
                   key={ol.id || i}
-                  className="flex flex-col p-3 bg-purple-50 rounded-xl border border-purple-100"
+                  className="flex flex-col p-3 bg-avocado-50 rounded-xl border border-avocado-100"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -920,7 +920,7 @@ export default function OrderDetail({
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
-                      <p className="font-bold text-purple-600">
+                      <p className="font-bold text-avocado-600">
                         {formatCurrency(
                           ol.type === 'RECIPE'
                             ? Number(ol.salePrice || 0)
@@ -951,12 +951,12 @@ export default function OrderDetail({
 
           {/* Legacy Recipe info — single recipe orders */}
           {!order.orderLines?.length && order.recipe && (
-            <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+            <div className="mt-6 p-4 bg-avocado-50 rounded-xl border border-avocado-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FlaticonIcon name="receipt" size="lg" />
                   <div>
-                    <h3 className="text-sm font-semibold text-purple-700">{order.recipe.name}</h3>
+                    <h3 className="text-sm font-semibold text-avocado-700">{order.recipe.name}</h3>
                     {order.customInput && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="text-[10px] text-gray-400">Input:</span>
@@ -974,7 +974,7 @@ export default function OrderDetail({
                     )}
                   </div>
                 </div>
-                <p className="font-bold text-purple-600 text-lg flex-shrink-0 ml-3">
+                <p className="font-bold text-avocado-600 text-lg flex-shrink-0 ml-3">
                   {order.salePriceSnapshot != null
                     ? formatCurrency(Number(order.salePriceSnapshot))
                     : '—'}
@@ -1062,7 +1062,7 @@ export default function OrderDetail({
                               setShipForm(newForm);
                               setShowShipForm(true);
                             }}
-                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-300 hover:shadow-sm transition-all shadow-sm"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-mint-600 hover:border-mint-300 hover:shadow-sm transition-all shadow-sm"
                             title="Sửa đơn giao"
                           >
                             <FlaticonIcon name="pencil" size="xs" />
@@ -1101,7 +1101,7 @@ export default function OrderDetail({
                               </button>
                             )}
                             {carrier === 'SOF' && (
-                              <span className="text-[10px] text-blue-600">
+                              <span className="text-[10px] text-mint-600">
                                 {s.deliveryType === 'Khách đến lấy hàng'
                                   ? 'Khách lấy'
                                   : 'Shop giao'}
@@ -1156,7 +1156,7 @@ export default function OrderDetail({
                           {
                             key: 'shop',
                             label: 'Shop trả (tính vào chi phí)',
-                            cls: 'border-blue-300 bg-blue-50 text-blue-700',
+                            cls: 'border-mint-300 bg-mint-50 text-mint-700',
                           },
                         ].map((opt) => {
                           const isSel = shippingPaidBy === opt.key;
@@ -1186,7 +1186,7 @@ export default function OrderDetail({
                               ? 'border-orange-400 bg-orange-50'
                               : carrier === 'Grab'
                                 ? 'border-emerald-400 bg-emerald-50'
-                                : 'border-blue-400 bg-blue-50';
+                                : 'border-mint-400 bg-mint-50';
                           return (
                             <button
                               type="button"
@@ -1220,7 +1220,7 @@ export default function OrderDetail({
                                 </div>
                               </div>
                               {isSel && (
-                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-[8px]">
+                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white text-[8px]">
                                   ✓
                                 </div>
                               )}
@@ -1337,15 +1337,15 @@ export default function OrderDetail({
                                       sofType: opt.value as 'pickup' | 'delivery',
                                     })
                                   }
-                                  className={`p-2.5 rounded-lg border-2 text-left transition-all ${shipForm.sofType === opt.value ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                                  className={`p-2.5 rounded-lg border-2 text-left transition-all ${shipForm.sofType === opt.value ? 'border-mint-400 bg-mint-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
                                 >
                                   <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white">
+                                    <div className="w-7 h-7 rounded bg-gradient-to-br from-mint-400 to-mint-500 flex items-center justify-center text-white">
                                       <FlaticonIcon name={opt.icon} size="xs" />
                                     </div>
                                     <div>
                                       <p
-                                        className={`text-xs font-medium ${shipForm.sofType === opt.value ? 'text-blue-700' : 'text-gray-700'}`}
+                                        className={`text-xs font-medium ${shipForm.sofType === opt.value ? 'text-mint-700' : 'text-gray-700'}`}
                                       >
                                         {opt.label}
                                       </p>
@@ -1547,7 +1547,7 @@ export default function OrderDetail({
               </div>
               <div className="detail-row py-2 border-t-2 border-gray-200">
                 <span className="text-sm font-semibold text-gray-800">Tổng chi phí</span>
-                <span className="text-base font-bold text-purple-600">
+                <span className="text-base font-bold text-avocado-600">
                   {formatCurrency(computedTotalCost)}
                 </span>
               </div>
@@ -1701,9 +1701,9 @@ export default function OrderDetail({
           aria-modal="true"
         >
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50/50 to-white">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-avocado-50/50 to-white">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white text-sm shadow-sm">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white text-sm shadow-sm">
                   <FlaticonIcon name="user" size="sm" />
                 </div>
                 <div>
@@ -1722,7 +1722,7 @@ export default function OrderDetail({
             <div className="p-5 space-y-4">
               {/* Avatar & Name */}
               <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-sm ring-2 ring-white">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-avocado-400 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-sm ring-2 ring-white">
                   {order.customer.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -1740,14 +1740,14 @@ export default function OrderDetail({
               <div className="space-y-3">
                 {order.customer.email && (
                   <div className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <FlaticonIcon name="envelope" size="xs" className="text-blue-500" />
+                    <div className="w-8 h-8 rounded-lg bg-mint-50 flex items-center justify-center flex-shrink-0">
+                      <FlaticonIcon name="envelope" size="xs" className="text-mint-500" />
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-400">Email</p>
                       <a
                         href={`mailto:${order.customer.email}`}
-                        className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
+                        className="text-gray-700 hover:text-avocado-600 transition-colors font-medium"
                       >
                         {order.customer.email}
                       </a>
@@ -1763,7 +1763,7 @@ export default function OrderDetail({
                       <p className="text-[10px] text-gray-400">Số điện thoại</p>
                       <a
                         href={`tel:${order.customer.phone}`}
-                        className="text-gray-700 hover:text-purple-600 transition-colors font-medium"
+                        className="text-gray-700 hover:text-avocado-600 transition-colors font-medium"
                       >
                         {order.customer.phone}
                       </a>
@@ -1790,7 +1790,7 @@ export default function OrderDetail({
                 order.customer.threads) && (
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <span className="w-1 h-3.5 rounded-full bg-purple-400 inline-block" />
+                    <span className="w-1 h-3.5 rounded-full bg-avocado-400 inline-block" />
                     Mạng xã hội
                   </p>
                   <div className="flex flex-wrap gap-2">

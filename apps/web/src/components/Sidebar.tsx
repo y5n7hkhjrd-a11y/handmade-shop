@@ -70,7 +70,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         `}
       >
         {/* Decorative gradient line on the right edge */}
-        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-pink-300/40 via-purple-300/20 to-transparent" />
+        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-avocado-300/40 via-mint-300/20 to-transparent" />
 
         {/* Logo */}
         <div
@@ -87,7 +87,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
             </Link>
             <button
               onClick={onMobileToggle}
-              className="lg:hidden btn-ghost absolute right-0 p-1.5 text-gray-400 hover:text-pink-500 transition-colors"
+              className="lg:hidden btn-ghost absolute right-0 p-1.5 text-gray-400 hover:text-avocado-500 transition-colors"
               aria-label="Đóng menu"
             >
               <svg
@@ -106,11 +106,11 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         {/* Desktop collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 hover:border-pink-300 z-10 group"
+          className="hidden lg:flex absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 hover:border-avocado-300 z-10 group"
           aria-label={collapsed ? 'Mở rộng' : 'Thu gọn'}
         >
           <span
-            className="text-xs text-gray-400 group-hover:text-pink-500 transition-all duration-300"
+            className="text-xs text-gray-400 group-hover:text-avocado-500 transition-all duration-300"
             style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}
           >
             ◀
@@ -135,24 +135,24 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
                       href={item.href}
                       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                         active
-                          ? 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 font-semibold shadow-sm'
-                          : 'text-gray-500 hover:bg-gradient-to-r hover:from-gray-50 hover:to-purple-50/30 hover:text-purple-600'
+                          ? 'bg-gradient-to-r from-avocado-50 to-mint-50 text-avocado-700 font-semibold shadow-sm'
+                          : 'text-gray-500 hover:bg-gradient-to-r hover:from-gray-50 hover:to-avocado-50/30 hover:text-avocado-600'
                       }`}
                     >
                       {/* Active indicator bar */}
                       {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gradient-to-b from-pink-400 to-purple-500 rounded-full animate-[fadeIn_0.2s_ease-out]" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gradient-to-b from-avocado-400 to-mint-500 rounded-full animate-[fadeIn_0.2s_ease-out]" />
                       )}
 
                       {/* Icon */}
                       <span
                         className={`relative flex-shrink-0 w-5 h-5 flex items-center justify-center transition-all duration-200 ${
-                          active ? 'text-purple-600' : 'text-gray-400 group-hover:scale-110'
+                          active ? 'text-avocado-600' : 'text-gray-400 group-hover:scale-110'
                         }`}
                       >
                         <FlaticonIcon name={item.icon} size="sm" />
                         {active && (
-                          <span className="absolute inset-0 rounded-full bg-purple-100/50 animate-[fadeIn_0.2s_ease-out]" />
+                          <span className="absolute inset-0 rounded-full bg-avocado-100/50 animate-[fadeIn_0.2s_ease-out]" />
                         )}
                       </span>
 
@@ -177,7 +177,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         >
           <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : ''}`}>
             <div className="relative w-8 h-8 flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-avocado-400 to-mint-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />

@@ -30,27 +30,27 @@ import {
 const STEP_DOT_COLORS = [
   'bg-gray-400 ring-gray-300',
   'bg-amber-300 ring-amber-200',
-  'bg-blue-300 ring-blue-200',
+  'bg-mint-300 ring-mint-200',
   'bg-pink-300 ring-pink-200',
-  'bg-purple-300 ring-purple-200',
+  'bg-avocado-300 ring-avocado-200',
   'bg-green-300 ring-green-200',
 ];
 
 const STEP_DOT_BG = [
   'bg-gray-400',
   'bg-amber-300',
-  'bg-blue-300',
+  'bg-mint-300',
   'bg-pink-300',
-  'bg-purple-300',
+  'bg-avocado-300',
   'bg-green-300',
 ];
 
 const STEP_LINE_COLORS = [
   'bg-gray-300',
   'bg-amber-300',
-  'bg-blue-300',
+  'bg-mint-300',
   'bg-pink-300',
-  'bg-purple-300',
+  'bg-avocado-300',
   'bg-green-300',
 ];
 
@@ -105,7 +105,7 @@ function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
       className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-pink-50/60 transition-colors cursor-pointer"
     >
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
         {order.customer?.name?.charAt(0) || '?'}
       </div>
       <div className="flex-1 min-w-0">
@@ -130,7 +130,7 @@ function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }
           </span>
           {order.deadline && <DeadlineChip order={order} />}
           {lineInfo && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-purple-600 bg-purple-50">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-avocado-600 bg-avocado-50">
               📋 {lineInfo}
             </span>
           )}
@@ -297,10 +297,10 @@ export default function OrdersPage() {
       <Toast toast={toast} />
 
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/50 border border-avocado-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -311,10 +311,10 @@ export default function OrdersPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="receipt" size="md" />
               </div>
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -343,7 +343,7 @@ export default function OrdersPage() {
             <span>＋ Đơn hàng mới</span>
           </button>
         </div>
-        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-avocado-300/40 to-transparent" />
       </div>
 
       {/* Status summary chips */}
@@ -559,7 +559,7 @@ export default function OrdersPage() {
                     return (
                       <tr
                         key={order.id}
-                        className="cursor-pointer group transition-all duration-200 hover:bg-blue-50/40"
+                        className="cursor-pointer group transition-all duration-200 hover:bg-mint-50/40"
                         onClick={() => {
                           if (order.status === 'Draft') {
                             setEditingOrder(order);
@@ -574,7 +574,7 @@ export default function OrdersPage() {
                       >
                         <td>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                               {order.customer?.name?.charAt(0) || '?'}
                             </div>
                             <div className="min-w-0">
@@ -666,7 +666,7 @@ export default function OrdersPage() {
                                 (s: any) => s.status === 'Failed' && !s.deletedAt,
                               ) && (
                                 <div className="relative group flex-shrink-0">
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shadow-sm shadow-red-200">
+                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-sm shadow-red-200">
                                     <FlaticonIcon
                                       name="triangle-warning"
                                       size="xs"
@@ -684,14 +684,14 @@ export default function OrdersPage() {
                         <td className="text-left">
                           {order.orderLines?.length > 0 ? (
                             <span
-                              className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-avocado-600 bg-avocado-50 px-1.5 py-0.5 rounded-full"
                               title={`${order.orderLines.length} dòng`}
                             >
                               📋 {order.orderLines.length} dòng
                             </span>
                           ) : order.recipeId ? (
                             <span
-                              className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-avocado-600 bg-avocado-50 px-1.5 py-0.5 rounded-full"
                               title="Đơn hàng theo công thức"
                             >
                               📋 Công thức

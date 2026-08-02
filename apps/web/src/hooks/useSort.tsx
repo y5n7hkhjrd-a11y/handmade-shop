@@ -98,7 +98,7 @@ export function SortIcon({
   return (
     <span
       className={`inline-flex items-center ml-1 text-[10px] leading-none transition-colors duration-150 ${
-        isActive ? 'text-blue-500' : 'text-gray-300 opacity-40 group-hover:opacity-80'
+        isActive ? 'text-mint-500' : 'text-gray-300 opacity-40 group-hover:opacity-80'
       }`}
     >
       {isActive && dir === 'desc' ? '▼' : '▲'}

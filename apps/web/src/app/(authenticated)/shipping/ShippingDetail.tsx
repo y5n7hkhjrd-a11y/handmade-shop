@@ -126,7 +126,7 @@ export default function ShippingDetail({
       <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint-500 to-avocado-600 flex items-center justify-center text-white shadow-sm">
             <FlaticonIcon name="truck-side" size="sm" />
           </div>
           <div className="flex-1 min-w-0">
@@ -236,7 +236,7 @@ export default function ShippingDetail({
                               <p className="text-[10px] text-gray-500 mt-0.5">{rec.description}</p>
                             )}
                             {rec.location && (
-                              <p className="text-[10px] text-blue-400 mt-0.5">
+                              <p className="text-[10px] text-mint-600 mt-0.5">
                                 <FlaticonIcon
                                   name="map-pin"
                                   size="xs"
@@ -272,7 +272,7 @@ export default function ShippingDetail({
                               ? 'bg-emerald-100 text-emerald-600'
                               : grabTrackingInfo.status === 'Failed'
                                 ? 'bg-red-100 text-red-500'
-                                : 'bg-blue-100 text-blue-600'
+                                : 'bg-avocado-100 text-mint-600'
                           }`}
                         >
                           <FlaticonIcon
@@ -492,7 +492,7 @@ export default function ShippingDetail({
                     {shipment.driverPhone && (
                       <a
                         href={`tel:${shipment.driverPhone}`}
-                        className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
+                        className="text-xs text-mint-600 font-medium hover:underline inline-flex items-center gap-1"
                       >
                         <FlaticonIcon name="phone-call" size="xs" />
                         {shipment.driverPhone}

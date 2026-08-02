@@ -167,18 +167,18 @@ export default function RecipeForm({
           </div>
 
           {/* BASE section */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-50/30 rounded-xl p-5 border border-blue-100/80 transition-all duration-200">
+          <div className="bg-gradient-to-br from-avocado-50 to-avocado-50/30 rounded-xl p-5 border border-avocado-100/80 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shadow-sm">
-                  <FlaticonIcon name="square" size="sm" className="text-blue-600" />
+                <div className="w-8 h-8 rounded-lg bg-avocado-100 flex items-center justify-center shadow-sm">
+                  <FlaticonIcon name="square" size="sm" className="text-mint-600" />
                 </div>
                 <div>
                   <label className="font-semibold text-gray-800 text-sm">Sản phẩm nền tảng</label>
                   <p className="text-[11px] text-gray-500">Chọn 1 BASE làm nền cho sản phẩm bán</p>
                 </div>
               </div>
-              <span className="text-[10px] font-semibold text-blue-600 bg-blue-100/80 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] font-semibold text-mint-600 bg-avocado-100/80 px-2.5 py-1 rounded-full">
                 Bắt buộc
               </span>
             </div>
@@ -202,9 +202,9 @@ export default function RecipeForm({
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-blue-100/60 px-2 py-1 rounded-md pointer-events-none">
-                  <span className="text-[10px] text-blue-500 font-medium">Giá vốn</span>
-                  <span className="text-xs font-bold text-blue-700 tabular-nums">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-avocado-100/60 px-2 py-1 rounded-md pointer-events-none">
+                  <span className="text-[10px] text-mint-500 font-medium">Giá vốn</span>
+                  <span className="text-xs font-bold text-mint-700 tabular-nums">
                     {(() => {
                       const p = products.find((pr) => pr.id === form.baseProductId);
                       return p ? formatCurrency(Number(p.cost)) : '0₫';
@@ -216,7 +216,7 @@ export default function RecipeForm({
           </div>
 
           {/* CHARM section */}
-          <div className="bg-gradient-to-br from-pink-50 to-pink-50/30 rounded-xl p-5 border border-pink-100/80 transition-all duration-200">
+          <div className="bg-gradient-to-br from-pink-50 to-pink-50/30 rounded-xl p-5 border border-avocado-100/80 transition-all duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center shadow-sm">
@@ -251,7 +251,7 @@ export default function RecipeForm({
               return (
                 <div
                   key={idx}
-                  className="bg-white rounded-lg border border-pink-200/60 p-2.5 shadow-sm mb-2 last:mb-3 transition-all duration-200 hover:border-pink-300/80 hover:shadow-md"
+                  className="bg-white rounded-lg border border-avocado-200/60 p-2.5 shadow-sm mb-2 last:mb-3 transition-all duration-200 hover:border-avocado-300/80 hover:shadow-md"
                 >
                   {/* Mobile layout */}
                   <div className="flex items-center gap-2 mb-2 sm:hidden">
@@ -408,7 +408,7 @@ export default function RecipeForm({
                       charmProducts: [...form.charmProducts, { productId: '', matchingRuleId: '' }],
                     })
                   }
-                  className="w-full py-2.5 border-2 border-dashed border-pink-200/70 rounded-lg text-sm font-medium text-pink-500 hover:text-pink-700 hover:border-pink-300 hover:bg-pink-50/50 transition-all duration-200 flex items-center justify-center gap-2 group/add"
+                  className="w-full py-2.5 border-2 border-dashed border-avocado-200/70 rounded-lg text-sm font-medium text-pink-500 hover:text-pink-700 hover:border-avocado-300 hover:bg-pink-50/50 transition-all duration-200 flex items-center justify-center gap-2 group/add"
                 >
                   <span className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center text-xs group-hover/add:bg-pink-200 transition-colors">
                     +

@@ -11,27 +11,27 @@ export const statusFlow = [
 export const statusColors: Record<string, string> = {
   Draft: 'badge-gray',
   WaitingConfirm: 'badge-yellow',
-  InProgress: 'badge-blue',
+  InProgress: 'badge-mint',
   Packaging: 'badge-pink',
-  ReadyToShip: 'badge-purple',
+  ReadyToShip: 'badge-avocado',
   Completed: 'badge-green',
 };
 
 export const statusPillClasses: Record<string, string> = {
   Draft: 'bg-gray-50 text-gray-600 ring-1 ring-gray-200',
   WaitingConfirm: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-  InProgress: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+  InProgress: 'bg-mint-50 text-mint-700 ring-1 ring-mint-200',
   Packaging: 'bg-pink-50 text-pink-700 ring-1 ring-pink-200',
-  ReadyToShip: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200',
+  ReadyToShip: 'bg-avocado-50 text-avocado-700 ring-1 ring-avocado-200',
   Completed: 'bg-green-50 text-green-700 ring-1 ring-green-200',
 };
 
 export const statusDotColors: Record<string, string> = {
   Draft: 'bg-gray-400',
   WaitingConfirm: 'bg-amber-400',
-  InProgress: 'bg-blue-400',
+  InProgress: 'bg-mint-400',
   Packaging: 'bg-pink-400',
-  ReadyToShip: 'bg-purple-400',
+  ReadyToShip: 'bg-avocado-400',
   Completed: 'bg-green-400',
 };
 export const statusIcons: Record<string, string> = {
@@ -53,17 +53,17 @@ export const statusLabels: Record<string, string> = {
 export const filterChipActiveColors: Record<string, string> = {
   Draft: '!bg-gray-100 !border-gray-300 !text-gray-700 !shadow-sm',
   WaitingConfirm: '!bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm',
-  InProgress: '!bg-blue-50 !border-blue-300 !text-blue-700 !shadow-sm',
+  InProgress: '!bg-mint-50 !border-mint-300 !text-mint-700 !shadow-sm',
   Packaging: '!bg-pink-50 !border-pink-300 !text-pink-700 !shadow-sm',
-  ReadyToShip: '!bg-purple-50 !border-purple-300 !text-purple-700 !shadow-sm',
+  ReadyToShip: '!bg-avocado-50 !border-avocado-300 !text-avocado-700 !shadow-sm',
   Completed: '!bg-green-50 !border-green-300 !text-green-700 !shadow-sm',
 };
 export const filterChipHoverColors: Record<string, string> = {
   Draft: 'hover:!border-gray-200 hover:!text-gray-600 hover:!bg-gray-100/50',
   WaitingConfirm: 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50',
-  InProgress: 'hover:!border-blue-200 hover:!text-blue-600 hover:!bg-blue-50/50',
+  InProgress: 'hover:!border-mint-200 hover:!text-mint-600 hover:!bg-mint-50/50',
   Packaging: 'hover:!border-pink-200 hover:!text-pink-600 hover:!bg-pink-50/50',
-  ReadyToShip: 'hover:!border-purple-200 hover:!text-purple-600 hover:!bg-purple-50/50',
+  ReadyToShip: 'hover:!border-avocado-200 hover:!text-avocado-600 hover:!bg-avocado-50/50',
   Completed: 'hover:!border-green-200 hover:!text-green-600 hover:!bg-green-50/50',
 };
 export const PREV_STATUS: Record<string, string> = {

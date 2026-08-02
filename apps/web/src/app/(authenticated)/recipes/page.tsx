@@ -139,10 +139,10 @@ export default function RecipesPage() {
       <Toast toast={toast} />
 
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/50 border border-avocado-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -153,10 +153,10 @@ export default function RecipesPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="receipt" size="md" />
               </div>
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -185,7 +185,7 @@ export default function RecipesPage() {
             <span>＋ Thêm sản phẩm bán</span>
           </button>
         </div>
-        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-avocado-300/40 to-transparent" />
       </div>
 
       <div className="action-bar">
@@ -324,18 +324,18 @@ export default function RecipesPage() {
                     {baseRp && (
                       <div className="mb-5">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shadow-sm">
-                            <FlaticonIcon name="square" size="xs" className="text-blue-600" />
+                          <div className="w-7 h-7 rounded-lg bg-avocado-100 flex items-center justify-center shadow-sm">
+                            <FlaticonIcon name="square" size="xs" className="text-mint-600" />
                           </div>
                           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Nền tảng
                           </h4>
                         </div>
-                        <div className="bg-white rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div className="bg-white rounded-xl p-4 border border-mint-100 shadow-sm hover:shadow-md transition-all duration-200">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3.5">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shadow-sm">
-                                <FlaticonIcon name="square" size="sm" className="text-blue-600" />
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-50 to-avocado-100 flex items-center justify-center shadow-sm">
+                                <FlaticonIcon name="square" size="sm" className="text-mint-600" />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2.5">
@@ -405,11 +405,11 @@ export default function RecipesPage() {
                                           {formatCurrency(Number(rp.product.cost))}
                                         </span>
                                         {ruleCode && (
-                                          <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-medium">
+                                          <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-avocado-50 text-avocado-600 font-medium">
                                             <FlaticonIcon
                                               name="text"
                                               size="xs"
-                                              className="text-purple-500"
+                                              className="text-avocado-500"
                                             />{' '}
                                             {ruleCode}
                                           </span>

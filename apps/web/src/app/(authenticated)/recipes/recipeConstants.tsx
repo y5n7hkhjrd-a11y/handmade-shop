@@ -36,7 +36,7 @@ export interface Recipe {
 export function ProductTypeBadge({ type }: { type: string }) {
   if (type === 'BASE') {
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-mint-50 text-mint-700">
         <FlaticonIcon name="square" size="xs" /> Nền tảng
       </span>
     );

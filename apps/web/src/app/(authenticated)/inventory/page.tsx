@@ -112,10 +112,10 @@ export default function InventoryPage() {
       <Toast toast={toast} />
 
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/50 border border-avocado-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -126,10 +126,10 @@ export default function InventoryPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="warehouse-alt" size="md" />
               </div>
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -153,7 +153,7 @@ export default function InventoryPage() {
             </button>
           </div>
         </div>
-        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-avocado-300/40 to-transparent" />
       </div>
 
       {/* Stat cards */}
@@ -195,7 +195,7 @@ export default function InventoryPage() {
           <div className="flex items-center gap-2 mb-1">
             <div
               className={`w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center text-white text-sm shadow-sm ${
-                netStock >= 0 ? 'from-pink-300 to-pink-400' : 'from-red-400 to-red-600'
+                netStock >= 0 ? 'from-mint-300 to-mint-400' : 'from-red-400 to-red-600'
               }`}
             >
               📊
@@ -204,13 +204,13 @@ export default function InventoryPage() {
               Tồn kho ròng
             </span>
           </div>
-          <p className={`text-xl font-bold ${netStock >= 0 ? 'text-[#D97D9E]' : 'text-red-600'}`}>
+          <p className={`text-xl font-bold ${netStock >= 0 ? 'text-[#66863A]' : 'text-red-600'}`}>
             {netStock >= 0 ? '+' : ''}
             {netStock.toLocaleString()}
           </p>
           <div className="progress-bar mt-2">
             <div
-              className={`progress-bar-fill ${totals.import > 0 ? 'bg-gradient-to-r from-[#E88DAB] to-emerald-500' : 'bg-gray-300'}`}
+              className={`progress-bar-fill ${totals.import > 0 ? 'bg-gradient-to-r from-[#7FA345] to-emerald-500' : 'bg-gray-300'}`}
               style={{
                 width: `${totals.import > 0 ? Math.min((totals.sale / totals.import) * 100, 100) : 0}%`,
               }}

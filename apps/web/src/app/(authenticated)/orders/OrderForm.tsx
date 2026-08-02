@@ -400,7 +400,7 @@ export default function OrderForm({
                           };
                           setForm({ ...form, orderLines: lines });
                         }}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'RECIPE' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'RECIPE' ? 'bg-avocado-100 text-avocado-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                       >
                         <FlaticonIcon name="receipt" size="xs" /> Công thức
                       </button>
@@ -420,7 +420,7 @@ export default function OrderForm({
                           };
                           setForm({ ...form, orderLines: lines });
                         }}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'PRODUCT' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'PRODUCT' ? 'bg-avocado-100 text-avocado-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                       >
                         <FlaticonIcon name="box-open" size="xs" /> Sản phẩm
                       </button>
@@ -514,17 +514,17 @@ export default function OrderForm({
                             });
                             if (!info) return null;
                             return (
-                              <div className="p-2 bg-purple-50 rounded-lg border border-purple-100">
-                                <p className="text-[10px] font-medium text-purple-700 mb-1">
+                              <div className="p-2 bg-avocado-50 rounded-lg border border-avocado-100">
+                                <p className="text-[10px] font-medium text-avocado-700 mb-1">
                                   Chi phí vật liệu ước tính:{' '}
                                   <strong>{formatCurrency(info.materialCost)}</strong>
                                 </p>
-                                <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-2.5 items-center text-[10px] text-purple-600">
+                                <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-2.5 items-center text-[10px] text-avocado-600">
                                   {info.items.map((item: any, ii: number) => {
                                     const ruleInfo = item.ruleInfo;
                                     return (
                                       <Fragment key={ii}>
-                                        <span className="truncate font-medium text-purple-800 min-w-0 max-w-44 py-0.5">
+                                        <span className="truncate font-medium text-avocado-800 min-w-0 max-w-44 py-0.5">
                                           {item.product?.name || '?'}
                                         </span>
                                         <span className="flex items-center gap-1 min-w-0 py-0.5">
@@ -533,7 +533,7 @@ export default function OrderForm({
                                               <span className="truncate min-w-0 max-w-40">
                                                 {ruleInfo.name}
                                               </span>
-                                              <code className="text-[9px] font-mono px-1 py-px rounded bg-white border border-purple-100 text-purple-400 flex-shrink-0">
+                                              <code className="text-[9px] font-mono px-1 py-px rounded bg-white border border-avocado-100 text-avocado-400 flex-shrink-0">
                                                 {ruleInfo.code}
                                               </code>
                                             </>
@@ -645,7 +645,7 @@ export default function OrderForm({
                     ],
                   })
                 }
-                className="w-full py-3 border-2 border-dashed border-pink-200 rounded-xl text-sm font-medium text-pink-500 hover:text-pink-600 hover:border-pink-300 hover:bg-pink-50/50 transition-all"
+                className="w-full py-3 border-2 border-dashed border-pink-200 rounded-xl text-sm font-medium text-avocado-500 hover:text-avocado-600 hover:border-avocado-300 hover:bg-pink-50/50 transition-all"
               >
                 <FlaticonIcon name="plus" size="xs" className="mr-1" /> Thêm sản phẩm / Công thức
               </button>
@@ -665,12 +665,12 @@ export default function OrderForm({
               });
               if (totalSalePrice <= 0) return null;
               return (
-                <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-50/30 rounded-xl border border-purple-100">
+                <div className="p-3 bg-gradient-to-br from-avocado-50 to-avocado-50/30 rounded-xl border border-avocado-100">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700">
                       Tổng giá trị đơn hàng
                     </span>
-                    <span className="text-lg font-bold text-purple-600">
+                    <span className="text-lg font-bold text-avocado-600">
                       {formatCurrency(totalSalePrice)}
                     </span>
                   </div>
@@ -787,7 +787,7 @@ export default function OrderForm({
             {/* Social Links */}
             <div className="px-5 pb-1">
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <span className="w-1 h-3.5 rounded-full bg-purple-400 inline-block" />
+                <span className="w-1 h-3.5 rounded-full bg-avocado-400 inline-block" />
                 Mạng xã hội
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -808,8 +808,8 @@ export default function OrderForm({
                   </div>
                 ))}
               </div>
-              <div className="mt-2.5 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
+              <div className="mt-2.5 p-2.5 bg-mint-50 rounded-lg border border-mint-100">
+                <div className="flex items-center gap-1.5 text-[11px] text-mint-700">
                   <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="#0068FF">
                     <path d="M12.49 10.2722v-.4496h1.3467v6.3218h-.7704a.576.576 0 01-.5763-.5729l-.0006.0005a3.273 3.273 0 01-1.9372.6321c-1.8138 0-3.2844-1.4697-3.2844-3.2823 0-1.8125 1.4706-3.2822 3.2844-3.2822a3.273 3.273 0 011.9372.6321l.0006.0005zM6.9188 7.7896v.205c0 .3823-.051.6944-.2995 1.0605l-.03.0343c-.0542.0615-.1815.206-.2421.2843L2.024 14.8h4.8948v.7682a.5764.5764 0 01-.5767.5761H0v-.3622c0-.4436.1102-.6414.2495-.8476L4.8582 9.23H.1922V7.7896h6.7266zm8.5513 8.3548a.4805.4805 0 01-.4803-.4798v-7.875h1.4416v8.3548H15.47zM20.6934 9.6C22.52 9.6 24 11.0807 24 12.9044c0 1.8252-1.4801 3.306-3.3066 3.306-1.8264 0-3.3066-1.4808-3.3066-3.306 0-1.8237 1.4802-3.3044 3.3066-3.3044zm-10.1412 5.253c1.0675 0 1.9324-.8645 1.9324-1.9312 0-1.065-.865-1.9295-1.9324-1.9295s-1.9324.8644-1.9324 1.9295c0 1.0667.865 1.9312 1.9324 1.9312zm10.1412-.0033c1.0737 0 1.945-.8707 1.945-1.9453 0-1.073-.8713-1.9436-1.945-1.9436-1.0753 0-1.945.8706-1.945 1.9436 0 1.0746.8697 1.9453 1.945 1.9453z" />
                   </svg>

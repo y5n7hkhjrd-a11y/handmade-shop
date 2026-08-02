@@ -19,13 +19,13 @@ export interface Customer {
 
 export const AVATAR_COLORS = [
   'from-pink-300 to-pink-500',
-  'from-purple-300 to-purple-500',
-  'from-blue-300 to-blue-500',
+  'from-avocado-300 to-avocado-500',
+  'from-avocado-300 to-avocado-500',
   'from-cyan-300 to-cyan-500',
   'from-emerald-300 to-emerald-500',
   'from-amber-300 to-amber-500',
-  'from-rose-300 to-rose-500',
-  'from-indigo-300 to-indigo-500',
+  'from-pink-300 to-pink-500',
+  'from-mint-300 to-mint-500',
 ];
 
 export function getAvatarColor(name: string): string {

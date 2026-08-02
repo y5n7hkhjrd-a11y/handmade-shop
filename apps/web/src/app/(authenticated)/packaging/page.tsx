@@ -142,10 +142,10 @@ export default function PackagingPage() {
       <Toast toast={toast} />
 
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-purple-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(232,141,171,0.15)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/50 border border-avocado-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-purple-200/25 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -156,10 +156,10 @@ export default function PackagingPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="gift" size="md" />
               </div>
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-pink-400/20 to-purple-500/20 blur-sm -z-10" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
@@ -180,7 +180,7 @@ export default function PackagingPage() {
             <span>＋ Thêm phương án</span>
           </button>
         </div>
-        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-avocado-300/40 to-transparent" />
       </div>
 
       {/* Summary chips */}
@@ -351,7 +351,7 @@ export default function PackagingPage() {
                 ))}
                 <button
                   type="button"
-                  className="text-sm text-[#D97D9E] font-medium hover:text-[#E88DAB]"
+                  className="text-sm text-[#66863A] font-medium hover:text-[#7FA345]"
                   onClick={() =>
                     setForm({
                       ...form,
@@ -366,10 +366,10 @@ export default function PackagingPage() {
                 </button>
               </div>
               {form.components.some((c) => c.cost > 0) && (
-                <div className="p-3 bg-rose-50 rounded-lg border border-rose-100">
+                <div className="p-3 bg-pink-50 rounded-lg border border-pink-100">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-rose-700 font-medium">Total Packaging Cost</span>
-                    <span className="text-rose-600 font-bold text-lg">
+                    <span className="text-pink-700 font-medium">Total Packaging Cost</span>
+                    <span className="text-pink-600 font-bold text-lg">
                       {formatCurrency(form.components.reduce((s, c) => s + Number(c.cost), 0))}
                     </span>
                   </div>
@@ -401,7 +401,7 @@ export default function PackagingPage() {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
                       <FlaticonIcon name="gift" size="md" />
                     </div>
                     <div className="min-w-0">
@@ -414,14 +414,14 @@ export default function PackagingPage() {
                       </span>
                     </div>
                   </div>
-                  <p className="font-bold text-[#E88DAB] text-lg flex-shrink-0">
+                  <p className="font-bold text-[#7FA345] text-lg flex-shrink-0">
                     {formatCurrency(Number(tpl.totalCost))}
                   </p>
                 </div>
                 {tpl.description && <p className="text-sm text-gray-500 mb-3">{tpl.description}</p>}
                 <div className="flex items-center justify-between">
                   <button
-                    className="text-sm text-[#D97D9E] font-medium hover:text-[#E88DAB]"
+                    className="text-sm text-[#66863A] font-medium hover:text-[#7FA345]"
                     onClick={() => setExpandedId(expandedId === tpl.id ? null : tpl.id)}
                   >
                     {expandedId === tpl.id ? '▲ Hide' : '▼ Show'} components (
@@ -460,7 +460,7 @@ export default function PackagingPage() {
                             </div>
                             <div className="progress-bar">
                               <div
-                                className="progress-bar-fill bg-gradient-to-r from-rose-500 to-pink-400"
+                                className="progress-bar-fill bg-gradient-to-r from-avocado-500 to-mint-400"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
