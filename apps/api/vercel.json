@@ -2,5 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd ../.. && pnpm --filter @handmade-shop/shared build && pnpm --filter @handmade-shop/api prisma:generate",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "framework": "express"
+  "framework": "express",
+  "regions": ["hnd1"]
 }

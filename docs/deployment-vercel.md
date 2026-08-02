@@ -165,13 +165,15 @@ The API's build settings are defined in `apps/api/vercel.json`:
 {
   "buildCommand": "cd ../.. && pnpm --filter @handmade-shop/shared build && pnpm --filter @handmade-shop/api prisma:generate",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "framework": "express"
+  "framework": "express",
+  "regions": ["hnd1"]
 }
 ```
 
 **Key points:**
 
 - `framework: "express"` — uses Vercel's built-in Express preset: the app exported from `src/index.ts` becomes a **single serverless function** with automatic routing to all paths (no `rewrites` needed). This overrides the "Other" (static) preset, which would otherwise demand an output directory (default `public`) and fail the build with `No Output Directory named "public" found`.
+- `regions: ["hnd1"]` — pins the serverless function to **Tokyo** (Vercel region `hnd1`), matching the Supabase database region (`ap-northeast-1`). Without this, the function runs in `iad1` (US East) by default and every DB query crosses the Pacific (~200 ms round-trip each). If you change the database region, update this to the matching Vercel region (e.g. `sin1` Singapore, `iad1` US East, `sfo1` San Francisco).
 - **No `rewrites`, `functions`, or `outputDirectory` needed** — the Express preset handles routing, function limits (configure memory/max duration in the Dashboard → Functions), and does not require any static output.
 - The `installCommand` and `buildCommand` both navigate to the monorepo root via `cd ../..`. The buildCommand generates Prisma Client and builds the shared package before the function is bundled.
 - **Do NOT add `outputDirectory`** — it makes Vercel treat the deployment as pre-built static files and skip compiling the function entirely (the API then returns raw TypeScript source, HTTP 200).
