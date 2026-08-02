@@ -72,9 +72,10 @@ commands:
           command: pnpm --filter @handmade-shop/api prisma:generate
 
   # ----- Deploy a specific app directory to Vercel ---------------------------
-  # Writes the .vercel/project.json link (from CircleCI env vars) inside the
-  # app directory, then deploys from there so Vercel uploads the app's own
-  # files and picks up its vercel.json. --yes avoids npx prompts in CI.
+  # Exports VERCEL_PROJECT_ID + VERCEL_ORG_ID (from CircleCI env vars) so the
+  # Vercel CLI targets the intended project; also writes .vercel/project.json
+  # as a fallback link. Deploys from the app dir so Vercel uploads the app's
+  # own files and picks up its vercel.json. --yes avoids npx prompts in CI.
   deploy-vercel:
     parameters:
       app-dir:
@@ -90,6 +91,11 @@ commands:
             cd << parameters.app-dir >>
             mkdir -p .vercel
             echo "{\"projectId\":\"${<< parameters.project-id-env >>}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
+            # Vercel CLI v58 validates these env vars BEFORE reading .vercel/project.json:
+            # if VERCEL_ORG_ID is set without VERCEL_PROJECT_ID, it aborts with
+            # "You specified `VERCEL_ORG_ID` but you forgot to specify `VERCEL_PROJECT_ID`".
+            # Export both so the CLI targets the intended project directly.
+            export VERCEL_PROJECT_ID="${<< parameters.project-id-env >>}"
             npx --yes vercel@58 deploy --prod --token=$VERCEL_TOKEN --yes
 
 # ---------------------------------------------------------------------------

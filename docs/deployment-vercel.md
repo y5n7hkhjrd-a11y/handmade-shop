@@ -334,14 +334,20 @@ commands:
             cd << parameters.app-dir >>
             mkdir -p .vercel
             echo "{\"projectId\":\"${<< parameters.project-id-env >>}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
+            # Vercel CLI v58 checks VERCEL_ORG_ID/VERCEL_PROJECT_ID env vars BEFORE
+            # reading .vercel/project.json: if VERCEL_ORG_ID is set without
+            # VERCEL_PROJECT_ID it aborts with "You specified `VERCEL_ORG_ID` but you
+            # forgot to specify `VERCEL_PROJECT_ID`". Export both to target the project.
+            export VERCEL_PROJECT_ID="${<< parameters.project-id-env >>}"
             npx vercel deploy --prod --token=$VERCEL_TOKEN --yes
 ```
 
 This:
 
 1. Navigates to the app directory.
-2. Creates a `.vercel/project.json` with the correct project and org IDs.
-3. Runs `vercel deploy --prod` to deploy.
+2. Creates a `.vercel/project.json` with the correct project and org IDs (fallback link).
+3. Exports `VERCEL_PROJECT_ID` (alongside the already-set `VERCEL_ORG_ID`) so the CLI targets the intended project — this works around a v58 CLI check that rejects `VERCEL_ORG_ID` without `VERCEL_PROJECT_ID` before it even reads `project.json`.
+4. Runs `vercel deploy --prod` to deploy.
 
 > **`--prod`** flag deploys to the Production environment (the `main` branch in Vercel's terms). For staging, the `staging` branch still uses `--prod` because we want it to replace the staging project's current production deployment.
 >
