@@ -30,7 +30,7 @@ interface MatchingRule {
 }
 
 const typeConfig: Record<string, { icon: string; badge: string; desc: string }> = {
-  BASE: { icon: 'square', badge: 'badge-blue', desc: 'Base component' },
+  BASE: { icon: 'box', badge: 'badge-blue', desc: 'Base component' },
   CHARM: { icon: 'stars', badge: 'badge-pink', desc: 'Charm / add-on' },
 };
 

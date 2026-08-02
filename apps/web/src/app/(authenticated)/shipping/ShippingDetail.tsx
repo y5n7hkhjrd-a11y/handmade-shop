@@ -252,7 +252,7 @@ export default function ShippingDetail({
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 py-2">
-                    <FlaticonIcon name="circle-exclamation" size="sm" className="text-gray-300" />
+                    <FlaticonIcon name="circle-dashed" size="sm" className="text-gray-300" />
                     <span className="text-xs text-gray-400">Chưa có dữ liệu vận đơn</span>
                   </div>
                 )
@@ -302,7 +302,7 @@ export default function ShippingDetail({
                     {grabTrackingInfo.pickupAddress && (
                       <div className="flex items-start gap-2.5">
                         <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 bg-amber-100 text-amber-600">
-                          <FlaticonIcon name="store" size="xs" />
+                          <FlaticonIcon name="store-alt" size="xs" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-[10px] font-medium text-gray-400 uppercase">
@@ -363,7 +363,7 @@ export default function ShippingDetail({
                       )}
                       {grabTrackingInfo.orderBookingCode && (
                         <div className="flex items-center gap-1.5">
-                          <FlaticonIcon name="tag" size="xs" className="text-gray-400" />
+                          <FlaticonIcon name="tags" size="xs" className="text-gray-400" />
                           <span className="text-[10px] font-mono text-gray-500">
                             {grabTrackingInfo.orderBookingCode}
                           </span>
@@ -376,7 +376,7 @@ export default function ShippingDetail({
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 py-2">
-                    <FlaticonIcon name="circle-exclamation" size="sm" className="text-gray-300" />
+                    <FlaticonIcon name="circle-dashed" size="sm" className="text-gray-300" />
                     <span className="text-xs text-gray-400">Đang tải thông tin Grab...</span>
                   </div>
                 )
@@ -494,7 +494,7 @@ export default function ShippingDetail({
                         href={`tel:${shipment.driverPhone}`}
                         className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
                       >
-                        <FlaticonIcon name="phone" size="xs" />
+                        <FlaticonIcon name="phone-call" size="xs" />
                         {shipment.driverPhone}
                       </a>
                     )}
@@ -510,7 +510,7 @@ export default function ShippingDetail({
                     }
                     className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
                   >
-                    <FlaticonIcon name="external-link" size="xs" />
+                    <FlaticonIcon name="arrow-up-right-from-square" size="xs" />
                     Mở tracking Grab
                   </button>
                 </div>
@@ -538,7 +538,7 @@ export default function ShippingDetail({
                         <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <>
-                          <FlaticonIcon name="chevron-right" size="xs" /> {act.label}
+                          <FlaticonIcon name="angle-right" size="xs" /> {act.label}
                         </>
                       )}
                     </button>

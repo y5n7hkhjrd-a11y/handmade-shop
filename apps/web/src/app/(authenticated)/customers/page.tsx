@@ -519,7 +519,7 @@ export default function CustomersPage() {
                     {c.phone && (
                       <div className="flex items-center gap-2 text-sm group">
                         <FlaticonIcon
-                          name="phone"
+                          name="phone-call"
                           size="sm"
                           className="text-gray-400 w-5 flex-shrink-0"
                         />

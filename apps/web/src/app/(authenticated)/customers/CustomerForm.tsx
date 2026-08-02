@@ -189,7 +189,7 @@ export default function CustomerForm({
                 <label className="label">Số điện thoại</label>
                 <div className="relative">
                   <FlaticonIcon
-                    name="phone"
+                    name="phone-call"
                     size="xs"
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                   />

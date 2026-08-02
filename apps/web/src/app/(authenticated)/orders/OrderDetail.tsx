@@ -1111,7 +1111,7 @@ export default function OrderDetail({
                           <p className="text-[10px] text-gray-400">
                             {Number(s.cost) === 0 ? (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 font-medium">
-                                <FlaticonIcon name="tag" size="xs" /> Miễn phí ship
+                                <FlaticonIcon name="tags" size="xs" /> Miễn phí ship
                               </span>
                             ) : (
                               formatCurrency(Number(s.cost))
@@ -1757,7 +1757,7 @@ export default function OrderDetail({
                 {order.customer.phone && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <FlaticonIcon name="phone" size="xs" className="text-green-500" />
+                      <FlaticonIcon name="phone-call" size="xs" className="text-green-500" />
                     </div>
                     <div>
                       <p className="text-[10px] text-gray-400">Số điện thoại</p>

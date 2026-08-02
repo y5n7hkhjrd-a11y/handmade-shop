@@ -30,7 +30,7 @@ const navGroups = [
     items: [
       { href: '/dashboard', label: 'Tổng quan', icon: 'analyse' },
       { href: '/reports', label: 'Báo cáo', icon: 'stats' },
-      { href: '/settings', label: 'Cài đặt', icon: 'cog' },
+      { href: '/settings', label: 'Cài đặt', icon: 'settings' },
     ],
   },
 ];

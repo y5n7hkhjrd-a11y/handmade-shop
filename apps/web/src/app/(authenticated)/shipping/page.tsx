@@ -44,7 +44,7 @@ function TrackingBadge({ s, carrier }: { s: Shipping; carrier: CarrierType }) {
           }}
           className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-medium hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm transition-all max-w-[120px]"
         >
-          <FlaticonIcon name="external-link" size="xs" />
+          <FlaticonIcon name="arrow-up-right-from-square" size="xs" />
           <span className="truncate min-w-0">{s.trackingNumber}</span>
         </button>
         <button
@@ -69,7 +69,7 @@ function TrackingBadge({ s, carrier }: { s: Shipping; carrier: CarrierType }) {
         }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-medium hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all"
       >
-        <FlaticonIcon name="external-link" size="xs" />
+        <FlaticonIcon name="arrow-up-right-from-square" size="xs" />
         Grab Track
       </button>
     );
@@ -588,7 +588,7 @@ export default function ShippingPage() {
                     <div className="text-right flex-shrink-0">
                       {Number(s.cost) === 0 ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-medium">
-                          <FlaticonIcon name="tag" size="xs" /> Miễn phí
+                          <FlaticonIcon name="tags" size="xs" /> Miễn phí
                         </span>
                       ) : (
                         <p className="text-sm font-bold text-gray-800">
@@ -732,7 +732,7 @@ export default function ShippingPage() {
                               {s.driverPhone && (
                                 <>
                                   <FlaticonIcon
-                                    name="phone"
+                                    name="phone-call"
                                     size="xs"
                                     className="inline-flex mr-0.5"
                                   />
@@ -786,7 +786,7 @@ export default function ShippingPage() {
                         <td>
                           {Number(s.cost) === 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-medium">
-                              <FlaticonIcon name="tag" size="xs" /> Miễn phí
+                              <FlaticonIcon name="tags" size="xs" /> Miễn phí
                             </span>
                           ) : (
                             <>
