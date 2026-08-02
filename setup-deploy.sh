@@ -267,6 +267,61 @@ extract_ids() {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Mask a secret value for display (never print secrets in full)
+# ──────────────────────────────────────────────────────────────────────────────
+mask_secret() {
+  local VALUE="$1"
+  if [ -z "$VALUE" ]; then
+    echo "${RED}<not provided — add manually in the Vercel Dashboard>${NC}"
+  else
+    echo "${VALUE:0:6}…(${#VALUE} chars)"
+  fi
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Print the checklist of env vars that must exist on each Vercel project
+# ──────────────────────────────────────────────────────────────────────────────
+print_vercel_env_checklist() {
+  # Keep the env var names below in sync with WEB_ENV_VARS / API_ENV_VARS_COMMON / API_ENV_VARS_SECRET
+  local WEB_STAGING_URL="$1"
+  local WEB_PROD_URL="$2"
+  local API_STAGING_DB="$3"
+  local API_STAGING_JWT="$4"
+  local API_STAGING_EXP="$5"
+  local API_PROD_DB="$6"
+  local API_PROD_JWT="$7"
+  local API_PROD_EXP="$8"
+
+  log_step "Vercel Project Environment Variables Checklist"
+  echo "Verify these in Vercel Dashboard → Project → Settings → Environment Variables."
+  echo "If a secret shows \"not provided\", add it manually — the CLI step above may have failed."
+  echo ""
+  echo "Scope notes: Production is required for CircleCI deploys (they use --prod)."
+  echo "             Preview is for branch/preview deployments."
+  echo ""
+
+  echo -e "${BOLD}${CYAN}▶ handmade-shop-web-staging${NC}  (apps/web — staging frontend)"
+  echo -e "  ${BOLD}NEXT_PUBLIC_API_URL${NC}  (Production + Preview)  = ${GREEN}${WEB_STAGING_URL}${NC}"
+  echo ""
+
+  echo -e "${BOLD}${CYAN}▶ handmade-shop-web-prod${NC}     (apps/web — production frontend)"
+  echo -e "  ${BOLD}NEXT_PUBLIC_API_URL${NC}  (Production)             = ${GREEN}${WEB_PROD_URL}${NC}"
+  echo ""
+
+  echo -e "${BOLD}${CYAN}▶ handmade-shop-api-staging${NC}  (apps/api — staging API)"
+  echo -e "  ${BOLD}DATABASE_URL${NC}    (Production + Preview)  = $(mask_secret "$API_STAGING_DB")"
+  echo -e "  ${BOLD}JWT_SECRET${NC}      (Production + Preview)  = $(mask_secret "$API_STAGING_JWT")"
+  echo -e "  ${BOLD}JWT_EXPIRES_IN${NC}  (Production + Preview)  = ${GREEN}${API_STAGING_EXP:-7d}${NC}"
+  echo ""
+
+  echo -e "${BOLD}${CYAN}▶ handmade-shop-api-prod${NC}     (apps/api — production API)"
+  echo -e "  ${BOLD}DATABASE_URL${NC}    (Production)             = $(mask_secret "$API_PROD_DB")"
+  echo -e "  ${BOLD}JWT_SECRET${NC}      (Production)             = $(mask_secret "$API_PROD_JWT")"
+  echo -e "  ${BOLD}JWT_EXPIRES_IN${NC}  (Production)             = ${GREEN}${API_PROD_EXP:-7d}${NC}"
+  echo ""
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Main setup logic
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -510,6 +565,17 @@ main() {
   echo -e "NEXT_PUBLIC_API_URL_STAGING          ${GREEN}${STAGING_API_URL}${NC}"
   echo -e "NEXT_PUBLIC_API_URL_PROD             ${GREEN}${PROD_API_URL}${NC}"
   echo ""
+
+  # Print the Vercel-project env var checklist (verification reference)
+  print_vercel_env_checklist \
+    "${STAGING_API_URL}" \
+    "${PROD_API_URL}" \
+    "${ENV_VALS["STAGING_DATABASE_URL"]:-}" \
+    "${ENV_VALS["STAGING_JWT_SECRET"]:-}" \
+    "${ENV_VALS["STAGING_JWT_EXPIRES_IN"]:-}" \
+    "${ENV_VALS["PROD_DATABASE_URL"]:-}" \
+    "${ENV_VALS["PROD_JWT_SECRET"]:-}" \
+    "${ENV_VALS["PROD_JWT_EXPIRES_IN"]:-}"
 
   # ── Next steps ──────────────────────────────────────────────────────────
   log_step "Next Steps"
