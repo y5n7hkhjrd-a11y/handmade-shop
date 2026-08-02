@@ -3,6 +3,13 @@ import { prisma } from '../lib/prisma.js';
 import { shippingService } from './shippingService.js';
 import { ShippingStatus } from '@prisma/client';
 
+/**
+ * Minimal shape of the fetch() response we rely on. The global `Response` type
+ * resolves to an empty interface in some build environments (e.g. Vercel's
+ * Express builder), so we don't depend on it here.
+ */
+type TrackingApiResponse = { ok: boolean; json(): Promise<unknown> };
+
 const ACTIVE_STATUSES: ShippingStatus[] = ['Pending', 'Shipped', 'InTransit'];
 const CRON_SCHEDULE = '*/5 * * * *'; // Every 5 minutes
 
@@ -37,7 +44,9 @@ async function processActiveShipments(): Promise<void> {
           const spxUrl = `https://spx.vn/shipment/order/open/order/get_order_info?spx_tn=${encodeURIComponent(shipment.trackingNumber)}&language_code=vi`;
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 8000);
-          const response = await fetch(spxUrl, { signal: controller.signal });
+          const response = (await fetch(spxUrl, {
+            signal: controller.signal,
+          })) as unknown as TrackingApiResponse;
           clearTimeout(timeout);
 
           if (response.ok) {
@@ -63,13 +72,13 @@ async function processActiveShipments(): Promise<void> {
             const apiUrl = `https://p.grabtaxi.com/express/web/v1/tracking?withStaticTracking=true&orderGUIDs=${encodeURIComponent(orderGUID)}`;
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 8000);
-            const response = await fetch(apiUrl, {
+            const response = (await fetch(apiUrl, {
               signal: controller.signal,
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 Accept: 'application/json',
               },
-            });
+            })) as unknown as TrackingApiResponse;
             clearTimeout(timeout);
 
             if (response.ok) {

@@ -8,6 +8,13 @@ import {
 } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
+/**
+ * Minimal shape of the fetch() response we rely on. The global `Response` type
+ * resolves to an empty interface in some build environments (e.g. Vercel's
+ * Express builder), so we don't depend on it here.
+ */
+type TrackingApiResponse = { ok: boolean; json(): Promise<unknown> };
+
 export const shippingRouter: Router = Router();
 
 shippingRouter.get('/counts', async (_req: Request, res: Response, next: NextFunction) => {
@@ -113,14 +120,14 @@ shippingRouter.post('/track-grab', async (req: Request, res: Response, next: Nex
     const apiUrl = `https://p.grabtaxi.com/express/web/v1/tracking?withStaticTracking=true&orderGUIDs=${encodeURIComponent(orderGUID)}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    const response = await fetch(apiUrl, {
+    const response = (await fetch(apiUrl, {
       signal: controller.signal,
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
         Accept: 'application/json',
       },
-    });
+    })) as unknown as TrackingApiResponse;
     clearTimeout(timeout);
 
     if (!response.ok) {
@@ -288,7 +295,9 @@ shippingRouter.post('/track-spx', async (req: Request, res: Response, next: Next
     const spxUrl = `https://spx.vn/shipment/order/open/order/get_order_info?spx_tn=${encodeURIComponent(trackingNumber)}&language_code=vi`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    const response = await fetch(spxUrl, { signal: controller.signal });
+    const response = (await fetch(spxUrl, {
+      signal: controller.signal,
+    })) as unknown as TrackingApiResponse;
     clearTimeout(timeout);
     if (!response.ok) {
       throw new AppError('Không thể tra cứu mã vận đơn SPX', 502);
