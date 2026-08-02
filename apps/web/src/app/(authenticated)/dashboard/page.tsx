@@ -260,7 +260,7 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="analyse" size="lg" />
                   </div>
                   <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />
@@ -424,7 +424,7 @@ export default function DashboardPage() {
                     onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders?id=${order.id}`)}
                     className="flex items-center gap-3 px-4 py-3.5 active:bg-avocado-50/60 transition-colors cursor-pointer"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-400 to-mint-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
                       {order.customer?.name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -485,7 +485,7 @@ export default function DashboardPage() {
                         </td>
                         <td>
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-mint-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-pink-500 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
                               {order.customer?.name?.charAt(0) || '?'}
                             </div>
                             <div className="flex items-center gap-1.5">

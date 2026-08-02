@@ -216,7 +216,7 @@ export default function ProductsPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="box" size="lg" />
                   </div>
                   <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />

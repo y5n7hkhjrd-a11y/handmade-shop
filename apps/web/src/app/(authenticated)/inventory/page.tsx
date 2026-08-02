@@ -126,7 +126,7 @@ export default function InventoryPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="warehouse-alt" size="md" />
               </div>
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
@@ -160,7 +160,7 @@ export default function InventoryPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-sm shadow-sm">
               📥
             </div>
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -171,7 +171,7 @@ export default function InventoryPage() {
         </div>
         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center text-white text-sm shadow-sm">
               📤
             </div>
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -182,7 +182,7 @@ export default function InventoryPage() {
         </div>
         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-white text-sm shadow-sm">
               ⚖️
             </div>
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">

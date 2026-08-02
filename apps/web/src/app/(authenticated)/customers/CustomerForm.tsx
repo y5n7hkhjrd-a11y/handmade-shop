@@ -103,7 +103,7 @@ export default function CustomerForm({
         {/* Form header */}
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-mint-50/50 to-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white text-sm shadow-sm">
+            <div className="w-9 h-9 rounded-lg bg-pink-500 flex items-center justify-center text-white text-sm shadow-sm">
               {editingCustomer ? (
                 <FlaticonIcon name="pencil" size="sm" />
               ) : (

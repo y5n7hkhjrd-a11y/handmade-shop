@@ -105,7 +105,7 @@ function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
       className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-pink-50/60 transition-colors cursor-pointer"
     >
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-mint-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
         {order.customer?.name?.charAt(0) || '?'}
       </div>
       <div className="flex-1 min-w-0">
@@ -311,7 +311,7 @@ export default function OrdersPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="receipt" size="md" />
               </div>
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
@@ -574,7 +574,7 @@ export default function OrdersPage() {
                       >
                         <td>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                            <div className="w-8 h-8 rounded-full bg-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                               {order.customer?.name?.charAt(0) || '?'}
                             </div>
                             <div className="min-w-0">
@@ -666,7 +666,7 @@ export default function OrdersPage() {
                                 (s: any) => s.status === 'Failed' && !s.deletedAt,
                               ) && (
                                 <div className="relative group flex-shrink-0">
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-sm shadow-red-200">
+                                  <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-sm shadow-red-200">
                                     <FlaticonIcon
                                       name="triangle-warning"
                                       size="xs"

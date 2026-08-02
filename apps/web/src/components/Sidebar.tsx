@@ -177,7 +177,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         >
           <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : ''}`}>
             <div className="relative w-8 h-8 flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-mint-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
+              <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />

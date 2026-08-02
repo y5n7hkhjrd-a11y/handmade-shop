@@ -153,7 +153,7 @@ export default function RecipesPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="receipt" size="md" />
               </div>
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
@@ -253,7 +253,7 @@ export default function RecipesPage() {
                   onClick={() => setExpandedRecipe(expandedRecipe === recipe.id ? null : recipe.id)}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-sm">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center text-white shadow-sm">
                       <FlaticonIcon name="receipt" size="md" />
                     </div>
                     <div className="min-w-0">

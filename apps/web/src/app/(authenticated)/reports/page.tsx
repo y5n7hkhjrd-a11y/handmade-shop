@@ -147,7 +147,7 @@ export default function ReportsPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="analyse" size="lg" />
                   </div>
                   <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />
@@ -546,7 +546,7 @@ export default function ReportsPage() {
                     <div key={c.customerId} className="group">
                       <div className="flex items-center justify-between text-sm mb-1">
                         <span className="text-gray-700 truncate flex-1">
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 text-white text-[10px] font-bold mr-2">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-mint-400 text-white text-[10px] font-bold mr-2">
                             {c.customerName.charAt(0)}
                           </span>
                           {c.customerName}
@@ -602,7 +602,7 @@ export default function ReportsPage() {
                             </td>
                             <td className="font-medium">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-mint-300 to-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                <div className="w-8 h-8 rounded-full bg-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                                   {c.customerName.charAt(0)}
                                 </div>
                                 {c.customerName}
