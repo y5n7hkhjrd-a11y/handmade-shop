@@ -139,7 +139,7 @@ export default function RecipesPage() {
       <Toast toast={toast} />
 
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/50 border border-avocado-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
         <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
         <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
@@ -153,7 +153,7 @@ export default function RecipesPage() {
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white shadow-sm">
                 <FlaticonIcon name="receipt" size="md" />
               </div>
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
@@ -185,7 +185,7 @@ export default function RecipesPage() {
             <span>＋ Thêm sản phẩm bán</span>
           </button>
         </div>
-        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-avocado-300/40 to-transparent" />
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
       <div className="action-bar">

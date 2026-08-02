@@ -135,13 +135,13 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
                       href={item.href}
                       className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                         active
-                          ? 'bg-gradient-to-r from-avocado-50 to-mint-50 text-avocado-700 font-semibold shadow-sm'
-                          : 'text-gray-500 hover:bg-gradient-to-r hover:from-gray-50 hover:to-avocado-50/30 hover:text-avocado-600'
+                          ? 'bg-gradient-to-r from-pink-50 to-mint-50 text-avocado-700 font-semibold shadow-sm'
+                          : 'text-gray-500 hover:bg-gradient-to-r hover:from-gray-50 hover:to-pink-50/40 hover:text-avocado-600'
                       }`}
                     >
                       {/* Active indicator bar */}
                       {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gradient-to-b from-avocado-400 to-mint-500 rounded-full animate-[fadeIn_0.2s_ease-out]" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gradient-to-b from-pink-400 to-mint-500 rounded-full animate-[fadeIn_0.2s_ease-out]" />
                       )}
 
                       {/* Icon */}
@@ -177,7 +177,7 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
         >
           <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : ''}`}>
             <div className="relative w-8 h-8 flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-avocado-400 to-mint-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-mint-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />

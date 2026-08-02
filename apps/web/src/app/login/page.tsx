@@ -71,8 +71,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#FAFAFA] flex items-center justify-center py-8 px-4">
       {/* Decorative background */}
-      <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-gradient-to-br from-mint-200/40 via-avocado-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-32 w-[520px] h-[520px] bg-gradient-to-tr from-avocado-200/40 via-mint-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-gradient-to-br from-pink-200/40 via-mint-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -left-32 w-[520px] h-[520px] bg-gradient-to-tr from-avocado-200/40 via-pink-200/30 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-white/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative w-full max-w-4xl animate-[slideUp_0.4s_ease-out]">

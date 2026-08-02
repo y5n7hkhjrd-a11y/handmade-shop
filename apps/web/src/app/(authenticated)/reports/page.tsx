@@ -131,10 +131,10 @@ export default function ReportsPage() {
   return (
     <div className="page-enter space-y-6">
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50 via-white to-avocado-50/70 border border-avocado-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
-        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-avocado-200/25 to-mint-200/25 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-mint-200/25 rounded-full blur-3xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-avocado-100/10 rounded-full blur-xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-pink-100/10 rounded-full blur-xl" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -147,10 +147,10 @@ export default function ReportsPage() {
             <div>
               <div className="flex items-center gap-3.5">
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-avocado-400 via-avocado-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 via-pink-500 to-mint-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
                     <FlaticonIcon name="analyse" size="lg" />
                   </div>
-                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-avocado-300/30 to-mint-300/30 blur-sm -z-10" />
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -231,7 +231,7 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-avocado-200/80 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
       </div>
 
       <div className="tabs w-fit">

@@ -410,7 +410,7 @@ export default function ShippingPage() {
       `}</style>
 
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-mint-50/80 via-white to-avocado-50/40 border border-avocado-100/40 px-5 py-4 shadow-sm">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50/80 via-white to-avocado-50/40 border border-pink-100/40 px-5 py-4 shadow-sm">
         <div className="relative flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-mint-500 to-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">

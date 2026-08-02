@@ -40,12 +40,12 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Mobile header bar */}
-      <div className="lg:hidden relative overflow-hidden flex items-center gap-2.5 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-gradient-to-r from-white via-mint-50/30 to-avocado-50/30 border-b border-avocado-100/60 sticky top-0 z-20 shadow-sm">
+      <div className="lg:hidden relative overflow-hidden flex items-center gap-2.5 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-gradient-to-r from-white via-pink-50/30 to-avocado-50/30 border-b border-pink-100/60 sticky top-0 z-20 shadow-sm">
         <div className="absolute -top-4 -right-4 w-20 h-20 bg-avocado-200/20 rounded-full blur-xl" />
         <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-avocado-200/15 rounded-full blur-xl" />
         <button
           onClick={toggleMobileSidebar}
-          className="relative z-10 -ml-1 p-2 rounded-lg text-gray-500 hover:text-avocado-600 hover:bg-avocado-50 transition-all duration-200"
+          className="relative z-10 -ml-1 p-2 rounded-lg text-gray-500 hover:text-pink-600 hover:bg-pink-50 transition-all duration-200"
           aria-label={mobileSidebarOpen ? 'Đóng menu' : 'Mở menu'}
         >
           <svg
@@ -67,7 +67,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           <img src="/logo.svg" alt="Linus" className="h-8 w-auto max-w-[130px] object-contain" />
         </Link>
         {/* Bottom gradient line */}
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-avocado-300/30 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-300/30 to-transparent" />
       </div>
 
       <Sidebar mobileOpen={mobileSidebarOpen} onMobileToggle={toggleMobileSidebar} />

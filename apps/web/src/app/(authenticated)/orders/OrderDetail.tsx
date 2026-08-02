@@ -1220,7 +1220,7 @@ export default function OrderDetail({
                                 </div>
                               </div>
                               {isSel && (
-                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white text-[8px]">
+                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white text-[8px]">
                                   ✓
                                 </div>
                               )}
@@ -1703,7 +1703,7 @@ export default function OrderDetail({
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-avocado-50/50 to-white">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-avocado-400 to-mint-500 flex items-center justify-center text-white text-sm shadow-sm">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-400 to-mint-500 flex items-center justify-center text-white text-sm shadow-sm">
                   <FlaticonIcon name="user" size="sm" />
                 </div>
                 <div>
@@ -1722,7 +1722,7 @@ export default function OrderDetail({
             <div className="p-5 space-y-4">
               {/* Avatar & Name */}
               <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-avocado-400 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-sm ring-2 ring-white">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-mint-600 flex items-center justify-center text-white text-xl font-bold shadow-sm ring-2 ring-white">
                   {order.customer.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
