@@ -23,6 +23,7 @@ export const orderRepository = {
   async findById(id: string) {
     return prisma.order.findUnique({
       where: { id },
+      relationLoadStrategy: 'join',
       include: {
         customer: true,
         items: { include: { product: true, packagingTemplate: { include: { components: true } } } },
@@ -68,6 +69,7 @@ export const orderRepository = {
     const [data, total] = await Promise.all([
       prisma.order.findMany({
         where,
+        relationLoadStrategy: 'join',
         include: {
           customer: true,
           items: { include: { product: true } },
@@ -377,6 +379,7 @@ export const orderRepository = {
     return prisma.order.update({
       where: { id },
       data: updateData,
+      relationLoadStrategy: 'join',
       include: {
         customer: true,
         items: { include: { product: true } },
