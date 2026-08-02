@@ -153,7 +153,7 @@ export default function OrdersPage() {
   const { token } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [deadlineFilter, setDeadlineFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -181,7 +181,7 @@ export default function OrdersPage() {
     if (!token) return;
     try {
       const params: Record<string, string> = { page: String(page), limit: '20' };
-      if (statusFilter) params.status = statusFilter;
+      if (statusFilter.length) params.status = statusFilter.join(',');
       if (deadlineFilter) params.deadlineFilter = deadlineFilter;
       const res = await apiClient<any>(`/orders?${new URLSearchParams(params).toString()}`, {
         token,
@@ -203,9 +203,12 @@ export default function OrdersPage() {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
     const id = params.get('id');
-    if (status && status !== statusFilter) {
-      setPage(1);
-      setStatusFilter(status);
+    if (status) {
+      const arr = status.split(',').filter(Boolean);
+      if (arr.join(',') !== statusFilter.join(',')) {
+        setPage(1);
+        setStatusFilter(arr);
+      }
     }
     if (id) {
       apiClient(`/orders/${id}`, { token })
@@ -291,6 +294,12 @@ export default function OrdersPage() {
     {} as Record<string, number>,
   );
   const effectiveCounts = Object.keys(statusCounts).length > 0 ? statusCounts : localCounts;
+  const emptyMessage =
+    statusFilter.length > 0
+      ? `Không có đơn hàng nào ở trạng thái ${statusFilter
+          .map((s) => `"${statusLabels[s] || s}"`)
+          .join(', ')}. Thử bộ lọc khác.`
+      : 'Hãy tạo đơn hàng đầu tiên.';
 
   return (
     <div className="page-enter">
@@ -350,10 +359,10 @@ export default function OrdersPage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => {
-            setStatusFilter('');
+            setStatusFilter([]);
             setPage(1);
           }}
-          className={`filter-chip ${!statusFilter ? 'filter-chip-active' : ''}`}
+          className={`filter-chip ${statusFilter.length === 0 ? 'filter-chip-active' : ''}`}
         >
           Tất cả <span className="text-gray-400 ml-1">({orders.length})</span>
         </button>
@@ -361,11 +370,13 @@ export default function OrdersPage() {
           <button
             key={s}
             onClick={() => {
-              setStatusFilter(s);
+              setStatusFilter((prev) =>
+                prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+              );
               setPage(1);
             }}
-            className={`filter-chip ${statusFilter === s ? 'filter-chip-active' : ''} ${
-              statusFilter === s && filterChipActiveColors[s]
+            className={`filter-chip ${statusFilter.includes(s) ? 'filter-chip-active' : ''} ${
+              statusFilter.includes(s) && filterChipActiveColors[s]
                 ? filterChipActiveColors[s]
                 : filterChipHoverColors[s] || ''
             }`}
@@ -393,7 +404,7 @@ export default function OrdersPage() {
         <button
           onClick={() => {
             setDeadlineFilter('overdue');
-            setStatusFilter('');
+            setStatusFilter([]);
             setPage(1);
           }}
           className={`filter-chip text-xs ${deadlineFilter === 'overdue' ? 'filter-chip-active !bg-red-50 !border-red-300 !text-red-700 !shadow-sm' : 'hover:!border-red-200 hover:!text-red-600 hover:!bg-red-50/50'}`}
@@ -403,7 +414,7 @@ export default function OrdersPage() {
         <button
           onClick={() => {
             setDeadlineFilter('soon');
-            setStatusFilter('');
+            setStatusFilter([]);
             setPage(1);
           }}
           className={`filter-chip text-xs ${deadlineFilter === 'soon' ? 'filter-chip-active !bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm' : 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50'}`}
@@ -481,15 +492,7 @@ export default function OrdersPage() {
               {sortedData.length === 0 ? (
                 <table className="w-full">
                   <tbody>
-                    <EmptyState
-                      emoji="🛒"
-                      title="Không tìm thấy đơn hàng"
-                      message={
-                        statusFilter
-                          ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
-                          : 'Hãy tạo đơn hàng đầu tiên.'
-                      }
-                    />
+                    <EmptyState emoji="🛒" title="Không tìm thấy đơn hàng" message={emptyMessage} />
                   </tbody>
                 </table>
               ) : (
@@ -724,15 +727,7 @@ export default function OrdersPage() {
                     );
                   })}
                   {orders.length === 0 && (
-                    <EmptyState
-                      emoji="🛒"
-                      title="Không tìm thấy đơn hàng"
-                      message={
-                        statusFilter
-                          ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
-                          : 'Hãy tạo đơn hàng đầu tiên.'
-                      }
-                    />
+                    <EmptyState emoji="🛒" title="Không tìm thấy đơn hàng" message={emptyMessage} />
                   )}
                 </tbody>
               </table>

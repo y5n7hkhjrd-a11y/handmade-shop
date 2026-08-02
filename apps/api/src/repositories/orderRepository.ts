@@ -50,7 +50,14 @@ export const orderRepository = {
     deadlineFilter?: string;
   }) {
     const where: any = { deletedAt: null };
-    if (params.status) where.status = params.status;
+    if (params.status) {
+      const statuses = params.status
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (statuses.length === 1) where.status = statuses[0];
+      else if (statuses.length > 1) where.status = { in: statuses };
+    }
     if (params.customerId) where.customerId = params.customerId;
     if (params.startDate || params.endDate) {
       where.orderDate = {};
