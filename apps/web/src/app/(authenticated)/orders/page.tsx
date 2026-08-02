@@ -18,6 +18,8 @@ import {
   statusFlow,
   statusIcons,
   statusLabels,
+  statusPillClasses,
+  statusDotColors,
   filterChipActiveColors,
   filterChipHoverColors,
   PREV_STATUS,
@@ -51,6 +53,101 @@ const STEP_LINE_COLORS = [
   'bg-purple-300',
   'bg-green-300',
 ];
+
+/* ─── Deadline chip (shared by desktop table + mobile card) ─── */
+function DeadlineChip({ order }: { order: any }) {
+  if (!order.deadline) return null;
+  const deadlineDate = new Date(order.deadline);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  deadlineDate.setHours(23, 59, 59, 999);
+  const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isOverdue = diffDays <= 0 && !['Completed', 'ReadyToShip'].includes(order.status);
+  const isSoon =
+    diffDays > 0 && diffDays <= 3 && !['Completed', 'ReadyToShip'].includes(order.status);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+        isOverdue
+          ? 'bg-red-50 text-red-600'
+          : isSoon
+            ? 'bg-amber-50 text-amber-600'
+            : 'bg-emerald-50 text-emerald-600'
+      }`}
+      title={`Hạn chót: ${formatDate(order.deadline)}${isOverdue ? ' (quá hạn)' : isSoon ? ` (còn ${diffDays} ngày)` : ''}`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full inline-block ${
+          isOverdue ? 'bg-red-500' : isSoon ? 'bg-amber-500' : 'bg-emerald-500'
+        }`}
+      />
+      {formatDate(order.deadline)}
+    </span>
+  );
+}
+
+/* ─── Mobile order card (replaces the table on small screens) ─── */
+function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }) {
+  const total =
+    Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.packagingCost || 0);
+  const lineInfo =
+    order.orderLines?.length > 0
+      ? `${order.orderLines.length} dòng`
+      : order.recipeId
+        ? 'Công thức'
+        : null;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-pink-50/60 transition-colors cursor-pointer"
+    >
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+        {order.customer?.name?.charAt(0) || '?'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold text-gray-900 truncate">{order.customer?.name || 'N/A'}</p>
+          <span className="font-bold text-gray-900 tabular-nums text-sm flex-shrink-0">
+            {formatCurrency(total)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+              statusPillClasses[order.status] || 'bg-gray-50 text-gray-600 ring-1 ring-gray-200'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                statusDotColors[order.status] || 'bg-gray-400'
+              }`}
+            />
+            {statusLabels[order.status] || order.status}
+          </span>
+          {order.deadline && <DeadlineChip order={order} />}
+          {lineInfo && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-purple-600 bg-purple-50">
+              📋 {lineInfo}
+            </span>
+          )}
+        </div>
+      </div>
+      <svg
+        className="w-4 h-4 text-gray-300 flex-shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const { token } = useAuth();
@@ -315,292 +412,311 @@ export default function OrdersPage() {
 
       {/* Orders list */}
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th>Trạng thái</th>
-                  <th className="text-left">Số sản phẩm</th>
-                  <th className="text-right">Tổng</th>
-                  <th className="text-left">📅 Hạn chót</th>
-                  <th className="text-left">Ngày tạo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3].map((i) => (
-                  <SkeletonRow key={i} cols={6} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Khách hàng</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Số sản phẩm</th>
+                    <th className="text-right">Tổng</th>
+                    <th className="text-left">📅 Hạn chót</th>
+                    <th className="text-left">Ngày tạo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonRow key={i} cols={6} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('customer.name')}
-                  >
-                    Khách hàng{' '}
-                    <SortIcon sortKey="customer.name" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('status')}
-                  >
-                    Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th className="text-left">Số sản phẩm</th>
-                  <th
-                    className="text-left cursor-pointer select-none group"
-                    onClick={() => toggleSort('subtotal')}
-                  >
-                    Tổng <SortIcon sortKey="subtotal" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="text-left cursor-pointer select-none group"
-                    onClick={() => toggleSort('deadline')}
-                  >
-                    📅 Hạn chót <SortIcon sortKey="deadline" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="text-left cursor-pointer select-none group"
-                    onClick={() => toggleSort('orderDate')}
-                  >
-                    Ngày tạo <SortIcon sortKey="orderDate" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((order) => {
-                  return (
-                    <tr
-                      key={order.id}
-                      className="cursor-pointer group transition-all duration-200 hover:bg-blue-50/40"
-                      onClick={() => {
-                        if (order.status === 'Draft') {
-                          setEditingOrder(order);
-                          setShowForm(true);
-                        } else {
-                          setSelectedOrder(order);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && setSelectedOrder(order)}
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden">
+            <div className="card p-0 overflow-hidden divide-y divide-gray-100">
+              {sortedData.length === 0 ? (
+                <table className="w-full">
+                  <tbody>
+                    <EmptyState
+                      emoji="🛒"
+                      title="Không tìm thấy đơn hàng"
+                      message={
+                        statusFilter
+                          ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
+                          : 'Hãy tạo đơn hàng đầu tiên.'
+                      }
+                    />
+                  </tbody>
+                </table>
+              ) : (
+                sortedData.map((order) => (
+                  <MobileOrderCard
+                    key={order.id}
+                    order={order}
+                    onClick={() => {
+                      if (order.status === 'Draft') {
+                        setEditingOrder(order);
+                        setShowForm(true);
+                      } else {
+                        setSelectedOrder(order);
+                      }
+                    }}
+                  />
+                ))
+              )}
+            </div>
+            <div className="mt-3">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </div>
+
+          {/* Desktop table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('customer.name')}
                     >
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                            {order.customer?.name?.charAt(0) || '?'}
+                      Khách hàng{' '}
+                      <SortIcon sortKey="customer.name" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('status')}
+                    >
+                      Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th className="text-left">Số sản phẩm</th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('subtotal')}
+                    >
+                      Tổng <SortIcon sortKey="subtotal" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('deadline')}
+                    >
+                      📅 Hạn chót <SortIcon sortKey="deadline" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('orderDate')}
+                    >
+                      Ngày tạo <SortIcon sortKey="orderDate" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((order) => {
+                    return (
+                      <tr
+                        key={order.id}
+                        className="cursor-pointer group transition-all duration-200 hover:bg-blue-50/40"
+                        onClick={() => {
+                          if (order.status === 'Draft') {
+                            setEditingOrder(order);
+                            setShowForm(true);
+                          } else {
+                            setSelectedOrder(order);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedOrder(order)}
+                      >
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                              {order.customer?.name?.charAt(0) || '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-medium truncate">
+                                {order.customer?.name || 'N/A'}
+                              </span>
+                              {order.customer &&
+                                (order.customer.facebook ||
+                                  order.customer.instagram ||
+                                  order.customer.tiktok ||
+                                  order.customer.threads ||
+                                  order.customer.phone) && (
+                                  <div className="flex items-center gap-0.5 mt-0.5 flex-wrap">
+                                    {(() => {
+                                      return SOCIAL_PLATFORMS.map((sl) => {
+                                        let val = order.customer?.[sl.key];
+                                        if (sl.phoneBased) {
+                                          val = order.customer?.phone || null;
+                                          if (!val) return null;
+                                        } else if (!val) {
+                                          return null;
+                                        }
+                                        const href = val.startsWith('http')
+                                          ? val
+                                          : `${sl.domain}${val.replace(/^@/, '')}`;
+                                        const finalHref = sl.phoneBased
+                                          ? `https://zalo.me/${val.replace(/[^0-9]/g, '')}`
+                                          : href;
+                                        return (
+                                          <a
+                                            key={sl.key}
+                                            href={finalHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-3.5 h-3.5 flex items-center justify-center rounded bg-white border border-gray-200 hover:shadow-sm hover:scale-110 transition-all duration-200"
+                                            title={`Mở ${sl.label}`}
+                                          >
+                                            {sl.icon}
+                                          </a>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                )}
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <span className="font-medium truncate">
-                              {order.customer?.name || 'N/A'}
-                            </span>
-                            {order.customer &&
-                              (order.customer.facebook ||
-                                order.customer.instagram ||
-                                order.customer.tiktok ||
-                                order.customer.threads ||
-                                order.customer.phone) && (
-                                <div className="flex items-center gap-0.5 mt-0.5 flex-wrap">
-                                  {(() => {
-                                    return SOCIAL_PLATFORMS.map((sl) => {
-                                      let val = order.customer?.[sl.key];
-                                      if (sl.phoneBased) {
-                                        val = order.customer?.phone || null;
-                                        if (!val) return null;
-                                      } else if (!val) {
-                                        return null;
-                                      }
-                                      const href = val.startsWith('http')
-                                        ? val
-                                        : `${sl.domain}${val.replace(/^@/, '')}`;
-                                      const finalHref = sl.phoneBased
-                                        ? `https://zalo.me/${val.replace(/[^0-9]/g, '')}`
-                                        : href;
-                                      return (
-                                        <a
-                                          key={sl.key}
-                                          href={finalHref}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="w-3.5 h-3.5 flex items-center justify-center rounded bg-white border border-gray-200 hover:shadow-sm hover:scale-110 transition-all duration-200"
-                                          title={`Mở ${sl.label}`}
-                                        >
-                                          {sl.icon}
-                                        </a>
-                                      );
-                                    });
-                                  })()}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-0">
+                              {(() => {
+                                const orderIdx = statusFlow.indexOf(order.status);
+                                return statusFlow.map((step, i) => {
+                                  const isDone = i < orderIdx;
+                                  const isCurrent = i === orderIdx;
+                                  return (
+                                    <div key={step} className="flex items-center">
+                                      <div
+                                        className={`w-[22px] h-[22px] rounded-full flex items-center justify-center transition-all duration-300 ring-1 ${
+                                          isDone || isCurrent
+                                            ? `${STEP_DOT_COLORS[i]} text-white shadow-sm`
+                                            : 'bg-white border border-gray-200 ring-gray-200'
+                                        }`}
+                                        title={statusLabels[step]}
+                                      >
+                                        <FlaticonIcon
+                                          name={statusIcons[step]}
+                                          size="xs"
+                                          className={
+                                            isDone || isCurrent ? 'text-white' : 'text-gray-300'
+                                          }
+                                        />
+                                      </div>
+                                      {i < statusFlow.length - 1 && (
+                                        <div
+                                          className={`w-[6px] h-[3px] mx-[1.5px] rounded-full transition-all duration-300 ${
+                                            i < orderIdx ? STEP_LINE_COLORS[i] : 'bg-gray-200'
+                                          }`}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                            {Array.isArray(order.shipping) &&
+                              order.shipping.some(
+                                (s: any) => s.status === 'Failed' && !s.deletedAt,
+                              ) && (
+                                <div className="relative group flex-shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shadow-sm shadow-red-200">
+                                    <FlaticonIcon
+                                      name="triangle-warning"
+                                      size="xs"
+                                      className="text-white"
+                                    />
+                                  </div>
+                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping opacity-75" />
+                                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg z-50">
+                                    Vận chuyển thất bại
+                                  </span>
                                 </div>
                               )}
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex items-center gap-0">
-                            {(() => {
-                              const orderIdx = statusFlow.indexOf(order.status);
-                              return statusFlow.map((step, i) => {
-                                const isDone = i < orderIdx;
-                                const isCurrent = i === orderIdx;
-                                return (
-                                  <div key={step} className="flex items-center">
-                                    <div
-                                      className={`w-[22px] h-[22px] rounded-full flex items-center justify-center transition-all duration-300 ring-1 ${
-                                        isDone || isCurrent
-                                          ? `${STEP_DOT_COLORS[i]} text-white shadow-sm`
-                                          : 'bg-white border border-gray-200 ring-gray-200'
-                                      }`}
-                                      title={statusLabels[step]}
-                                    >
-                                      <FlaticonIcon
-                                        name={statusIcons[step]}
-                                        size="xs"
-                                        className={
-                                          isDone || isCurrent ? 'text-white' : 'text-gray-300'
-                                        }
-                                      />
-                                    </div>
-                                    {i < statusFlow.length - 1 && (
-                                      <div
-                                        className={`w-[6px] h-[3px] mx-[1.5px] rounded-full transition-all duration-300 ${
-                                          i < orderIdx ? STEP_LINE_COLORS[i] : 'bg-gray-200'
-                                        }`}
-                                      />
-                                    )}
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
-                          {Array.isArray(order.shipping) &&
-                            order.shipping.some(
-                              (s: any) => s.status === 'Failed' && !s.deletedAt,
-                            ) && (
-                              <div className="relative group flex-shrink-0">
-                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shadow-sm shadow-red-200">
-                                  <FlaticonIcon
-                                    name="triangle-warning"
-                                    size="xs"
-                                    className="text-white"
-                                  />
-                                </div>
-                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping opacity-75" />
-                                <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg z-50">
-                                  Vận chuyển thất bại
-                                </span>
-                              </div>
-                            )}
-                        </div>
-                      </td>
-                      <td className="text-left">
-                        {order.orderLines?.length > 0 ? (
-                          <span
-                            className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
-                            title={`${order.orderLines.length} dòng`}
-                          >
-                            📋 {order.orderLines.length} dòng
+                        </td>
+                        <td className="text-left">
+                          {order.orderLines?.length > 0 ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
+                              title={`${order.orderLines.length} dòng`}
+                            >
+                              📋 {order.orderLines.length} dòng
+                            </span>
+                          ) : order.recipeId ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
+                              title="Đơn hàng theo công thức"
+                            >
+                              📋 Công thức
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="font-semibold tabular-nums text-left">
+                          {formatCurrency(
+                            Number(order.subtotal || 0) -
+                              Number(order.discount || 0) +
+                              Number(order.packagingCost || 0),
+                          )}
+                        </td>
+                        <td className="text-left">
+                          {order.deadline ? (
+                            <DeadlineChip order={order} />
+                          ) : (
+                            <span className="text-[10px] text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="text-left">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                            <FlaticonIcon name="calendar" size="xs" className="text-gray-400" />
+                            <span className="font-medium">{formatDate(order.orderDate)}</span>
                           </span>
-                        ) : order.recipeId ? (
-                          <span
-                            className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
-                            title="Đơn hàng theo công thức"
-                          >
-                            📋 Công thức
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="font-semibold tabular-nums text-left">
-                        {formatCurrency(
-                          Number(order.subtotal || 0) -
-                            Number(order.discount || 0) +
-                            Number(order.packagingCost || 0),
-                        )}
-                      </td>
-                      <td className="text-left">
-                        {order.deadline ? (
-                          (() => {
-                            const deadlineDate = new Date(order.deadline);
-                            const now = new Date();
-                            now.setHours(0, 0, 0, 0);
-                            deadlineDate.setHours(23, 59, 59, 999);
-                            const diffDays = Math.ceil(
-                              (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-                            );
-                            const isOverdue =
-                              diffDays <= 0 &&
-                              order.status !== 'Completed' &&
-                              order.status !== 'ReadyToShip';
-                            const isSoon =
-                              diffDays > 0 &&
-                              diffDays <= 3 &&
-                              order.status !== 'Completed' &&
-                              order.status !== 'ReadyToShip';
-                            return (
-                              <span
-                                className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                                  isOverdue
-                                    ? 'bg-red-50 text-red-600'
-                                    : isSoon
-                                      ? 'bg-amber-50 text-amber-600'
-                                      : 'bg-emerald-50 text-emerald-600'
-                                }`}
-                                title={`Hạn chót: ${formatDate(order.deadline)}${isOverdue ? ' (quá hạn)' : isSoon ? ` (còn ${diffDays} ngày)` : ''}`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full inline-block ${
-                                    isOverdue
-                                      ? 'bg-red-500'
-                                      : isSoon
-                                        ? 'bg-amber-500'
-                                        : 'bg-emerald-500'
-                                  }`}
-                                />
-                                {formatDate(order.deadline)}
-                              </span>
-                            );
-                          })()
-                        ) : (
-                          <span className="text-[10px] text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="text-left">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-                          <FlaticonIcon name="calendar" size="xs" className="text-gray-400" />
-                          <span className="font-medium">{formatDate(order.orderDate)}</span>
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {orders.length === 0 && (
-                  <EmptyState
-                    emoji="🛒"
-                    title="Không tìm thấy đơn hàng"
-                    message={
-                      statusFilter
-                        ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
-                        : 'Hãy tạo đơn hàng đầu tiên.'
-                    }
-                  />
-                )}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {orders.length === 0 && (
+                    <EmptyState
+                      emoji="🛒"
+                      title="Không tìm thấy đơn hàng"
+                      message={
+                        statusFilter
+                          ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
+                          : 'Hãy tạo đơn hàng đầu tiên.'
+                      }
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+        </>
       )}
 
       {selectedOrder && (

@@ -714,3 +714,76 @@ i.fi + * {
 .bar-chart-label {
   @apply text-[10px] text-gray-500 font-medium truncate w-full text-center;
 }
+
+/* ─── Mobile polish ──────────────────────────────────────────────────────── */
+/* Remove tap highlight & double-tap zoom delay on touch devices */
+html,
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Smooth inertial horizontal scroll for tables on iOS */
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  /* Bigger touch targets */
+  .btn {
+    min-height: 40px;
+  }
+  .btn-sm {
+    min-height: 34px;
+  }
+
+  /* Modals become bottom sheets */
+  .modal-overlay {
+    align-items: flex-end;
+    padding-top: 0;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+    max-height: 92vh;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: modalSheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Toasts slide up from the bottom edge */
+  .toast {
+    top: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 16px;
+    right: 16px;
+    animation: toastSlideUp 0.25s ease-out;
+  }
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalSheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -40,6 +40,17 @@ export default function CustomersPage() {
   const { toast, showToast } = useToast();
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Mobile polish: auto-switch to card view on small screens
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const apply = () => {
+      if (mq.matches) setViewMode('cards');
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
   // Debounce search
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
