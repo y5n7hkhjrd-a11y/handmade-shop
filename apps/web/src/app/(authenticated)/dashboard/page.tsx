@@ -169,8 +169,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="page-enter space-y-6">
-        <div className="skeleton-title mb-8" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="skeleton-title mb-4" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <SkeletonCard key={i} />
           ))}
@@ -199,8 +199,6 @@ export default function DashboardPage() {
     caption: string;
     barColor?: string;
     percent?: number;
-    hazard?: boolean;
-    mobileSpan?: boolean;
   }> = [
     {
       title: 'Tổng đơn hàng',
@@ -233,19 +231,11 @@ export default function DashboardPage() {
       icon: 'arrows-repeat',
       color: 'bg-amber-50 text-amber-700',
       barColor: 'bg-amber-500',
-      caption: 'Đơn chưa hoàn thành',
+      caption:
+        overdueCount > 0
+          ? `${activeOrders} đang xử lý · ${overdueCount} quá hạn`
+          : 'Đơn chưa hoàn thành',
       percent: activeRate,
-    },
-    {
-      title: 'Sắp quá hạn',
-      value: overdueCount + soonCount,
-      icon: 'alarm-clock',
-      color: 'bg-red-50 text-red-700',
-      barColor: 'bg-red-500',
-      hazard: overdueCount > 0,
-      mobileSpan: true,
-      caption: `${overdueCount} quá hạn · ${soonCount} sắp tới`,
-      percent: activeOrders > 0 ? Math.round(((overdueCount + soonCount) / activeOrders) * 100) : 0,
     },
   ];
 
@@ -265,7 +255,7 @@ export default function DashboardPage() {
             backgroundSize: '24px 24px',
           }}
         />
-        <div className="relative px-4 py-3 sm:px-6 sm:py-5">
+        <div className="relative px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <div className="flex items-center gap-3.5">
@@ -309,25 +299,33 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5">
         {statCards.map((card) => (
           <div
             key={card.title}
-            className={`bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 group cursor-default ${
-              'mobileSpan' in card && card.mobileSpan ? 'col-span-2 lg:col-span-1' : ''
-            }`}
+            className="bg-white border border-gray-100 rounded-xl p-3.5 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200 group cursor-default"
           >
             <div className="flex items-start justify-between mb-3">
               <div
-                className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center shadow-sm ring-1 ring-black/5`}
+                className={`w-9 h-9 rounded-lg ${card.color} flex items-center justify-center shadow-sm ring-1 ring-black/5`}
               >
                 <FlaticonIcon name={card.icon} size="md" className="text-inherit" />
               </div>
               {card.percent !== undefined && (
                 <span
-                  className={`text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${card.hazard ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}
+                  className={`text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${
+                    overdueCount > 0
+                      ? 'bg-red-50 text-red-600'
+                      : soonCount > 0
+                        ? 'bg-amber-50 text-amber-600'
+                        : 'bg-gray-50 text-gray-500'
+                  }`}
                 >
-                  {card.percent}%
+                  {overdueCount > 0
+                    ? `${overdueCount} quá hạn`
+                    : soonCount > 0
+                      ? `${soonCount} sắp tới`
+                      : `${card.percent}%`}
                 </span>
               )}
             </div>
@@ -351,8 +349,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Status Pipeline */}
-      <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 md:p-5 mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-3.5 sm:p-4 mb-4 sm:mb-5">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-base font-semibold text-gray-900">Đơn theo trạng thái</h2>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -374,7 +372,7 @@ export default function DashboardPage() {
               <button
                 key={s.key}
                 onClick={() => router.push(`/orders?status=${s.key}`)}
-                className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all duration-200 group ${
+                className={`relative flex flex-col items-center gap-1 rounded-xl border p-2.5 transition-all duration-200 group ${
                   count > 0
                     ? 'border-purple-200 bg-purple-50/50 hover:bg-purple-50 hover:border-purple-300 hover:shadow-sm'
                     : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
@@ -396,10 +394,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Recent Orders Table */}
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-100">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Đơn hàng gần đây</h2>
               <p className="text-sm text-gray-500 mt-0.5">
@@ -520,10 +518,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Quick Actions */}
-          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Thao tác nhanh</h2>
+          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Thao tác nhanh</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 {
@@ -590,8 +588,8 @@ export default function DashboardPage() {
 
           {/* Deadline Alerts */}
           {stats?.deadlineOrders && stats.deadlineOrders.length > 0 && (
-            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-semibold text-gray-900">⏰ Sắp đến hạn</h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600">
                   {stats.overdueCount > 0
@@ -655,8 +653,8 @@ export default function DashboardPage() {
           )}
 
           {/* Order Summary */}
-          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Tổng quan đơn hàng</h2>
+          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-3">Tổng quan đơn hàng</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
                 <div className="flex items-center gap-2.5">
