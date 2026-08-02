@@ -182,6 +182,7 @@ The API's build settings are defined in `apps/api/vercel.json`:
 - `rewrites` — sends all requests to `api/index.ts`, which exports the Express app.
 - `functions` — allocates 256 MB memory and a 10-second max duration. Adjust `maxDuration` up to 30–60s if your API has slow queries.
 - The `installCommand` and `buildCommand` both navigate to the monorepo root via `cd ../..`.
+- **Do NOT add `outputDirectory`** — setting it makes Vercel treat the deployment as pre-built static files and skip compiling `api/index.ts` into a serverless function. The API then returns the raw TypeScript source (HTTP 200) instead of running Express. With no `outputDirectory`, Vercel auto-detects the `api/` directory and compiles it with the Node runtime.
 
 > ⚠️ The `vercel.json` file is already committed to the repo. When Vercel imports the project (Section 3.2), it automatically picks up these settings. **Do not override the Build Command or Install Command in the Dashboard** — let `vercel.json` manage them to avoid config drift.
 
