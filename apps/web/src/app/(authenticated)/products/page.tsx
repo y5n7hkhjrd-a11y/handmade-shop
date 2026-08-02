@@ -166,9 +166,6 @@ export default function ProductsPage() {
       document.body.removeChild(overlay);
       handleDelete(product.id);
     });
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) document.body.removeChild(overlay);
-    });
     document.body.appendChild(overlay);
   };
 
@@ -304,12 +301,7 @@ export default function ProductsPage() {
       </div>
 
       {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowForm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b">
               <h2 className="text-xl font-semibold">

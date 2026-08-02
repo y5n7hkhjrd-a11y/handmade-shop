@@ -122,7 +122,7 @@ export default function ShippingDetail({
   const isAnim = updatingShipments.has(shipment.id);
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 border-b border-gray-100 flex items-center gap-3">

@@ -67,7 +67,7 @@ export default function InventoryForm({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b">
           <h2 className="text-xl font-semibold">Giao dịch mới</h2>

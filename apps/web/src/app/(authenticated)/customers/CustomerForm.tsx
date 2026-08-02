@@ -98,7 +98,7 @@ export default function CustomerForm({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
         {/* Form header */}
         <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-mint-50/50 to-white">

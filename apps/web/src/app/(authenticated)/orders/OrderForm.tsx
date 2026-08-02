@@ -99,7 +99,6 @@ export default function OrderForm({
   };
   const [newCustomer, setNewCustomer] = useState({ ...NEW_CUSTOMER_INIT });
   const [creatingCustomer, setCreatingCustomer] = useState(false);
-  const formMousedownOnContent = useRef(false);
   const advanceAfterSave = useRef(false);
 
   // Initialize form when opening
@@ -260,28 +259,8 @@ export default function OrderForm({
   return (
     <>
       {/* Create/Edit Order Modal */}
-      <div
-        className="modal-overlay"
-        onClick={() => {
-          if (!formMousedownOnContent.current) {
-            onClose();
-            setForm({ customerId: '', deadline: '', notes: '', paidAmount: 0, orderLines: [] });
-          }
-          formMousedownOnContent.current = false;
-        }}
-        onMouseDown={() => {
-          formMousedownOnContent.current = false;
-        }}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div
-          className="modal-content max-w-2xl"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={() => {
-            formMousedownOnContent.current = true;
-          }}
-        >
+      <div className="modal-overlay" role="dialog" aria-modal="true">
+        <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
           <div className="p-6 border-b flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">
@@ -711,12 +690,7 @@ export default function OrderForm({
 
       {/* Add Customer Modal */}
       {showAddCustomer && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowAddCustomer(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b flex items-center justify-between">
               <h2 className="text-lg font-semibold flex items-center gap-2">

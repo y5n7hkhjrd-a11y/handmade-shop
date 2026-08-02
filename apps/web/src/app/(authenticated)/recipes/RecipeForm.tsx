@@ -134,7 +134,7 @@ export default function RecipeForm({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-content max-w-xl" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b">
           <h2 className="text-xl font-semibold">

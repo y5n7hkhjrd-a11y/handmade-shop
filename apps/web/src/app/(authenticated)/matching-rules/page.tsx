@@ -169,9 +169,6 @@ export default function MatchingRulesPage() {
       handleDelete(rule.id);
     });
     overlay.appendChild(dialog);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) document.body.removeChild(overlay);
-    });
     document.body.appendChild(overlay);
   };
 

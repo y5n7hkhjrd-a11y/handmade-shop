@@ -121,9 +121,6 @@ export default function RecipesPage() {
       handleDelete(recipe.id);
     });
     overlay.appendChild(dialog);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) document.body.removeChild(overlay);
-    });
     document.body.appendChild(overlay);
   };
 

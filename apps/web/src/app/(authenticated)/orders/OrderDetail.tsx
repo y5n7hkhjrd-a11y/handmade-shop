@@ -215,7 +215,6 @@ export default function OrderDetail({
   const [showRetryConfirm, setShowRetryConfirm] = useState(false);
   const [retryShipmentId, setRetryShipmentId] = useState<string | null>(null);
   const [retryingShipment, setRetryingShipment] = useState(false);
-  const mousedownOnContent = useRef(false);
 
   const handleRetryShipment = async () => {
     if (!token || !retryShipmentId) return;
@@ -436,25 +435,8 @@ export default function OrderDetail({
   const profit = Number(order.subtotal || 0) - Number(order.discount || 0) - computedTotalCost;
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={() => {
-        if (!mousedownOnContent.current) onClose();
-        mousedownOnContent.current = false;
-      }}
-      onMouseDown={() => {
-        mousedownOnContent.current = false;
-      }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="modal-content max-w-2xl"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={() => {
-          mousedownOnContent.current = true;
-        }}
-      >
+    <div className="modal-overlay" role="dialog" aria-modal="true">
+      <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Accent bar for Đơn chờ làm */}
         {order.status === 'WaitingConfirm' && (
           <div className="h-1 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 rounded-t-xl" />
@@ -1694,12 +1676,7 @@ export default function OrderDetail({
 
       {/* Read-only customer detail modal */}
       {showCustomerDetail && order.customer && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowCustomerDetail(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-avocado-50/50 to-white">
               <div className="flex items-center gap-2.5">
