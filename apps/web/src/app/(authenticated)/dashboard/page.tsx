@@ -112,8 +112,6 @@ function SocialLinks({ customer, size = 'sm' }: { customer: any; size?: 'sm' | '
   );
 }
 
-const mockChartData = [35, 55, 40, 70, 60, 85, 65, 90, 75, 95, 80, 100];
-
 function StatusBadge({ status }: { status: string }) {
   const statusMap: Record<string, { badge: string; label: string }> = {
     Draft: { badge: 'badge-gray', label: 'Nhập đơn' },
@@ -127,8 +125,17 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={info?.badge || 'badge-gray'}> {info?.label || status}</span>;
 }
 
+const STATUS_PIPELINE: Array<{ key: string; label: string; color: string; dot: string }> = [
+  { key: 'Draft', label: 'Nhập đơn', color: 'text-gray-600', dot: 'bg-gray-300' },
+  { key: 'WaitingConfirm', label: 'Chờ làm', color: 'text-amber-600', dot: 'bg-amber-400' },
+  { key: 'InProgress', label: 'Đang làm', color: 'text-blue-600', dot: 'bg-blue-500' },
+  { key: 'Packaging', label: 'Đã gói', color: 'text-purple-600', dot: 'bg-purple-500' },
+  { key: 'ReadyToShip', label: 'Đã gửi', color: 'text-cyan-600', dot: 'bg-cyan-500' },
+  { key: 'Completed', label: 'Hoàn thành', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+];
+
 export default function DashboardPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<{
     totalOrders: number;
@@ -140,18 +147,23 @@ export default function DashboardPage() {
     overdueCount: number;
     soonCount: number;
   } | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (token) {
-      apiClient<any>('/dashboard/stats', { token })
-        .then((res) => {
-          setStats(res.data);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    }
+    if (!token) return;
+    apiClient<any>('/dashboard/stats', { token })
+      .then((res) => {
+        setStats(res.data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+    apiClient<any>('/orders/counts', { token })
+      .then((res) => {
+        if (res.data) setStatusCounts(res.data);
+      })
+      .catch(() => {});
   }, [token]);
 
   if (loading) {
@@ -168,48 +180,72 @@ export default function DashboardPage() {
     );
   }
 
-  const statCards = [
+  const totalOrders = stats?.totalOrders || 0;
+  const activeOrders = stats?.activeOrders || 0;
+  const completedOrders = Math.max(totalOrders - activeOrders, 0);
+  const totalRevenue = stats?.totalRevenue || 0;
+  const totalProfit = stats?.totalProfit || 0;
+  const overdueCount = stats?.overdueCount || 0;
+  const soonCount = stats?.soonCount || 0;
+  const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0;
+  const marginRate = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+  const activeRate = totalOrders > 0 ? Math.round((activeOrders / totalOrders) * 100) : 0;
+
+  const statCards: Array<{
+    title: string;
+    value: string | number;
+    icon: string;
+    color: string;
+    caption: string;
+    barColor?: string;
+    percent?: number;
+    hazard?: boolean;
+    mobileSpan?: boolean;
+  }> = [
     {
       title: 'Tổng đơn hàng',
-      value: stats?.totalOrders || 0,
+      value: totalOrders,
       icon: 'clipboard',
       color: 'bg-purple-50 text-purple-700',
-      trend: '+12%',
-      trendUp: true,
+      barColor: 'bg-purple-500',
+      caption: `${completedOrders} hoàn thành · ${activeOrders} đang xử lý`,
+      percent: completionRate,
     },
     {
       title: 'Doanh thu',
-      value: formatCurrency(stats?.totalRevenue || 0),
+      value: formatCurrency(totalRevenue),
       icon: 'usd-circle',
       color: 'bg-emerald-50 text-emerald-700',
-      trend: '+8%',
-      trendUp: true,
+      caption: 'Tổng doanh thu đã hoàn thành',
     },
     {
       title: 'Lợi nhuận',
-      value: formatCurrency(stats?.totalProfit || 0),
+      value: formatCurrency(totalProfit),
       icon: 'arrow-trend-up',
       color: 'bg-blue-50 text-blue-700',
-      trend: (stats?.totalProfit || 0) > 0 ? '+5%' : '0%',
-      trendUp: (stats?.totalProfit || 0) > 0,
+      barColor: 'bg-blue-500',
+      caption: `Biên lợi nhuận ${marginRate}%`,
+      percent: Math.min(marginRate, 100),
     },
     {
       title: 'Đang xử lý',
-      value: stats?.activeOrders || 0,
+      value: activeOrders,
       icon: 'arrows-repeat',
       color: 'bg-amber-50 text-amber-700',
-      trend: 'Đang xử lý',
-      trendUp: true,
+      barColor: 'bg-amber-500',
+      caption: 'Đơn chưa hoàn thành',
+      percent: activeRate,
     },
     {
       title: 'Sắp quá hạn',
-      value: (stats?.overdueCount || 0) + (stats?.soonCount || 0),
+      value: overdueCount + soonCount,
       icon: 'alarm-clock',
       color: 'bg-red-50 text-red-700',
-      hazard: (stats?.overdueCount || 0) > 0,
+      barColor: 'bg-red-500',
+      hazard: overdueCount > 0,
       mobileSpan: true,
-      trend: `${stats?.overdueCount || 0} quá hạn · ${stats?.soonCount || 0} sắp tới`,
-      trendUp: (stats?.overdueCount || 0) > 0,
+      caption: `${overdueCount} quá hạn · ${soonCount} sắp tới`,
+      percent: activeOrders > 0 ? Math.round(((overdueCount + soonCount) / activeOrders) * 100) : 0,
     },
   ];
 
@@ -242,25 +278,27 @@ export default function DashboardPage() {
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
-                      Tổng quan
+                      {user?.name ? `Chào, ${user.name.split(' ').pop()}!` : 'Tổng quan'}
                     </h1>
                     {stats && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-100 text-pink-700 shadow-sm ring-1 ring-pink-200/50">
                         <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
-                        {stats.totalOrders}
+                        {stats.totalOrders} đơn
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    Chào mừng trở lại! Dưới đây là tình hình hôm nay.
+                  <p className="text-sm text-gray-400 mt-0.5 capitalize">
+                    {new Date().toLocaleDateString('vi-VN', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <button className="btn-secondary btn-sm">
-                <FlaticonIcon name="time-watch-calendar" size="sm" className="mr-1.5" /> Hôm nay
-              </button>
               <Link href="/orders" className="btn-primary btn-sm">
                 <span className="mr-1.5">+</span> Đơn hàng mới
               </Link>
@@ -285,11 +323,13 @@ export default function DashboardPage() {
               >
                 <FlaticonIcon name={card.icon} size="md" className="text-inherit" />
               </div>
-              <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${'hazard' in card && card.hazard ? 'bg-red-50 text-red-600' : card.trendUp ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-500'}`}
-              >
-                {card.trend}
-              </span>
+              {card.percent !== undefined && (
+                <span
+                  className={`text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${card.hazard ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}
+                >
+                  {card.percent}%
+                </span>
+              )}
             </div>
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
               {card.title}
@@ -297,17 +337,62 @@ export default function DashboardPage() {
             <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1 tabular-nums truncate">
               {card.value}
             </p>
-            <div className="flex items-end gap-0.5 h-8 mt-3 border-t border-gray-50 pt-3">
-              {mockChartData.slice(0, 8).map((h, i) => (
+            <p className="text-[10px] sm:text-xs text-gray-400 mt-1 truncate">{card.caption}</p>
+            {card.percent !== undefined && card.barColor && (
+              <div className="h-1.5 rounded-full bg-gray-100 mt-3 overflow-hidden">
                 <div
-                  key={i}
-                  className="w-2 rounded-t transition-all duration-300 bg-purple-400/40 group-hover:bg-purple-500/60"
-                  style={{ height: `${h * 0.4}px` }}
+                  className={`h-full rounded-full ${card.barColor} transition-all duration-700 ease-out`}
+                  style={{ width: `${Math.min(Math.max(card.percent, 2), 100)}%` }}
                 />
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         ))}
+      </div>
+
+      {/* Status Pipeline */}
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 md:p-5 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Đơn theo trạng thái</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Bấm vào để xem danh sách đơn theo trạng thái
+            </p>
+          </div>
+          <Link
+            href="/orders"
+            className="btn-ghost btn-sm text-purple-600 hover:text-purple-700 font-medium"
+          >
+            Xem tất cả <span className="ml-1">→</span>
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-3">
+          {' '}
+          {STATUS_PIPELINE.map((s) => {
+            const count = statusCounts[s.key] || 0;
+            return (
+              <button
+                key={s.key}
+                onClick={() => router.push(`/orders?status=${s.key}`)}
+                className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all duration-200 group ${
+                  count > 0
+                    ? 'border-purple-200 bg-purple-50/50 hover:bg-purple-50 hover:border-purple-300 hover:shadow-sm'
+                    : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${s.dot} ${count > 0 ? 'animate-pulse' : ''}`}
+                />
+                <span className={`text-lg sm:text-xl font-bold tabular-nums ${s.color}`}>
+                  {count}
+                </span>
+                <span className="text-[10px] sm:text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                  {s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Main Grid */}
@@ -347,6 +432,9 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-medium text-gray-900 text-sm truncate flex items-center gap-1.5">
+                          <span className="text-[10px] font-semibold text-purple-500 bg-purple-50 rounded px-1.5 py-0.5 ring-1 ring-purple-100 flex-shrink-0">
+                            {order.id}
+                          </span>
                           {order.customer?.name || 'N/A'}
                           <SocialLinks customer={order.customer} size="xs" />
                         </p>
@@ -378,6 +466,7 @@ export default function DashboardPage() {
                 <table>
                   <thead>
                     <tr>
+                      <th>Mã đơn</th>
                       <th>Khách hàng</th>
                       <th>Trạng thái</th>
                       <th className="text-right">Tổng</th>
@@ -391,6 +480,11 @@ export default function DashboardPage() {
                         className="cursor-pointer hover:bg-purple-50/30 transition-colors"
                         onClick={() => router.push(`/orders?id=${order.id}`)}
                       >
+                        <td>
+                          <span className="text-xs font-semibold text-purple-600 bg-purple-50 rounded px-1.5 py-0.5 ring-1 ring-purple-100 whitespace-nowrap">
+                            {order.id}
+                          </span>
+                        </td>
                         <td>
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
@@ -430,7 +524,7 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-5">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Thao tác nhanh</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 {
                   icon: 'plus',
@@ -459,6 +553,20 @@ export default function DashboardPage() {
                   href: '/recipes',
                   color: 'bg-amber-50 text-amber-700',
                   desc: 'Quản lý công thức',
+                },
+                {
+                  icon: 'warehouse-alt',
+                  label: 'Kho hàng',
+                  href: '/inventory',
+                  color: 'bg-cyan-50 text-cyan-700',
+                  desc: 'Nhập/xuất kho',
+                },
+                {
+                  icon: 'truck-side',
+                  label: 'Giao hàng',
+                  href: '/shipping',
+                  color: 'bg-rose-50 text-rose-700',
+                  desc: 'Theo dõi vận đơn',
                 },
               ].map((action) => (
                 <Link

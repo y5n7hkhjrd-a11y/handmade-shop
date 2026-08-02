@@ -195,6 +195,29 @@ export default function OrdersPage() {
   }, [token, page, statusFilter, deadlineFilter, showToast]);
 
   useEffect(() => {
+    // Deep-link support: /orders?status=WaitingConfirm or /orders?id=...
+    // Keyed on [token] because AuthProvider hydrates token from localStorage
+    // asynchronously — on a fresh page load token is null on first render.
+    if (!token) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const id = params.get('id');
+    if (status && status !== statusFilter) {
+      setPage(1);
+      setStatusFilter(status);
+    }
+    if (id) {
+      apiClient(`/orders/${id}`, { token })
+        .then((res: any) => {
+          if (res.data) setSelectedOrder(res.data);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
     loadOrders();
     loadCounts();
     if (token) {
