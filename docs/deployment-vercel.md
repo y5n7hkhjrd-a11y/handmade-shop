@@ -331,7 +331,11 @@ commands:
     steps:
       - run:
           command: |
-            cd << parameters.app-dir >>
+            # MUST run from the monorepo root, NOT from inside the app dir: the
+            # Vercel CLI resolves the project's Root Directory (apps/web or
+            # apps/api) relative to cwd, so deploying from inside the app dir
+            # doubles the path and fails with "The provided path .../apps/web/
+            # apps/web does not exist".
             mkdir -p .vercel
             echo "{\"projectId\":\"${<< parameters.project-id-env >>}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
             # Vercel CLI v58 checks VERCEL_ORG_ID/VERCEL_PROJECT_ID env vars BEFORE
@@ -344,10 +348,10 @@ commands:
 
 This:
 
-1. Navigates to the app directory.
+1. Runs from the monorepo root (the CircleCI `working_directory: ~/project`) so the CLI can resolve the project's Root Directory (`apps/web` or `apps/api`) against the local checkout.
 2. Creates a `.vercel/project.json` with the correct project and org IDs (fallback link).
 3. Exports `VERCEL_PROJECT_ID` (alongside the already-set `VERCEL_ORG_ID`) so the CLI targets the intended project — this works around a v58 CLI check that rejects `VERCEL_ORG_ID` without `VERCEL_PROJECT_ID` before it even reads `project.json`.
-4. Runs `vercel deploy --prod` to deploy.
+4. Runs `vercel deploy --prod` to deploy. The CLI uploads the monorepo (root lockfile and `packages/shared` included) while Vercel builds from the Root Directory — which is why the `cd ../..` commands in the committed `vercel.json` files work.
 
 > **`--prod`** flag deploys to the Production environment (the `main` branch in Vercel's terms). For staging, the `staging` branch still uses `--prod` because we want it to replace the staging project's current production deployment.
 >
