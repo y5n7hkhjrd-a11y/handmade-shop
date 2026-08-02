@@ -6,7 +6,15 @@
  */
 const CACHE_NAME = 'linus-shell-v1';
 
-const PRECACHE_URLS = ['/', '/login', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
+const PRECACHE_URLS = [
+  '/',
+  '/login',
+  '/manifest.webmanifest',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png',
+];
 
 self.addEventListener('install', (event) => {
   // Precache each URL individually with allSettled so a single transient
@@ -16,9 +24,7 @@ self.addEventListener('install', (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) =>
-        Promise.allSettled(
-          PRECACHE_URLS.map((url) => cache.add(url).catch(() => {})),
-        ),
+        Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url).catch(() => {}))),
       )
       .then(() => self.skipWaiting()),
   );
@@ -28,7 +34,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -69,8 +77,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() =>
-        caches.match(request).then((cached) => cached || caches.match('/')),
-      ),
+      .catch(() => caches.match(request).then((cached) => cached || caches.match('/'))),
   );
 });
