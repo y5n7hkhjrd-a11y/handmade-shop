@@ -28,6 +28,146 @@ import {
 } from './shippingConstants';
 import ShippingDetail from './ShippingDetail';
 
+/* ─── Shared render helpers (desktop table + mobile card) ─── */
+function TrackingBadge({ s, carrier }: { s: Shipping; carrier: CarrierType }) {
+  if (carrier === 'SPX' && s.trackingNumber) {
+    return (
+      <div className="flex items-center gap-1">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(
+              `https://spx.vn/track?${s.trackingNumber}`,
+              '_blank',
+              'noopener,noreferrer',
+            );
+          }}
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-medium hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm transition-all max-w-[120px]"
+        >
+          <FlaticonIcon name="external-link" size="xs" />
+          <span className="truncate min-w-0">{s.trackingNumber}</span>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            copyToClipboard(s.trackingNumber!);
+          }}
+          className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-300 transition-all"
+          title="Sao chép mã vận đơn"
+        >
+          <FlaticonIcon name="clipboard" size="xs" />
+        </button>
+      </div>
+    );
+  }
+  if (carrier === 'Grab' && s.trackingUrl) {
+    return (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          window.open(s.trackingUrl!, '_blank', 'noopener,noreferrer');
+        }}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-medium hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all"
+      >
+        <FlaticonIcon name="external-link" size="xs" />
+        Grab Track
+      </button>
+    );
+  }
+  if (carrier === 'SOF') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
+        <FlaticonIcon
+          name={s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'}
+          size="xs"
+          className="text-blue-500"
+        />
+        <span className="text-xs font-medium text-blue-600">
+          {s.deliveryType === 'Khách đến lấy hàng' ? 'Lấy tại shop' : 'Shop giao'}
+        </span>
+      </span>
+    );
+  }
+  return <span className="text-gray-300 italic text-xs">—</span>;
+}
+
+function ShipmentActions({
+  s,
+  carrier,
+  isAnimating,
+  action,
+  spxUpdating,
+  grabUpdating,
+  onUpdateStatus,
+  onUpdateSpx,
+  onUpdateGrab,
+}: {
+  s: Shipping;
+  carrier: CarrierType;
+  isAnimating: boolean;
+  action: { status: string; label: string; btn: string } | undefined;
+  spxUpdating: string | null;
+  grabUpdating: string | null;
+  onUpdateStatus: (id: string, newStatus: string) => void;
+  onUpdateSpx: (shipment: Shipping) => void;
+  onUpdateGrab: (shipment: Shipping) => void;
+}) {
+  return (
+    <>
+      {action && (
+        <button
+          onClick={() => onUpdateStatus(s.id, action.status)}
+          disabled={isAnimating}
+          className={`btn-xs ${action.btn} disabled:opacity-50`}
+        >
+          {isAnimating ? (
+            <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+          ) : (
+            action.label
+          )}
+        </button>
+      )}
+      {s.status === 'InTransit' && (
+        <button
+          onClick={() => onUpdateStatus(s.id, 'Failed')}
+          disabled={isAnimating}
+          className="btn-xs btn-danger disabled:opacity-50"
+        >
+          Thất bại
+        </button>
+      )}
+      {carrier === 'SPX' && s.trackingNumber && (
+        <button
+          onClick={() => onUpdateSpx(s)}
+          disabled={spxUpdating === s.id}
+          className="btn-xs btn-ghost disabled:opacity-50"
+          title="Cập nhật SPX"
+        >
+          {spxUpdating === s.id ? (
+            <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          ) : (
+            <FlaticonIcon name="refresh" size="xs" />
+          )}
+        </button>
+      )}
+      {carrier === 'Grab' && s.trackingUrl && (
+        <button
+          onClick={() => onUpdateGrab(s)}
+          disabled={grabUpdating === s.id}
+          className="btn-xs btn-ghost disabled:opacity-50"
+          title="Cập nhật Grab"
+        >
+          {grabUpdating === s.id ? (
+            <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          ) : (
+            <FlaticonIcon name="refresh" size="xs" />
+          )}
+        </button>
+      )}
+    </>
+  );
+}
+
 export default function ShippingPage() {
   const { token } = useAuth();
   const [shipments, setShipments] = useState<Shipping[]>([]);
@@ -358,28 +498,45 @@ export default function ShippingPage() {
 
       {/* ─── Table ─── */}
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Hãng</th>
-                  <th>Đơn hàng</th>
-                  <th>Tiến trình</th>
-                  <th>Trạng thái</th>
-                  <th>Theo dõi</th>
-                  <th>Phí</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <SkeletonRow key={i} cols={7} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hãng</th>
+                    <th>Đơn hàng</th>
+                    <th>Tiến trình</th>
+                    <th>Trạng thái</th>
+                    <th>Theo dõi</th>
+                    <th>Phí</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <SkeletonRow key={i} cols={7} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : filtered.length === 0 ? (
         <div className="relative overflow-hidden flex flex-col items-center justify-center py-20 text-center">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-100/40 rounded-full blur-3xl" />
@@ -397,295 +554,284 @@ export default function ShippingPage() {
           </p>
         </div>
       ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('carrier')}
-                  >
-                    Hãng <SortIcon sortKey="carrier" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('orderId')}
-                  >
-                    Đơn hàng <SortIcon sortKey="orderId" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th>Tiến trình</th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('status')}
-                  >
-                    Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th>Theo dõi</th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('cost')}
-                  >
-                    Phí <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((s) => {
-                  const carrier = getCarrier(s);
-                  const cfg = carrierConfig[carrier];
-                  const action = nextActions[s.status];
-                  const isFailed = s.status === 'Failed';
-                  const isAnimating = updatingShipments.has(s.id);
-                  const wasJustUpdated = justUpdated === s.id;
-
-                  return (
-                    <tr
-                      key={s.id}
-                      onClick={() => setDetailShipment(s)}
-                      className={`cursor-pointer transition-all duration-300 ${
-                        wasJustUpdated && justUpdatedStatus === 'Delivered'
-                          ? 'animate-success-glow-delivered'
-                          : wasJustUpdated
-                            ? 'animate-success-glow'
-                            : isAnimating
-                              ? 'opacity-70'
-                              : ''
-                      } ${isAnimating ? 'pointer-events-none' : ''} hover:bg-blue-50/40`}
+        <>
+          {/* Mobile shipping cards */}
+          <div className="card p-0 overflow-hidden divide-y divide-gray-100 md:hidden">
+            {sortedData.map((s) => {
+              const carrier = getCarrier(s);
+              const action = nextActions[s.status];
+              const isFailed = s.status === 'Failed';
+              const isAnimating = updatingShipments.has(s.id);
+              return (
+                <div
+                  key={s.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetailShipment(s)}
+                  onKeyDown={(e) => e.key === 'Enter' && setDetailShipment(s)}
+                  className="px-4 py-3.5 active:bg-blue-50/60 transition-colors cursor-pointer"
+                >
+                  {/* Carrier + order + cost */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CarrierLogo carrier={carrier} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 truncate">
+                          {s.deliveryType}
+                        </p>
+                        <p className="text-[10px] font-mono text-gray-500 truncate">
+                          #{s.orderId}
+                          {s.eta ? ` · ETA ${formatDateTime(s.eta)}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {Number(s.cost) === 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-medium">
+                          <FlaticonIcon name="tag" size="xs" /> Miễn phí
+                        </span>
+                      ) : (
+                        <p className="text-sm font-bold text-gray-800">
+                          {formatCurrency(Number(s.cost))}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Status + progress */}
+                  <div className="flex items-center justify-between gap-2 mt-2">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${statusBgs[s.status] || 'bg-gray-100 text-gray-600'}`}
                     >
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <CarrierLogo carrier={carrier} size="sm" />
-                          <div>
-                            <p className="text-xs font-semibold text-gray-800">{s.deliveryType}</p>
-                            {cfg && (
-                              <span
-                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.badge}`}
-                              >
-                                {cfg.label}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`}
+                      />
+                      {getStatusLabel(carrier, s.status)}
+                    </span>
+                    <DotProgress status={s.status} isFailed={isFailed} />
+                  </div>
+                  {/* Tracking + actions */}
+                  <div className="flex items-center justify-between gap-2 mt-2.5">
+                    <TrackingBadge s={s} carrier={carrier} />
+                    <div
+                      className="flex items-center gap-1.5 flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ShipmentActions
+                        s={s}
+                        carrier={carrier}
+                        isAnimating={isAnimating}
+                        action={action}
+                        spxUpdating={spxUpdating}
+                        grabUpdating={grabUpdating}
+                        onUpdateStatus={updateStatus}
+                        onUpdateSpx={updateSpxFromTracking}
+                        onUpdateGrab={updateGrabFromTracking}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop shipping table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('carrier')}
+                    >
+                      Hãng <SortIcon sortKey="carrier" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('orderId')}
+                    >
+                      Đơn hàng <SortIcon sortKey="orderId" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th>Tiến trình</th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('status')}
+                    >
+                      Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th>Theo dõi</th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('cost')}
+                    >
+                      Phí <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((s) => {
+                    const carrier = getCarrier(s);
+                    const cfg = carrierConfig[carrier];
+                    const action = nextActions[s.status];
+                    const isFailed = s.status === 'Failed';
+                    const isAnimating = updatingShipments.has(s.id);
+                    const wasJustUpdated = justUpdated === s.id;
+
+                    return (
+                      <tr
+                        key={s.id}
+                        onClick={() => setDetailShipment(s)}
+                        className={`cursor-pointer transition-all duration-300 ${
+                          wasJustUpdated && justUpdatedStatus === 'Delivered'
+                            ? 'animate-success-glow-delivered'
+                            : wasJustUpdated
+                              ? 'animate-success-glow'
+                              : isAnimating
+                                ? 'opacity-70'
+                                : ''
+                        } ${isAnimating ? 'pointer-events-none' : ''} hover:bg-blue-50/40`}
+                      >
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <CarrierLogo carrier={carrier} size="sm" />
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800">
+                                {s.deliveryType}
+                              </p>
+                              {cfg && (
+                                <span
+                                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${cfg.badge}`}
+                                >
+                                  {cfg.label}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="text-xs font-mono text-gray-500">#{s.orderId}</span>
+                          {s.eta && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              ETA: {formatDateTime(s.eta)}
+                            </p>
+                          )}
+                          {carrier === 'SOF' && (s.driverName || s.driverPhone) && (
+                            <p className="text-[10px] text-blue-500 mt-0.5 font-medium">
+                              {s.driverName && (
+                                <>
+                                  <FlaticonIcon
+                                    name="user"
+                                    size="xs"
+                                    className="inline-flex mr-0.5"
+                                  />
+                                  {s.driverName}
+                                </>
+                              )}
+                              {s.driverName && s.driverPhone ? ' · ' : ''}
+                              {s.driverPhone && (
+                                <>
+                                  <FlaticonIcon
+                                    name="phone"
+                                    size="xs"
+                                    className="inline-flex mr-0.5"
+                                  />
+                                  {s.driverPhone}
+                                </>
+                              )}
+                            </p>
+                          )}
+                        </td>
+                        <td className="min-w-[140px]">
+                          <DotProgress status={s.status} isFailed={isFailed} />
+                          <div className="flex items-center gap-2 mt-1.5 text-[9px] text-gray-400">
+                            {s.shippedAt && (
+                              <span>
+                                <FlaticonIcon
+                                  name="box-open"
+                                  size="xs"
+                                  className="inline-flex mr-0.5 text-gray-400"
+                                />
+                                {formatDateTime(s.shippedAt)}
                               </span>
                             )}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="text-xs font-mono text-gray-500">#{s.orderId}</span>
-                        {s.eta && (
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            ETA: {formatDateTime(s.eta)}
-                          </p>
-                        )}
-                        {carrier === 'SOF' && (s.driverName || s.driverPhone) && (
-                          <p className="text-[10px] text-blue-500 mt-0.5 font-medium">
-                            {s.driverName && (
-                              <>
-                                <FlaticonIcon
-                                  name="user"
-                                  size="xs"
-                                  className="inline-flex mr-0.5"
-                                />
-                                {s.driverName}
-                              </>
-                            )}
-                            {s.driverName && s.driverPhone ? ' · ' : ''}
-                            {s.driverPhone && (
-                              <>
-                                <FlaticonIcon
-                                  name="phone"
-                                  size="xs"
-                                  className="inline-flex mr-0.5"
-                                />
-                                {s.driverPhone}
-                              </>
-                            )}
-                          </p>
-                        )}
-                      </td>
-                      <td className="min-w-[140px]">
-                        <DotProgress status={s.status} isFailed={isFailed} />
-                        <div className="flex items-center gap-2 mt-1.5 text-[9px] text-gray-400">
-                          {s.shippedAt && (
-                            <span>
-                              <FlaticonIcon
-                                name="box-open"
-                                size="xs"
-                                className="inline-flex mr-0.5 text-gray-400"
-                              />
-                              {formatDateTime(s.shippedAt)}
-                            </span>
-                          )}
-                          {s.deliveredAt && (
-                            <span>
-                              <FlaticonIcon
-                                name="badge-check"
-                                size="xs"
-                                className="inline-flex mr-0.5 text-emerald-500"
-                              />
-                              {formatDateTime(s.deliveredAt)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          key={wasJustUpdated ? 'upd-' + justUpdatedStatus : s.status}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-                            wasJustUpdated ? 'animate-status-pop' : ''
-                          } ${statusBgs[s.status] || 'bg-gray-100 text-gray-600'}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`}
-                          />
-                          {getStatusLabel(carrier, s.status)}
-                        </span>
-                      </td>
-                      <td>
-                        {carrier === 'SPX' && s.trackingNumber ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(
-                                  `https://spx.vn/track?${s.trackingNumber}`,
-                                  '_blank',
-                                  'noopener,noreferrer',
-                                );
-                              }}
-                              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-medium hover:bg-orange-100 hover:border-orange-300 hover:shadow-sm transition-all max-w-[120px]"
-                            >
-                              <FlaticonIcon name="external-link" size="xs" />
-                              <span className="truncate min-w-0">{s.trackingNumber}</span>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(s.trackingNumber!);
-                              }}
-                              className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:border-gray-300 transition-all"
-                              title="Sao chép mã vận đơn"
-                            >
-                              <FlaticonIcon name="clipboard" size="xs" />
-                            </button>
-                          </div>
-                        ) : carrier === 'Grab' && s.trackingUrl ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (s.trackingUrl)
-                                window.open(s.trackingUrl, '_blank', 'noopener,noreferrer');
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-medium hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm transition-all"
-                          >
-                            <FlaticonIcon name="external-link" size="xs" />
-                            Grab Track
-                          </button>
-                        ) : carrier === 'SOF' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
-                            <FlaticonIcon
-                              name={
-                                s.deliveryType === 'Khách đến lấy hàng' ? 'store-alt' : 'truck-side'
-                              }
-                              size="xs"
-                              className="text-blue-500"
-                            />
-                            <span className="text-xs font-medium text-blue-600">
-                              {s.deliveryType === 'Khách đến lấy hàng'
-                                ? 'Lấy tại shop'
-                                : 'Shop giao'}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 italic text-xs">—</span>
-                        )}
-                      </td>
-                      <td>
-                        {Number(s.cost) === 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-medium">
-                            <FlaticonIcon name="tag" size="xs" /> Miễn phí
-                          </span>
-                        ) : (
-                          <>
-                            <p className="text-sm font-bold text-gray-800">
-                              {formatCurrency(Number(s.cost))}
-                            </p>
                             {s.deliveredAt && (
-                              <p className="text-[10px] text-emerald-500 font-medium">
+                              <span>
                                 <FlaticonIcon
                                   name="badge-check"
                                   size="xs"
-                                  className="inline-flex mr-0.5"
+                                  className="inline-flex mr-0.5 text-emerald-500"
                                 />
-                                Đã thanh toán
-                              </p>
+                                {formatDateTime(s.deliveredAt)}
+                              </span>
                             )}
-                          </>
-                        )}
-                      </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 justify-end">
-                          {action && (
-                            <button
-                              onClick={() => updateStatus(s.id, action.status)}
-                              disabled={isAnimating}
-                              className={`btn-xs ${action.btn} disabled:opacity-50`}
-                            >
-                              {isAnimating ? (
-                                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
-                              ) : (
-                                action.label
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            key={wasJustUpdated ? 'upd-' + justUpdatedStatus : s.status}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                              wasJustUpdated ? 'animate-status-pop' : ''
+                            } ${statusBgs[s.status] || 'bg-gray-100 text-gray-600'}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${statusColors[s.status] || 'bg-gray-400'}`}
+                            />
+                            {getStatusLabel(carrier, s.status)}
+                          </span>
+                        </td>
+                        <td>
+                          <TrackingBadge s={s} carrier={carrier} />
+                        </td>
+                        <td>
+                          {Number(s.cost) === 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-medium">
+                              <FlaticonIcon name="tag" size="xs" /> Miễn phí
+                            </span>
+                          ) : (
+                            <>
+                              <p className="text-sm font-bold text-gray-800">
+                                {formatCurrency(Number(s.cost))}
+                              </p>
+                              {s.deliveredAt && (
+                                <p className="text-[10px] text-emerald-500 font-medium">
+                                  <FlaticonIcon
+                                    name="badge-check"
+                                    size="xs"
+                                    className="inline-flex mr-0.5"
+                                  />
+                                  Đã thanh toán
+                                </p>
                               )}
-                            </button>
+                            </>
                           )}
-                          {s.status === 'InTransit' && (
-                            <button
-                              onClick={() => updateStatus(s.id, 'Failed')}
-                              disabled={isAnimating}
-                              className="btn-xs btn-danger disabled:opacity-50"
-                            >
-                              Thất bại
-                            </button>
-                          )}
-                          {carrier === 'SPX' && s.trackingNumber && (
-                            <button
-                              onClick={() => updateSpxFromTracking(s)}
-                              disabled={spxUpdating === s.id}
-                              className="btn-xs btn-ghost disabled:opacity-50"
-                              title="Cập nhật SPX"
-                            >
-                              {spxUpdating === s.id ? (
-                                <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                              ) : (
-                                <FlaticonIcon name="refresh" size="xs" />
-                              )}
-                            </button>
-                          )}
-                          {carrier === 'Grab' && s.trackingUrl && (
-                            <button
-                              onClick={() => updateGrabFromTracking(s)}
-                              disabled={grabUpdating === s.id}
-                              className="btn-xs btn-ghost disabled:opacity-50"
-                              title="Cập nhật Grab"
-                            >
-                              {grabUpdating === s.id ? (
-                                <span className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                              ) : (
-                                <FlaticonIcon name="refresh" size="xs" />
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1 justify-end">
+                            <ShipmentActions
+                              s={s}
+                              carrier={carrier}
+                              isAnimating={isAnimating}
+                              action={action}
+                              spxUpdating={spxUpdating}
+                              grabUpdating={grabUpdating}
+                              onUpdateStatus={updateStatus}
+                              onUpdateSpx={updateSpxFromTracking}
+                              onUpdateGrab={updateGrabFromTracking}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 border-t border-gray-100">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
-          <div className="px-5 py-3 border-t border-gray-100">
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
-        </div>
+        </>
       )}
 
       {/* ─── Detail Modal ─── */}

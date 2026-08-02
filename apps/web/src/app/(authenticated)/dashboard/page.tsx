@@ -158,7 +158,7 @@ export default function DashboardPage() {
     return (
       <div className="page-enter space-y-6">
         <div className="skeleton-title mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <SkeletonCard key={i} />
           ))}
@@ -207,6 +207,7 @@ export default function DashboardPage() {
       icon: 'alarm-clock',
       color: 'bg-red-50 text-red-700',
       hazard: (stats?.overdueCount || 0) > 0,
+      mobileSpan: true,
       trend: `${stats?.overdueCount || 0} quá hạn · ${stats?.soonCount || 0} sắp tới`,
       trendUp: (stats?.overdueCount || 0) > 0,
     },
@@ -270,11 +271,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
         {statCards.map((card) => (
           <div
             key={card.title}
-            className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 group cursor-default"
+            className={`bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-200 group cursor-default ${
+              'mobileSpan' in card && card.mobileSpan ? 'col-span-2 lg:col-span-1' : ''
+            }`}
           >
             <div className="flex items-start justify-between mb-3">
               <div
@@ -291,7 +294,9 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
               {card.title}
             </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1 tabular-nums">{card.value}</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1 tabular-nums truncate">
+              {card.value}
+            </p>
             <div className="flex items-end gap-0.5 h-8 mt-3 border-t border-gray-50 pt-3">
               {mockChartData.slice(0, 8).map((h, i) => (
                 <div
@@ -324,48 +329,94 @@ export default function DashboardPage() {
             </Link>
           </div>
           {stats?.recentOrders && stats.recentOrders.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Khách hàng</th>
-                    <th>Trạng thái</th>
-                    <th className="text-right">Tổng</th>
-                    <th>Ngày</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.recentOrders.map((order: any) => (
-                    <tr
-                      key={order.id}
-                      className="cursor-pointer hover:bg-purple-50/30 transition-colors"
-                      onClick={() => router.push(`/orders?id=${order.id}`)}
-                    >
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
-                            {order.customer?.name?.charAt(0) || '?'}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-medium text-gray-900">
-                              {order.customer?.name || 'N/A'}
-                            </span>
-                            <SocialLinks customer={order.customer} size="xs" />
-                          </div>
-                        </div>
-                      </td>
-                      <td>
+            <>
+              {/* Mobile recent orders */}
+              <div className="divide-y divide-gray-100 md:hidden">
+                {stats.recentOrders.map((order: any) => (
+                  <div
+                    key={order.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`/orders?id=${order.id}`)}
+                    onKeyDown={(e) => e.key === 'Enter' && router.push(`/orders?id=${order.id}`)}
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-purple-50/60 transition-colors cursor-pointer"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                      {order.customer?.name?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-gray-900 text-sm truncate flex items-center gap-1.5">
+                          {order.customer?.name || 'N/A'}
+                          <SocialLinks customer={order.customer} size="xs" />
+                        </p>
+                        <span className="font-bold text-gray-900 text-sm tabular-nums flex-shrink-0">
+                          {formatCurrency(Number(order.totalCost))}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
                         <StatusBadge status={order.status} />
-                      </td>
-                      <td className="text-right font-semibold text-gray-900 tabular-nums">
-                        {formatCurrency(Number(order.totalCost))}
-                      </td>
-                      <td className="text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
+                        <span className="text-[10px] text-gray-400">
+                          {formatDate(order.orderDate)}
+                        </span>
+                      </div>
+                    </div>
+                    <svg
+                      className="w-4 h-4 text-gray-300 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop recent orders table */}
+              <div className="table-wrap hidden md:block">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Khách hàng</th>
+                      <th>Trạng thái</th>
+                      <th className="text-right">Tổng</th>
+                      <th>Ngày</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {stats.recentOrders.map((order: any) => (
+                      <tr
+                        key={order.id}
+                        className="cursor-pointer hover:bg-purple-50/30 transition-colors"
+                        onClick={() => router.push(`/orders?id=${order.id}`)}
+                      >
+                        <td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
+                              {order.customer?.name?.charAt(0) || '?'}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-gray-900">
+                                {order.customer?.name || 'N/A'}
+                              </span>
+                              <SocialLinks customer={order.customer} size="xs" />
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <StatusBadge status={order.status} />
+                        </td>
+                        <td className="text-right font-semibold text-gray-900 tabular-nums">
+                          {formatCurrency(Number(order.totalCost))}
+                        </td>
+                        <td className="text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="empty-state">
               <FlaticonIcon name="clipboard" size="xl" className="empty-state-icon" />

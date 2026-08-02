@@ -421,152 +421,269 @@ export default function ProductsPage() {
       )}
 
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tên</th>
-                  <th>Loại</th>
-                  <th className="text-left">Giá vốn</th>
-                  <th>Kho</th>
-                  <th>Trạng thái</th>
-                  <th className="text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <SkeletonRow key={i} cols={6} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('name')}
-                  >
-                    Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('type')}
-                  >
-                    Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="text-left cursor-pointer select-none group"
-                    onClick={() => toggleSort('cost')}
-                  >
-                    Giá vốn <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th>Kho</th>
-                  <th>Trạng thái</th>
-                  <th className="text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((p) => (
-                  <tr key={p.id} className="group">
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
-                            p.type === 'BASE'
-                              ? 'from-blue-50 to-blue-100'
-                              : 'from-pink-50 to-pink-100'
-                          } flex items-center justify-center text-lg shadow-sm`}
-                        >
-                          {typeConfig[p.type]?.icon ? (
-                            <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
-                          ) : (
-                            '📦'
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{p.name}</p>
-                          {p.description && (
-                            <p className="text-xs text-gray-500 truncate max-w-[200px]">
-                              {p.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={typeConfig[p.type]?.badge || 'badge-gray'}>{p.type}</span>
-                    </td>
-                    <td className="font-semibold tabular-nums text-left">
-                      {formatCurrency(Number(p.cost))}
-                    </td>
-                    <td>
-                      {p.trackInventory !== false ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Có
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                          Không
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleToggleStatus(p)}
-                        className={`badge cursor-pointer transition-all duration-200 ${
-                          p.isActive
-                            ? 'badge-green hover:bg-emerald-200'
-                            : 'badge-gray hover:bg-gray-200'
-                        }`}
-                      >
-                        <span
-                          className={`status-dot ${p.isActive ? 'status-dot-active' : 'status-dot-inactive'}`}
-                        />
-                        {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
-                      </button>
-                    </td>
-                    <td className="text-left">
-                      <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
-                        <button
-                          onClick={() => handleEdit(p)}
-                          className="flex items-center justify-center w-[28px] h-[28px] hover:bg-blue-50 hover:text-blue-600 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
-                          title="Sửa"
-                          aria-label="Chỉnh sửa"
-                        >
-                          <FlaticonIcon name="pencil" size="xs" />
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(p)}
-                          className="flex items-center justify-center w-[28px] h-[28px] hover:bg-red-50 hover:text-red-500 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
-                          title="Xóa"
-                          aria-label="Xóa"
-                        >
-                          <FlaticonIcon name="trash" size="xs" />
-                        </button>
-                      </div>
-                    </td>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tên</th>
+                    <th>Loại</th>
+                    <th className="text-left">Giá vốn</th>
+                    <th>Kho</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Thao tác</th>
                   </tr>
-                ))}
-                {products.length === 0 && (
-                  <EmptyState
-                    emoji="📦"
-                    title="Không tìm thấy nguyên vật liệu"
-                    message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
-                  />
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <SkeletonRow key={i} cols={6} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+        </>
+      ) : (
+        <>
+          {/* Mobile product cards */}
+          <div className="md:hidden">
+            <div className="card p-0 overflow-hidden divide-y divide-gray-100">
+              {sortedData.map((p) => (
+                <div key={p.id} className="px-4 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${
+                        p.type === 'BASE' ? 'from-blue-50 to-blue-100' : 'from-pink-50 to-pink-100'
+                      } flex items-center justify-center text-lg shadow-sm flex-shrink-0`}
+                    >
+                      {typeConfig[p.type]?.icon ? (
+                        <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
+                      ) : (
+                        '📦'
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-gray-900 text-sm truncate">{p.name}</p>
+                        <span
+                          className={`${typeConfig[p.type]?.badge || 'badge-gray'} flex-shrink-0`}
+                        >
+                          {p.type}
+                        </span>
+                      </div>
+                      {p.description && (
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{p.description}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-gray-900 tabular-nums">
+                          {formatCurrency(Number(p.cost))}
+                        </span>
+                        <button
+                          onClick={() => handleToggleStatus(p)}
+                          className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-all duration-150 ${
+                            p.isActive
+                              ? 'bg-emerald-50 text-emerald-600 active:bg-emerald-100'
+                              : 'bg-gray-100 text-gray-400 active:bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              p.isActive ? 'bg-emerald-500' : 'bg-gray-400'
+                            }`}
+                          />
+                          {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
+                        </button>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                            p.trackInventory !== false
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'bg-gray-100 text-gray-400'
+                          }`}
+                        >
+                          {p.trackInventory !== false ? 'Theo dõi kho' : 'Không theo dõi'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(p)}
+                        className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-all duration-150"
+                        title="Sửa"
+                        aria-label="Chỉnh sửa"
+                      >
+                        <FlaticonIcon name="pencil" size="xs" />
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(p)}
+                        className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150"
+                        title="Xóa"
+                        aria-label="Xóa"
+                      >
+                        <FlaticonIcon name="trash" size="xs" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {products.length === 0 && (
+                <table className="w-full">
+                  <tbody>
+                    <EmptyState
+                      emoji="📦"
+                      title="Không tìm thấy nguyên vật liệu"
+                      message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
+                    />
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="mt-3">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </div>
+
+          {/* Desktop product table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('name')}
+                    >
+                      Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('type')}
+                    >
+                      Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('cost')}
+                    >
+                      Giá vốn <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th>Kho</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((p) => (
+                    <tr key={p.id} className="group">
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
+                              p.type === 'BASE'
+                                ? 'from-blue-50 to-blue-100'
+                                : 'from-pink-50 to-pink-100'
+                            } flex items-center justify-center text-lg shadow-sm`}
+                          >
+                            {typeConfig[p.type]?.icon ? (
+                              <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
+                            ) : (
+                              '📦'
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{p.name}</p>
+                            {p.description && (
+                              <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                                {p.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={typeConfig[p.type]?.badge || 'badge-gray'}>{p.type}</span>
+                      </td>
+                      <td className="font-semibold tabular-nums text-left">
+                        {formatCurrency(Number(p.cost))}
+                      </td>
+                      <td>
+                        {p.trackInventory !== false ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Có
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                            Không
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleToggleStatus(p)}
+                          className={`badge cursor-pointer transition-all duration-200 ${
+                            p.isActive
+                              ? 'badge-green hover:bg-emerald-200'
+                              : 'badge-gray hover:bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`status-dot ${p.isActive ? 'status-dot-active' : 'status-dot-inactive'}`}
+                          />
+                          {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
+                        </button>
+                      </td>
+                      <td className="text-left">
+                        <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
+                          <button
+                            onClick={() => handleEdit(p)}
+                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-blue-50 hover:text-blue-600 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
+                            title="Sửa"
+                            aria-label="Chỉnh sửa"
+                          >
+                            <FlaticonIcon name="pencil" size="xs" />
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(p)}
+                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-red-50 hover:text-red-500 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
+                            title="Xóa"
+                            aria-label="Xóa"
+                          >
+                            <FlaticonIcon name="trash" size="xs" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {products.length === 0 && (
+                    <EmptyState
+                      emoji="📦"
+                      title="Không tìm thấy nguyên vật liệu"
+                      message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </>
       )}
     </div>
   );

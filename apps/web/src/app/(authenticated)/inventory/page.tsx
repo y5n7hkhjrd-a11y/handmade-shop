@@ -157,7 +157,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm shadow-sm">
@@ -180,7 +180,7 @@ export default function InventoryPage() {
           </div>
           <p className="text-xl font-bold text-red-600">{totals.sale.toLocaleString()}</p>
         </div>
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-sm shadow-sm">
               ⚖️
@@ -191,7 +191,7 @@ export default function InventoryPage() {
           </div>
           <p className="text-xl font-bold text-amber-600">{totals.adjustment.toLocaleString()}</p>
         </div>
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-1">
             <div
               className={`w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center text-white text-sm shadow-sm ${
@@ -322,80 +322,59 @@ export default function InventoryPage() {
 
       {/* Transactions List */}
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Product</th>
-                  <th className="text-left">Qty</th>
-                  <th>Reference</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3].map((i) => (
-                  <SkeletonRow key={i} cols={5} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Product</th>
+                    <th className="text-left">Qty</th>
+                    <th>Reference</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonRow key={i} cols={5} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('type')}
-                  >
-                    Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('product.name')}
-                  >
-                    Sản phẩm / Nguyên liệu{' '}
-                    <SortIcon sortKey="product.name" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="text-left cursor-pointer select-none group"
-                    onClick={() => toggleSort('quantity')}
-                  >
-                    Số lượng <SortIcon sortKey="quantity" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th>Tham chiếu</th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('createdAt')}
-                  >
-                    Ngày <SortIcon sortKey="createdAt" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((tx) => (
-                  <tr key={tx.id} className="group">
-                    <td>
-                      <span className={typeConfig[tx.type]?.badge || 'badge-gray'}>
-                        {typeConfig[tx.type]?.icon ? (
-                          <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" />
-                        ) : null}{' '}
-                        {typeConfig[tx.type]?.label || tx.type}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="font-medium">
-                        {tx.product?.name || tx.componentName || (
-                          <span className="text-gray-300 italic">—</span>
-                        )}
-                      </span>
-                    </td>
-                    <td
-                      className={`text-left font-semibold tabular-nums ${
+        <>
+          {/* Mobile transaction cards */}
+          <div className="md:hidden">
+            <div className="card p-0 overflow-hidden divide-y divide-gray-100">
+              {sortedData.map((tx) => (
+                <div key={tx.id} className="px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={typeConfig[tx.type]?.badge || 'badge-gray'}>
+                      {typeConfig[tx.type]?.icon ? (
+                        <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" />
+                      ) : null}{' '}
+                      {typeConfig[tx.type]?.label || tx.type}
+                    </span>
+                    <span
+                      className={`text-sm font-bold tabular-nums ${
                         tx.type === 'IMPORT'
                           ? 'text-emerald-600'
                           : tx.type === 'SALE'
@@ -406,29 +385,132 @@ export default function InventoryPage() {
                       {tx.type === 'IMPORT' ? '+' : tx.type === 'SALE' ? '−' : '±'}
                       {Number(tx.quantity).toLocaleString()}
                       <span className="text-xs text-gray-400 ml-0.5">{tx.unit}</span>
-                    </td>
-                    <td className="text-gray-500 text-xs font-mono">
+                    </span>
+                  </div>
+                  <p className="font-medium text-gray-900 text-sm mt-1.5 truncate">
+                    {tx.product?.name || tx.componentName || (
+                      <span className="text-gray-300 italic">—</span>
+                    )}
+                  </p>
+                  <div className="flex items-center justify-between gap-2 mt-1.5">
+                    <span className="text-[10px] text-gray-500 font-mono truncate">
                       {tx.reference || <span className="text-gray-300 italic">—</span>}
-                    </td>
-                    <td className="text-gray-500 text-xs">{formatDateTime(tx.createdAt)}</td>
-                  </tr>
-                ))}
-                {transactions.length === 0 && (
-                  <EmptyState
-                    emoji="📊"
-                    title="Không tìm thấy giao dịch"
-                    message={
-                      typeFilter
-                        ? 'Không có giao dịch phù hợp với bộ lọc.'
-                        : 'Ghi nhận giao dịch đầu tiên để bắt đầu.'
-                    }
-                  />
-                )}
-              </tbody>
-            </table>
+                    </span>
+                    <span className="text-[10px] text-gray-400 flex-shrink-0">
+                      {formatDateTime(tx.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {transactions.length === 0 && (
+                <table className="w-full">
+                  <tbody>
+                    <EmptyState
+                      emoji="📊"
+                      title="Không tìm thấy giao dịch"
+                      message={
+                        typeFilter
+                          ? 'Không có giao dịch phù hợp với bộ lọc.'
+                          : 'Ghi nhận giao dịch đầu tiên để bắt đầu.'
+                      }
+                    />
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="mt-3">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+
+          {/* Desktop transactions table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('type')}
+                    >
+                      Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('product.name')}
+                    >
+                      Sản phẩm / Nguyên liệu{' '}
+                      <SortIcon sortKey="product.name" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('quantity')}
+                    >
+                      Số lượng <SortIcon sortKey="quantity" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th>Tham chiếu</th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('createdAt')}
+                    >
+                      Ngày <SortIcon sortKey="createdAt" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((tx) => (
+                    <tr key={tx.id} className="group">
+                      <td>
+                        <span className={typeConfig[tx.type]?.badge || 'badge-gray'}>
+                          {typeConfig[tx.type]?.icon ? (
+                            <FlaticonIcon name={typeConfig[tx.type]!.icon} size="sm" />
+                          ) : null}{' '}
+                          {typeConfig[tx.type]?.label || tx.type}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="font-medium">
+                          {tx.product?.name || tx.componentName || (
+                            <span className="text-gray-300 italic">—</span>
+                          )}
+                        </span>
+                      </td>
+                      <td
+                        className={`text-left font-semibold tabular-nums ${
+                          tx.type === 'IMPORT'
+                            ? 'text-emerald-600'
+                            : tx.type === 'SALE'
+                              ? 'text-red-600'
+                              : 'text-amber-600'
+                        }`}
+                      >
+                        {tx.type === 'IMPORT' ? '+' : tx.type === 'SALE' ? '−' : '±'}
+                        {Number(tx.quantity).toLocaleString()}
+                        <span className="text-xs text-gray-400 ml-0.5">{tx.unit}</span>
+                      </td>
+                      <td className="text-gray-500 text-xs font-mono">
+                        {tx.reference || <span className="text-gray-300 italic">—</span>}
+                      </td>
+                      <td className="text-gray-500 text-xs">{formatDateTime(tx.createdAt)}</td>
+                    </tr>
+                  ))}
+                  {transactions.length === 0 && (
+                    <EmptyState
+                      emoji="📊"
+                      title="Không tìm thấy giao dịch"
+                      message={
+                        typeFilter
+                          ? 'Không có giao dịch phù hợp với bộ lọc.'
+                          : 'Ghi nhận giao dịch đầu tiên để bắt đầu.'
+                      }
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </>
       )}
     </div>
   );
