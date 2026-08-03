@@ -7,6 +7,7 @@ import { formatCurrency } from '@handmade-shop/shared';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import FlaticonIcon from '@/components/FlaticonIcon';
+import CustomDate from '@/components/CustomDate';
 
 interface ProfitData {
   period: string;
@@ -131,7 +132,7 @@ export default function ReportsPage() {
   return (
     <div className="page-enter space-y-6">
       {/* ─── Header ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+      <div className="relative rounded-xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
         <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-mint-200/25 rounded-full blur-3xl" />
         <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
         <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-pink-100/10 rounded-full blur-xl" />
@@ -178,26 +179,20 @@ export default function ReportsPage() {
                         <label className="text-xs font-medium text-gray-600 mb-1 block">
                           Start Date
                         </label>
-                        <input
-                          type="date"
-                          className="input text-sm"
+                        <CustomDate
                           value={dateRange.startDate || ''}
-                          onChange={(e) =>
-                            setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
-                          }
+                          onChange={(startDate) => setDateRange((prev) => ({ ...prev, startDate }))}
+                          placeholder="Chọn ngày bắt đầu"
                         />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-600 mb-1 block">
                           End Date
                         </label>
-                        <input
-                          type="date"
-                          className="input text-sm"
+                        <CustomDate
                           value={dateRange.endDate || ''}
-                          onChange={(e) =>
-                            setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
-                          }
+                          onChange={(endDate) => setDateRange((prev) => ({ ...prev, endDate }))}
+                          placeholder="Chọn ngày kết thúc"
                         />
                       </div>
                       <div className="flex gap-2 pt-1">

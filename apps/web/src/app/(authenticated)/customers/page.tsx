@@ -21,7 +21,7 @@ import {
 import CustomerForm from './CustomerForm';
 import ConfirmModal from '@/components/ConfirmModal';
 
-type FilterKey = 'all' | 'email' | 'phone' | 'social';
+type FilterKey = 'all' | 'phone' | 'social';
 
 export default function CustomersPage() {
   const { token } = useAuth();
@@ -72,8 +72,7 @@ export default function CustomersPage() {
         token,
       });
       let data = res.data as Customer[];
-      if (activeFilter === 'email') data = data.filter((c) => !!c.email);
-      else if (activeFilter === 'phone') data = data.filter((c) => !!c.phone);
+      if (activeFilter === 'phone') data = data.filter((c) => !!c.phone);
       else if (activeFilter === 'social') data = data.filter(hasSocial);
       setCustomers(data);
       setTotalPages(res.pagination.totalPages);
@@ -259,7 +258,6 @@ export default function CustomersPage() {
               <thead>
                 <tr>
                   <th>Tên</th>
-                  <th>Email</th>
                   <th>Điện thoại</th>
                   <th>Địa chỉ</th>
                   <th className="text-left">Social</th>
@@ -274,9 +272,6 @@ export default function CustomersPage() {
                         <div className="w-8 h-8 rounded-full skeleton" />
                         <div className="skeleton h-4 w-28" />
                       </div>
-                    </td>
-                    <td>
-                      <div className="skeleton h-4 w-36" />
                     </td>
                     <td>
                       <div className="skeleton h-4 w-28" />
@@ -308,12 +303,6 @@ export default function CustomersPage() {
                     onClick={() => toggleSort('name')}
                   >
                     Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} />
-                  </th>
-                  <th
-                    className="cursor-pointer select-none group"
-                    onClick={() => toggleSort('email')}
-                  >
-                    Email <SortIcon sortKey="email" currentKey={sortKey} dir={sortDir} />
                   </th>
                   <th
                     className="cursor-pointer select-none group"
@@ -355,18 +344,6 @@ export default function CustomersPage() {
                           )}
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      {c.email ? (
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="text-gray-600 hover:text-avocado-600 transition-colors text-sm"
-                        >
-                          {c.email}
-                        </a>
-                      ) : (
-                        <span className="text-gray-300 text-sm">—</span>
-                      )}
                     </td>
                     <td>
                       {c.phone ? (
@@ -473,16 +450,6 @@ export default function CustomersPage() {
                       <h3 className="font-semibold text-gray-900 truncate flex items-center gap-1.5">
                         {c.name}
                       </h3>
-                      {c.email ? (
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="text-xs text-gray-500 hover:text-avocado-600 transition-colors truncate block"
-                        >
-                          {c.email}
-                        </a>
-                      ) : (
-                        <p className="text-xs text-gray-300 truncate">Chưa có email</p>
-                      )}
                     </div>
                     <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm flex-shrink-0">
                       <button

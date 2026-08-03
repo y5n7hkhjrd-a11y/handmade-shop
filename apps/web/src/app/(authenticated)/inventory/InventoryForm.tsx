@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { apiClient } from '@/lib/api';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { NumberInput } from '@/components/NumberInput';
+import CustomSelect from '@/components/CustomSelect';
 import { useEscapeClose } from '@/hooks/useEscapeClose';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
@@ -81,33 +82,30 @@ export default function InventoryForm({
         <form onSubmit={handleCreate} className="p-6 space-y-4">
           <div>
             <label className="label">Loại</label>
-            <select
-              className="input"
+            <CustomSelect
               value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-            >
-              <option value="IMPORT">📥 Import — Stock received</option>
-              <option value="SALE">📤 Sale — Stock sold</option>
-              <option value="ADJUSTMENT">⚖️ Adjustment — Stock correction</option>
-            </select>
+              onChange={(type) => setForm({ ...form, type })}
+              options={[
+                { value: 'IMPORT', label: '📥 Import — Stock received' },
+                { value: 'SALE', label: '📤 Sale — Stock sold' },
+                { value: 'ADJUSTMENT', label: '⚖️ Adjustment — Stock correction' },
+              ]}
+            />
           </div>
 
           <div>
             <label className="label">
               Sản phẩm <span className="text-gray-400 font-normal">(hoặc tên nguyên liệu)</span>
             </label>
-            <select
-              className="input"
+            <CustomSelect
               value={form.productId}
-              onChange={(e) => setForm({ ...form, productId: e.target.value })}
-            >
-              <option value="">Chọn sản phẩm...</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              onChange={(productId) => setForm({ ...form, productId })}
+              placeholder="Chọn sản phẩm..."
+              options={[
+                { value: '', label: 'Không chọn sản phẩm' },
+                ...products.map((product) => ({ value: product.id, label: product.name })),
+              ]}
+            />
           </div>
 
           {!form.productId && (

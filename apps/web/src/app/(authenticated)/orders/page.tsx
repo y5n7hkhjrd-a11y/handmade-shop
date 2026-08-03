@@ -12,6 +12,8 @@ import { useSort, SortIcon } from '@/hooks/useSort';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
 import ConfirmModal from '@/components/ConfirmModal';
+import CustomSelect from '@/components/CustomSelect';
+import CustomDate from '@/components/CustomDate';
 import OrderDetail from './OrderDetail';
 import OrderForm from './OrderForm';
 import {
@@ -403,7 +405,7 @@ export default function OrdersPage() {
       </div>
 
       {/* ─── Filter bar ─── */}
-      <div className="relative overflow-hidden rounded-xl bg-white border border-gray-200/80 shadow-sm mb-4 sm:mb-6">
+      <div className="relative rounded-xl bg-white border border-gray-200/80 shadow-sm mb-4 sm:mb-6">
         {/* Header */}
         <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -451,71 +453,41 @@ export default function OrdersPage() {
               )}
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <select
-                className="input sm:w-56"
+              <CustomSelect
+                className="w-full sm:w-56"
                 value={customerFilter}
-                onChange={(e) => {
-                  setCustomerFilter(e.target.value);
+                onChange={(customerId) => {
+                  setCustomerFilter(customerId);
                   setPage(1);
                 }}
-              >
-                <option value="">Tất cả khách hàng</option>
-                {customers.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1 sm:flex-none">
-                  <input
-                    type="date"
-                    className="input !py-2 w-full"
-                    value={dateFrom}
-                    onChange={(e) => {
-                      setDateFrom(e.target.value);
-                      setPage(1);
-                    }}
-                    title="Từ ngày"
-                  />
-                  {dateFrom && (
-                    <button
-                      onClick={() => {
-                        setDateFrom('');
-                        setPage(1);
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center text-[9px] transition-colors"
-                      title="Xóa ngày bắt đầu"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-                <span className="text-gray-400 text-sm flex-shrink-0">→</span>
-                <div className="relative flex-1 sm:flex-none">
-                  <input
-                    type="date"
-                    className="input !py-2 w-full"
-                    value={dateTo}
-                    onChange={(e) => {
-                      setDateTo(e.target.value);
-                      setPage(1);
-                    }}
-                    title="Đến ngày"
-                  />
-                  {dateTo && (
-                    <button
-                      onClick={() => {
-                        setDateTo('');
-                        setPage(1);
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center text-[9px] transition-colors"
-                      title="Xóa ngày kết thúc"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+                options={[
+                  { value: '', label: 'Tất cả khách hàng' },
+                  ...customers.map((customer: any) => ({
+                    value: customer.id,
+                    label: customer.name,
+                  })),
+                ]}
+              />
+              <div className="grid gap-2 sm:flex sm:items-center sm:gap-2">
+                <CustomDate
+                  className="w-full sm:w-40"
+                  value={dateFrom}
+                  placeholder="Từ ngày"
+                  onChange={(v) => {
+                    setDateFrom(v);
+                    setPage(1);
+                  }}
+                />
+                <span className="hidden sm:inline text-gray-400 text-sm flex-shrink-0">→</span>
+                <CustomDate
+                  className="w-full sm:w-40"
+                  value={dateTo}
+                  placeholder="Đến ngày"
+                  onChange={(v) => {
+                    setDateTo(v);
+                    setPage(1);
+                  }}
+                />
               </div>
             </div>
           </div>

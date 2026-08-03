@@ -5,7 +5,6 @@ import FlaticonIcon from '@/components/FlaticonIcon';
 export interface Customer {
   id: string;
   name: string;
-  email: string;
   phone?: string;
   address?: string;
   facebook?: string;
@@ -145,9 +144,8 @@ export function SocialIconsRow({
   );
 }
 
-export const FILTERS: { key: 'all' | 'email' | 'phone' | 'social'; label: string }[] = [
+export const FILTERS: { key: 'all' | 'phone' | 'social'; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'email', label: '📧 Có email' },
   { key: 'phone', label: '📞 Có SĐT' },
   { key: 'social', label: '🌐 Có MXH' },
 ];
@@ -161,7 +159,6 @@ export function hasSocial(customer: Customer): boolean {
 
 export const initialForm = {
   name: '',
-  email: '',
   phone: '',
   address: '',
   facebook: '',

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import { NumberInput } from '@/components/NumberInput';
+import CustomSelect from '@/components/CustomSelect';
 import { useEscapeClose } from '@/hooks/useEscapeClose';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { SOCIAL_PLATFORMS } from './orderConstants';
@@ -60,6 +61,59 @@ function getRuleMatchInfo(input: string, pattern: string): { count: number; char
   }
 }
 
+function getSocialId(value: string): string {
+  return value
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?/i, '')
+    .replace(/^(?:instagram\.com|threads\.(?:net|com)|facebook\.com|fb\.com|tiktok\.com)\/?/i, '')
+    .replace(/^@/, '')
+    .split(/[/?#]/)[0];
+}
+
+function getCustomerOptionLabel(customer: any): string {
+  const details: string[] = [];
+  const phoneDigits = customer.phone?.replace(/\D/g, '');
+
+  if (phoneDigits) details.push(phoneDigits.slice(-4));
+
+  const social = [
+    ['facebook', 'FB'],
+    ['instagram', 'IG'],
+    ['threads', 'Threads'],
+    ['tiktok', 'TikTok'],
+  ].find(([key]) => customer[key]);
+
+  if (social) {
+    const id = getSocialId(customer[social[0]]);
+    if (id) details.push(`${social[1]}: ${id}`);
+  }
+
+  return details.length > 0 ? `${customer.name} — ${details.join(' · ')}` : customer.name;
+}
+
+function getCustomerSortName(name: string): string {
+  const nameParts = name.trim().split(/\s+/);
+  const givenName = nameParts[nameParts.length - 1] || name;
+  return givenName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase();
+}
+
+function parseDateValue(value: string): Date | null {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  return year && month && day ? new Date(year, month - 1, day) : null;
+}
+
+function formatDateValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function OrderForm({
   isOpen,
   onClose,
@@ -88,9 +142,11 @@ export default function OrderForm({
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false);
+  const [isDeadlinePickerOpen, setIsDeadlinePickerOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const NEW_CUSTOMER_INIT = {
     name: '',
-    email: '',
     phone: '',
     address: '',
     notes: '',
@@ -102,11 +158,63 @@ export default function OrderForm({
   const [newCustomer, setNewCustomer] = useState({ ...NEW_CUSTOMER_INIT });
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const advanceAfterSave = useRef(false);
+  const customerMenuRef = useRef<HTMLDivElement>(null);
+  const deadlinePickerRef = useRef<HTMLDivElement>(null);
+  const selectedCustomer = customers.find((customer) => customer.id === form.customerId);
+  const sortedCustomers = useMemo(
+    () =>
+      [...customers].sort(
+        (a, b) =>
+          getCustomerSortName(a.name).localeCompare(getCustomerSortName(b.name)) ||
+          a.name.localeCompare(b.name, 'vi'),
+      ),
+    [customers],
+  );
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: firstWeekday + daysInMonth }, (_, index) =>
+      index < firstWeekday ? null : new Date(year, month, index - firstWeekday + 1),
+    );
+  }, [calendarMonth]);
 
   // Escape closes only the top-most modal (AddCustomer first, then the main form)
-  useEscapeClose(onClose, isOpen && !showAddCustomer);
+  useEscapeClose(
+    onClose,
+    isOpen && !showAddCustomer && !isCustomerMenuOpen && !isDeadlinePickerOpen,
+  );
   useEscapeClose(() => setShowAddCustomer(false), showAddCustomer);
+  useEscapeClose(() => setIsCustomerMenuOpen(false), isCustomerMenuOpen);
+  useEscapeClose(() => setIsDeadlinePickerOpen(false), isDeadlinePickerOpen);
   useBodyScrollLock(isOpen);
+
+  useEffect(() => {
+    if (!isCustomerMenuOpen) return;
+
+    const closeMenuOnOutsideClick = (event: MouseEvent) => {
+      if (!customerMenuRef.current?.contains(event.target as Node)) {
+        setIsCustomerMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closeMenuOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeMenuOnOutsideClick);
+  }, [isCustomerMenuOpen]);
+
+  useEffect(() => {
+    if (!isDeadlinePickerOpen) return;
+
+    const closePickerOnOutsideClick = (event: MouseEvent) => {
+      if (!deadlinePickerRef.current?.contains(event.target as Node)) {
+        setIsDeadlinePickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closePickerOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closePickerOnOutsideClick);
+  }, [isDeadlinePickerOpen]);
 
   // Initialize form when opening
   useEffect(() => {
@@ -295,7 +403,7 @@ export default function OrderForm({
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="label !mb-0">
@@ -304,6 +412,7 @@ export default function OrderForm({
                   <button
                     type="button"
                     onClick={() => {
+                      setIsCustomerMenuOpen(false);
                       setShowAddCustomer(true);
                       setNewCustomer({ ...NEW_CUSTOMER_INIT });
                     }}
@@ -313,33 +422,190 @@ export default function OrderForm({
                     <FlaticonIcon name="plus" size="xs" /> Thêm mới
                   </button>
                 </div>
-                <select
-                  className={`input w-full ${formErrors.customerId ? 'input-error' : ''}`}
-                  value={form.customerId}
-                  onChange={(e) => {
-                    setForm({ ...form, customerId: e.target.value });
-                    if (formErrors.customerId) setFormErrors({ ...formErrors, customerId: '' });
-                  }}
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div ref={customerMenuRef} className="relative">
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isCustomerMenuOpen}
+                    className={`input w-full flex items-center justify-between gap-3 text-left ${formErrors.customerId ? 'input-error' : ''}`}
+                    onClick={() => {
+                      setIsDeadlinePickerOpen(false);
+                      setIsCustomerMenuOpen((open) => !open);
+                    }}
+                  >
+                    <span className={selectedCustomer ? 'truncate text-gray-800' : 'text-gray-400'}>
+                      {selectedCustomer
+                        ? getCustomerOptionLabel(selectedCustomer)
+                        : 'Chọn khách hàng...'}
+                    </span>
+                    <svg
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                      className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform ${isCustomerMenuOpen ? 'rotate-180' : ''}`}
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  {isCustomerMenuOpen && (
+                    <div
+                      role="listbox"
+                      className="absolute z-30 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl shadow-gray-200/60"
+                    >
+                      {sortedCustomers.map((customer: any) => {
+                        const isSelected = customer.id === form.customerId;
+                        return (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-mint-50 text-mint-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => {
+                              setForm({ ...form, customerId: customer.id });
+                              setIsCustomerMenuOpen(false);
+                              if (formErrors.customerId) {
+                                setFormErrors({ ...formErrors, customerId: '' });
+                              }
+                            }}
+                          >
+                            <span className="block truncate">
+                              {getCustomerOptionLabel(customer)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 {formErrors.customerId && (
                   <p className="text-xs text-red-600 mt-1">{formErrors.customerId}</p>
                 )}
               </div>
               <div>
                 <label className="label">Hạn chót</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={form.deadline}
-                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                />
+                <div ref={deadlinePickerRef} className="relative">
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded={isDeadlinePickerOpen}
+                    className={`input w-full flex items-center gap-2.5 text-left ${form.deadline ? 'text-gray-800' : 'text-gray-400'}`}
+                    onClick={() => {
+                      const selectedDate = parseDateValue(form.deadline);
+                      setCalendarMonth(selectedDate || new Date());
+                      setIsCustomerMenuOpen(false);
+                      setIsDeadlinePickerOpen((open) => !open);
+                    }}
+                  >
+                    <FlaticonIcon name="calendar" size="xs" className="text-avocado-600" />
+                    <span className="flex-1">
+                      {form.deadline
+                        ? parseDateValue(form.deadline)?.toLocaleDateString('vi-VN')
+                        : 'Chọn hạn chót'}
+                    </span>
+                    <svg viewBox="0 0 20 20" className="w-4 h-4 text-gray-400" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  {isDeadlinePickerOpen && (
+                    <div
+                      role="dialog"
+                      aria-label="Chọn hạn chót"
+                      className="absolute right-0 z-30 mt-1 w-60 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-2.5 shadow-xl shadow-gray-200/60"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          aria-label="Tháng trước"
+                          className="w-7 h-7 rounded-lg text-gray-500 hover:bg-mint-50 hover:text-mint-700 transition-colors"
+                          onClick={() =>
+                            setCalendarMonth(
+                              (month) => new Date(month.getFullYear(), month.getMonth() - 1, 1),
+                            )
+                          }
+                        >
+                          ‹
+                        </button>
+                        <span className="text-sm font-semibold text-gray-800 capitalize">
+                          {calendarMonth.toLocaleDateString('vi-VN', {
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Tháng sau"
+                          className="w-7 h-7 rounded-lg text-gray-500 hover:bg-mint-50 hover:text-mint-700 transition-colors"
+                          onClick={() =>
+                            setCalendarMonth(
+                              (month) => new Date(month.getFullYear(), month.getMonth() + 1, 1),
+                            )
+                          }
+                        >
+                          ›
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-7 mb-1 text-center text-[10px] font-semibold text-gray-400">
+                        {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
+                          <span key={day}>{day}</span>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {calendarDays.map((date, index) => {
+                          if (!date) return <span key={`empty-${index}`} />;
+                          const value = formatDateValue(date);
+                          const isSelected = value === form.deadline;
+                          const isToday = value === formatDateValue(new Date());
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={`h-7 rounded-md text-xs transition-colors ${isSelected ? 'bg-avocado-600 text-white font-semibold shadow-sm' : isToday ? 'bg-mint-50 text-mint-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+                              onClick={() => {
+                                setForm({ ...form, deadline: value });
+                                setIsDeadlinePickerOpen(false);
+                              }}
+                            >
+                              {date.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between border-t border-gray-100 pt-2.5">
+                        <button
+                          type="button"
+                          className="text-xs text-gray-400 hover:text-gray-600"
+                          onClick={() => {
+                            setForm({ ...form, deadline: '' });
+                            setIsDeadlinePickerOpen(false);
+                          }}
+                        >
+                          Xóa ngày
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-avocado-600 hover:text-avocado-700"
+                          onClick={() => {
+                            const today = new Date();
+                            setForm({ ...form, deadline: formatDateValue(today) });
+                            setCalendarMonth(today);
+                            setIsDeadlinePickerOpen(false);
+                          }}
+                        >
+                          Hôm nay
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -420,22 +686,18 @@ export default function OrderForm({
                             <label className="text-[10px] text-gray-500 font-medium">
                               Công thức
                             </label>
-                            <select
-                              className="input text-sm"
+                            <CustomSelect
                               value={line.recipeId}
-                              onChange={(e) => {
+                              onChange={(recipeId) => {
                                 const lines = [...form.orderLines];
-                                lines[idx] = { ...lines[idx]!, recipeId: e.target.value };
+                                lines[idx] = { ...lines[idx]!, recipeId };
                                 setForm({ ...form, orderLines: lines });
                               }}
-                            >
-                              <option value="">Chọn...</option>
-                              {recipes.map((r: any) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name}
-                                </option>
-                              ))}
-                            </select>
+                              options={[
+                                { value: '', label: 'Chọn...' },
+                                ...recipes.map((r: any) => ({ value: r.id, label: r.name })),
+                              ]}
+                            />
                           </div>
                           <div>
                             <label className="text-[10px] text-gray-500 font-medium">
@@ -550,30 +812,27 @@ export default function OrderForm({
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-[10px] text-gray-500 font-medium">Sản phẩm</label>
-                          <select
-                            className="input text-sm"
+                          <CustomSelect
                             value={line.productId}
-                            onChange={(e) => {
+                            onChange={(productId) => {
                               const lines = [...form.orderLines];
-                              const defaultPrice = (() => {
-                                const p = products.find((p: any) => p.id === e.target.value);
-                                return p ? Number(p.cost || 0) : 0;
-                              })();
+                              const p = products.find((p: any) => p.id === productId);
+                              const defaultPrice = p ? Number(p.cost || 0) : 0;
                               lines[idx] = {
                                 ...lines[idx]!,
-                                productId: e.target.value,
+                                productId,
                                 unitPrice: line.unitPrice || defaultPrice,
                               };
                               setForm({ ...form, orderLines: lines });
                             }}
-                          >
-                            <option value="">Chọn...</option>
-                            {products.map((p: any) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} ({formatCurrency(Number(p.cost))})
-                              </option>
-                            ))}
-                          </select>
+                            options={[
+                              { value: '', label: 'Chọn...' },
+                              ...products.map((p: any) => ({
+                                value: p.id,
+                                label: `${p.name} (${formatCurrency(Number(p.cost))})`,
+                              })),
+                            ]}
+                          />
                         </div>
                         <div>
                           <label className="text-[10px] text-gray-500 font-medium">Giá bán</label>
@@ -723,17 +982,7 @@ export default function OrderForm({
                   autoFocus
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Email</label>
-                  <input
-                    className="input"
-                    type="email"
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                    placeholder="Email"
-                  />
-                </div>
+              <div>
                 <div>
                   <label className="label">Số điện thoại</label>
                   <input
@@ -822,7 +1071,6 @@ export default function OrderForm({
                       method: 'POST',
                       body: {
                         name: newCustomer.name.trim(),
-                        email: newCustomer.email || undefined,
                         phone: newCustomer.phone || undefined,
                         address: newCustomer.address || undefined,
                         notes: newCustomer.notes || undefined,

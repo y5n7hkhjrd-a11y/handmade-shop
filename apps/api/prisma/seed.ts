@@ -63,7 +63,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Nguyen Van A',
-        email: 'nguyenvana@example.com',
         phone: '0912345678',
         address: '123 Le Loi, District 1, HCMC',
       },
@@ -71,7 +70,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Tran Thi B',
-        email: 'tranthib@example.com',
         phone: '0987654321',
         address: '456 Nguyen Hue, District 1, HCMC',
       },
@@ -79,7 +77,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Le Van C',
-        email: 'levanc@example.com',
         phone: '0909090909',
         address: '789 Vo Van Tan, District 3, HCMC',
       },
@@ -87,7 +84,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Pham Thi D',
-        email: 'phamthid@example.com',
         phone: '0911111111',
         address: '321 Nguyen Trai, District 5, HCMC',
       },
@@ -95,7 +91,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Hoang Van E',
-        email: 'hoangvane@example.com',
         phone: '0922222222',
         address: '654 Le Van Sy, District 3, HCMC',
       },

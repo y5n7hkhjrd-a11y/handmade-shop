@@ -12,7 +12,6 @@ interface CustomerFormProps {
   editingCustomer: {
     id: string;
     name: string;
-    email?: string;
     phone?: string;
     address?: string;
     facebook?: string;
@@ -49,7 +48,6 @@ export default function CustomerForm({
       if (editingCustomer) {
         setForm({
           name: editingCustomer.name,
-          email: editingCustomer.email || '',
           phone: editingCustomer.phone || '',
           address: editingCustomer.address || '',
           facebook: editingCustomer.facebook || '',
@@ -69,8 +67,6 @@ export default function CustomerForm({
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!form.name.trim()) errors.name = 'Vui lòng nhập tên khách hàng';
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errors.email = 'Email không hợp lệ';
     if (form.phone && !/^[0-9+\-\s()]{7,20}$/.test(form.phone))
       errors.phone = 'Số điện thoại không hợp lệ';
     setFormErrors(errors);
@@ -164,32 +160,6 @@ export default function CustomerForm({
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="label">Email</label>
-                <div className="relative">
-                  <FlaticonIcon
-                    name="envelope"
-                    size="xs"
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    className={`input !pl-9 ${formErrors.email ? 'input-error' : ''}`}
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => {
-                      setForm({ ...form, email: e.target.value });
-                      if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
-                    }}
-                    placeholder="email@example.com"
-                  />
-                </div>
-                {formErrors.email && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1 animate-[slideDown_0.15s_ease-out]">
-                    <FlaticonIcon name="triangle-warning" size="xs" className="text-red-500" />{' '}
-                    {formErrors.email}
-                  </p>
-                )}
-              </div>
               <div>
                 <label className="label">Số điện thoại</label>
                 <div className="relative">

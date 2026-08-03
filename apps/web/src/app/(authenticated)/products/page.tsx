@@ -14,6 +14,7 @@ import { useSort, SortIcon } from '@/hooks/useSort';
 import { SkeletonRow } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
+import CustomSelect from '@/components/CustomSelect';
 
 interface Product {
   id: string;
@@ -287,18 +288,19 @@ export default function ProductsPage() {
             onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
           />
         </div>
-        <select
-          className="input max-w-[140px]"
+        <CustomSelect
+          className="w-full sm:max-w-[140px]"
           value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value);
+          onChange={(type) => {
+            setTypeFilter(type);
             setPage(1);
           }}
-        >
-          <option value="">Tất cả loại</option>
-          <option value="BASE">🔷 BASE</option>
-          <option value="CHARM">✨ CHARM</option>
-        </select>
+          options={[
+            { value: '', label: 'Tất cả loại' },
+            { value: 'BASE', label: '🔷 BASE' },
+            { value: 'CHARM', label: '✨ CHARM' },
+          ]}
+        />
         <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
           {(['all', 'active', 'inactive'] as const).map((s) => (
             <button
@@ -331,16 +333,17 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Loại</label>
-                  <select
-                    className={`input ${formErrors.type ? 'input-error' : ''}`}
+                  <CustomSelect
                     value={form.type}
-                    onChange={(e) => {
-                      setForm({ ...form, type: e.target.value });
+                    onChange={(type) => {
+                      setForm({ ...form, type });
                     }}
-                  >
-                    <option value="BASE">🔷 BASE — Thành phần cơ bản</option>
-                    <option value="CHARM">✨ CHARM — Phụ kiện</option>
-                  </select>
+                    options={[
+                      { value: 'BASE', label: '🔷 BASE — Thành phần cơ bản' },
+                      { value: 'CHARM', label: '✨ CHARM — Phụ kiện' },
+                    ]}
+                    hasError={!!formErrors.type}
+                  />
                 </div>
               </div>
 

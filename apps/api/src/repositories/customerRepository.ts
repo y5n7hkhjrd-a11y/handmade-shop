@@ -16,16 +16,11 @@ export const customerRepository = {
     return prisma.customer.findUnique({ where: { id } });
   },
 
-  async findByEmail(email: string) {
-    return prisma.customer.findUnique({ where: { email } });
-  },
-
   async list(params: { page: number; limit: number; search?: string }) {
     const where: any = { deletedAt: null };
     if (params.search) {
       where.OR = [
         { name: { contains: params.search, mode: 'insensitive' } },
-        { email: { contains: params.search, mode: 'insensitive' } },
         { phone: { contains: params.search, mode: 'insensitive' } },
       ];
     }
@@ -43,7 +38,6 @@ export const customerRepository = {
 
   async create(data: {
     name: string;
-    email?: string;
     phone?: string;
     address?: string;
     facebook?: string;
@@ -59,7 +53,6 @@ export const customerRepository = {
     id: string,
     data: {
       name?: string;
-      email?: string;
       phone?: string;
       address?: string;
       facebook?: string;

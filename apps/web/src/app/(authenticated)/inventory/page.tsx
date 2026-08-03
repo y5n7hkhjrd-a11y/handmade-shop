@@ -12,6 +12,7 @@ import EmptyState from '@/components/EmptyState';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
 import InventoryForm from './InventoryForm';
+import CustomSelect from '@/components/CustomSelect';
 
 interface Transaction {
   id: string;
@@ -277,34 +278,34 @@ export default function InventoryPage() {
 
       {/* Filters */}
       <div className="action-bar">
-        <select
-          className="input max-w-[180px]"
+        <CustomSelect
+          className="w-full sm:max-w-[180px]"
           value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value);
+          onChange={(type) => {
+            setTypeFilter(type);
             setPage(1);
           }}
-        >
-          <option value="">Tất cả loại</option>
-          <option value="IMPORT">📥 Import</option>
-          <option value="SALE">📤 Sale</option>
-          <option value="ADJUSTMENT">⚖️ Adjustment</option>
-        </select>
-        <select
-          className="input max-w-[200px]"
+          placeholder="Tất cả loại"
+          options={[
+            { value: '', label: 'Tất cả loại' },
+            { value: 'IMPORT', label: '📥 Import' },
+            { value: 'SALE', label: '📤 Sale' },
+            { value: 'ADJUSTMENT', label: '⚖️ Adjustment' },
+          ]}
+        />
+        <CustomSelect
+          className="w-full sm:max-w-[200px]"
           value={productFilter}
-          onChange={(e) => {
-            setProductFilter(e.target.value);
+          onChange={(productId) => {
+            setProductFilter(productId);
             setPage(1);
           }}
-        >
-          <option value="">Tất cả sản phẩm</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              📦 {p.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Tất cả sản phẩm"
+          options={[
+            { value: '', label: 'Tất cả sản phẩm' },
+            ...products.map((product) => ({ value: product.id, label: `📦 ${product.name}` })),
+          ]}
+        />
         <span className="text-sm text-gray-500 ml-auto">
           {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
         </span>

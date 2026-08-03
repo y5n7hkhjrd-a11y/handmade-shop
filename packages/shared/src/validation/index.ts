@@ -25,7 +25,6 @@ export const createUserSchema = z.object({
 // Customer
 export const createCustomerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   address: z.string().optional().or(z.literal('')),
   facebook: z.string().optional().or(z.literal('')),

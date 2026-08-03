@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
 import FlaticonIcon from '@/components/FlaticonIcon';
+import CustomSelect from '@/components/CustomSelect';
 import { useEscapeClose } from '@/hooks/useEscapeClose';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { type Product, type MatchingRule } from './recipeConstants';
@@ -196,26 +197,14 @@ export default function RecipeForm({
               </div>
             ) : (
               <div className="relative">
-                <select
-                  className="input w-full pr-24 appearance-none"
+                <CustomSelect
                   value={form.baseProductId}
-                  onChange={(e) => setForm({ ...form, baseProductId: e.target.value })}
-                >
-                  {baseProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-avocado-100/60 px-2 py-1 rounded-md pointer-events-none">
-                  <span className="text-[10px] text-mint-500 font-medium">Giá vốn</span>
-                  <span className="text-xs font-bold text-mint-700 tabular-nums">
-                    {(() => {
-                      const p = products.find((pr) => pr.id === form.baseProductId);
-                      return p ? formatCurrency(Number(p.cost)) : '0₫';
-                    })()}
-                  </span>
-                </div>
+                  onChange={(baseProductId) => setForm({ ...form, baseProductId })}
+                  options={baseProducts.map((p) => ({
+                    value: p.id,
+                    label: `${p.name} — ${formatCurrency(Number(p.cost))}`,
+                  }))}
+                />
               </div>
             )}
           </div>
@@ -260,22 +249,19 @@ export default function RecipeForm({
                 >
                   {/* Mobile layout */}
                   <div className="flex items-center gap-2 mb-2 sm:hidden">
-                    <select
-                      className="input text-sm flex-1 appearance-none"
+                    <CustomSelect
+                      className="flex-1"
                       value={cp.productId}
-                      onChange={(e) => {
+                      onChange={(productId) => {
                         const cps = [...form.charmProducts];
-                        cps[idx] = { productId: e.target.value, matchingRuleId: '' };
+                        cps[idx] = { productId, matchingRuleId: '' };
                         setForm({ ...form, charmProducts: cps });
                       }}
-                    >
-                      <option value="">Chọn CHARM...</option>
-                      {charmProductsMaster.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: '', label: 'Chọn CHARM...' },
+                        ...charmProductsMaster.map((p) => ({ value: p.id, label: p.name })),
+                      ]}
+                    />
                     <button
                       type="button"
                       onClick={() =>
@@ -293,22 +279,18 @@ export default function RecipeForm({
                   <div className="sm:hidden space-y-2">
                     {cp.productId &&
                       (availableRules.length > 0 ? (
-                        <select
-                          className="input text-xs w-full appearance-none"
+                        <CustomSelect
                           value={cp.matchingRuleId}
-                          onChange={(e) => {
+                          onChange={(matchingRuleId) => {
                             const cps = [...form.charmProducts];
-                            cps[idx] = { ...cps[idx], matchingRuleId: e.target.value };
+                            cps[idx] = { ...cps[idx], matchingRuleId };
                             setForm({ ...form, charmProducts: cps });
                           }}
-                        >
-                          <option value="">Chọn quy tắc...</option>
-                          {availableRules.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
+                          options={[
+                            { value: '', label: 'Chọn quy tắc...' },
+                            ...availableRules.map((r) => ({ value: r.id, label: r.name })),
+                          ]}
+                        />
                       ) : (
                         <div className="text-[11px] text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md text-center flex items-center justify-center gap-1">
                           <FlaticonIcon
@@ -330,46 +312,35 @@ export default function RecipeForm({
                   {/* Desktop layout */}
                   <div className="hidden sm:grid sm:grid-cols-[7fr_3fr_auto] gap-2 items-center">
                     <div className="relative">
-                      <select
-                        className="input text-xs w-full pr-24 appearance-none"
+                      <CustomSelect
                         value={cp.productId}
-                        onChange={(e) => {
+                        onChange={(productId) => {
                           const cps = [...form.charmProducts];
-                          cps[idx] = { productId: e.target.value, matchingRuleId: '' };
+                          cps[idx] = { productId, matchingRuleId: '' };
                           setForm({ ...form, charmProducts: cps });
                         }}
-                      >
-                        <option value="">Chọn CHARM...</option>
-                        {charmProductsMaster.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-pink-100/60 px-2 py-1 rounded-md pointer-events-none">
-                        <span className="text-[10px] text-pink-500 font-medium">Giá vốn</span>
-                        <span className="text-xs font-bold text-pink-700 tabular-nums">
-                          {selectedProduct ? formatCurrency(Number(selectedProduct.cost)) : '0₫'}
-                        </span>
-                      </div>
+                        options={[
+                          { value: '', label: 'Chọn CHARM...' },
+                          ...charmProductsMaster.map((p) => ({
+                            value: p.id,
+                            label: `${p.name} — ${formatCurrency(Number(p.cost))}`,
+                          })),
+                        ]}
+                      />
                     </div>
                     {availableRules.length > 0 ? (
-                      <select
-                        className="input text-xs w-full appearance-none"
+                      <CustomSelect
                         value={cp.matchingRuleId}
-                        onChange={(e) => {
+                        onChange={(matchingRuleId) => {
                           const cps = [...form.charmProducts];
-                          cps[idx] = { ...cps[idx], matchingRuleId: e.target.value };
+                          cps[idx] = { ...cps[idx], matchingRuleId };
                           setForm({ ...form, charmProducts: cps });
                         }}
-                      >
-                        <option value="">Chọn quy tắc...</option>
-                        {availableRules.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
-                        ))}
-                      </select>
+                        options={[
+                          { value: '', label: 'Chọn quy tắc...' },
+                          ...availableRules.map((r) => ({ value: r.id, label: r.name })),
+                        ]}
+                      />
                     ) : (
                       <div className="text-[11px] text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md text-center flex items-center justify-center gap-1">
                         <FlaticonIcon

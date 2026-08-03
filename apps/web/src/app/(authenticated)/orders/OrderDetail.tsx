@@ -9,6 +9,7 @@ import { useEscapeClose } from '@/hooks/useEscapeClose';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { copyToClipboard } from '@/lib/clipboard';
 import { NumberInput } from '@/components/NumberInput';
+import CustomDate from '@/components/CustomDate';
 import BrandIcon from '@/components/BrandIcon';
 import {
   statusFlow,
@@ -1276,11 +1277,10 @@ export default function OrderDetail({
                               <label className="text-[10px] font-medium text-gray-500 mb-1 block">
                                 Dự kiến giao
                               </label>
-                              <input
-                                type="date"
-                                className="input text-sm"
+                              <CustomDate
                                 value={shipForm.eta}
-                                onChange={(e) => setShipForm({ ...shipForm, eta: e.target.value })}
+                                onChange={(eta) => setShipForm({ ...shipForm, eta })}
+                                placeholder="Dự kiến giao"
                               />
                             </div>
                           </div>

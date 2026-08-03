@@ -13,6 +13,7 @@ import { SkeletonCard } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
+import CustomSelect from '@/components/CustomSelect';
 
 interface PackagingComponent {
   id: string;
@@ -264,14 +265,14 @@ export default function PackagingPage() {
                 </div>
                 <div>
                   <label className="label">Loại</label>
-                  <select
-                    className="input"
+                  <CustomSelect
                     value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  >
-                    <option value="ITEM">📦 Per Item</option>
-                    <option value="ORDER">🎁 Per Order</option>
-                  </select>
+                    onChange={(type) => setForm({ ...form, type })}
+                    options={[
+                      { value: 'ITEM', label: '📦 Per Item' },
+                      { value: 'ORDER', label: '🎁 Per Order' },
+                    ]}
+                  />
                 </div>
               </div>
               <div>

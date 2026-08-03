@@ -84,7 +84,6 @@ model User {
 model Customer {
   id        String    @id @default(uuid()) @db.Uuid
   name      String
-  email     String    @unique
   phone     String?
   address   String?
   facebook  String?
