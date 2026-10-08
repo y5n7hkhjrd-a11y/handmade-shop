@@ -3,585 +3,150 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api';
-import { formatCurrency, formatDate, formatDateTime } from '@handmade-shop/shared';
+import { formatCurrency, formatDate } from '@handmade-shop/shared';
 import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 import { SkeletonRow } from '@/components/LoadingSpinner';
+import FlaticonIcon from '@/components/FlaticonIcon';
+import { useSort, SortIcon } from '@/hooks/useSort';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
-import { copyToClipboard } from '@/lib/clipboard';
+import ConfirmModal from '@/components/ConfirmModal';
+import CustomSelect from '@/components/CustomSelect';
+import CustomDate from '@/components/CustomDate';
+import OrderDetail from './OrderDetail';
+import OrderForm from './OrderForm';
+import {
+  statusFlow,
+  statusIcons,
+  statusLabels,
+  statusPillClasses,
+  statusDotColors,
+  filterChipActiveColors,
+  filterChipHoverColors,
+  PREV_STATUS,
+  NEXT_STATUS,
+  SOCIAL_PLATFORMS,
+} from './orderConstants';
 
-const statusFlow = [
-  'Draft',
-  'WaitingConfirm',
-  'InProgress',
-  'Packaging',
-  'ReadyToShip',
-  'Completed',
+const STEP_DOT_COLORS = [
+  'bg-gray-400 ring-gray-300',
+  'bg-amber-300 ring-amber-200',
+  'bg-mint-300 ring-mint-200',
+  'bg-pink-300 ring-pink-200',
+  'bg-avocado-300 ring-avocado-200',
+  'bg-green-300 ring-green-200',
 ];
-const statusColors: Record<string, string> = {
-  Draft: 'badge-gray',
-  WaitingConfirm: 'badge-yellow',
-  InProgress: 'badge-blue',
-  Packaging: 'badge-pink',
-  ReadyToShip: 'badge-green',
-  Completed: 'badge-green',
-};
-const statusIcons: Record<string, string> = {
-  Draft: '📝',
-  WaitingConfirm: '⏳',
-  InProgress: '🔧',
-  Packaging: '🎁',
-  ReadyToShip: '📬',
-  Completed: '✅',
-};
-const statusLabels: Record<string, string> = {
-  Draft: 'Nháp',
-  WaitingConfirm: 'Chờ xác nhận',
-  InProgress: 'Đang sản xuất',
-  Packaging: 'Đang đóng gói',
-  ReadyToShip: 'Sẵn sàng giao',
-  Completed: 'Hoàn thành',
-};
-const NEXT_STATUS: Record<string, string> = {
-  Draft: 'WaitingConfirm',
-  WaitingConfirm: 'InProgress',
-  InProgress: 'Packaging',
-  Packaging: 'ReadyToShip',
-  ReadyToShip: 'Completed',
-};
-const PREV_STATUS: Record<string, string> = {
-  WaitingConfirm: 'Draft',
-  InProgress: 'WaitingConfirm',
-  Packaging: 'InProgress',
-  ReadyToShip: 'Packaging',
-  Completed: 'ReadyToShip',
-};
 
-function OrderTimeline({ currentStatus }: { currentStatus: string }) {
-  const idx = statusFlow.indexOf(currentStatus);
+const STEP_DOT_BG = [
+  'bg-gray-400',
+  'bg-amber-300',
+  'bg-mint-300',
+  'bg-pink-300',
+  'bg-avocado-300',
+  'bg-green-300',
+];
+
+const STEP_LINE_COLORS = [
+  'bg-gray-300',
+  'bg-amber-300',
+  'bg-mint-300',
+  'bg-pink-300',
+  'bg-avocado-300',
+  'bg-green-300',
+];
+
+/* ─── Deadline chip (shared by desktop table + mobile card) ─── */
+function DeadlineChip({ order }: { order: any }) {
+  if (!order.deadline) return null;
+  const deadlineDate = new Date(order.deadline);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  deadlineDate.setHours(23, 59, 59, 999);
+  const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isOverdue = diffDays <= 0 && !['Completed', 'ReadyToShip'].includes(order.status);
+  const isSoon =
+    diffDays > 0 && diffDays <= 3 && !['Completed', 'ReadyToShip'].includes(order.status);
   return (
-    <div className="flex items-center gap-0 py-4 px-2">
-      {statusFlow.map((s, i) => (
-        <div key={s} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center">
-            <div
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-500 ${
-                i <= idx ? 'bg-[#E88DAB] text-white shadow-sm' : 'bg-[#F0ECEE] text-[#C8C0C4]'
-              }`}
-            >
-              {i < idx ? (
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                i + 1
-              )}
-            </div>
-            <span
-              className={`text-[10px] mt-1.5 whitespace-nowrap font-medium transition-all duration-300 ${
-                i <= idx ? 'text-[#D97D9E]' : 'text-[#C8C0C4]'
-              }`}
-            >
-              {statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}
-            </span>
-          </div>
-          {i < statusFlow.length - 1 && (
-            <div
-              className={`flex-1 h-0.5 mx-1 mb-5 transition-all duration-500 ${
-                i < idx ? 'bg-[#E88DAB]' : 'bg-[#F0ECEE]'
-              }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+        isOverdue
+          ? 'bg-red-50 text-red-600'
+          : isSoon
+            ? 'bg-amber-50 text-amber-600'
+            : 'bg-emerald-50 text-emerald-600'
+      }`}
+      title={`Hạn chót: ${formatDate(order.deadline)}${isOverdue ? ' (quá hạn)' : isSoon ? ` (còn ${diffDays} ngày)` : ''}`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full inline-block ${
+          isOverdue ? 'bg-red-500' : isSoon ? 'bg-amber-500' : 'bg-emerald-500'
+        }`}
+      />
+      {formatDate(order.deadline)}
+    </span>
   );
 }
 
-function OrderDetail({
-  order,
-  onClose,
-  onStatusChange,
-  token,
-  products,
-  showToast,
-}: {
-  order: any;
-  onClose: () => void;
-  onStatusChange: () => void;
-  token: string | null;
-  products?: any[];
-  showToast?: (message: string, type?: 'success' | 'error') => void;
-}) {
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [addForm, setAddForm] = useState({ productId: '', quantity: 1, unitPrice: 0 });
-
-  const handleAdvance = async () => {
-    if (!token || !NEXT_STATUS[order.status]) return;
-    try {
-      await apiClient(`/orders/${order.id}/status`, {
-        method: 'PATCH',
-        body: { status: NEXT_STATUS[order.status] },
-        token,
-      });
-      onStatusChange();
-    } catch (e: any) {
-      console.error(e);
-    }
-  };
-  const handleReturn = async () => {
-    if (!token || !PREV_STATUS[order.status]) return;
-    const prevLabel =
-      statusLabels[PREV_STATUS[order.status]] ||
-      PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim();
-    if (!confirm(`Quay lại trạng thái "${prevLabel}"?`)) return;
-    try {
-      await apiClient(`/orders/${order.id}/status`, {
-        method: 'PATCH',
-        body: { status: PREV_STATUS[order.status] },
-        token,
-      });
-      onStatusChange();
-    } catch (e: any) {
-      console.error(e);
-    }
-  };
-  const handleAddProduct = async () => {
-    if (!token || !addForm.productId) return;
-    try {
-      await apiClient(`/orders/${order.id}/items`, {
-        method: 'POST',
-        body: {
-          productId: addForm.productId,
-          quantity: addForm.quantity,
-          unitPrice: addForm.unitPrice,
-        },
-        token,
-      });
-      showToast?.('Đã thêm sản phẩm');
-      setShowAddProduct(false);
-      setAddForm({ productId: '', quantity: 1, unitPrice: 0 });
-      onStatusChange();
-    } catch (e: any) {
-      showToast?.(e.message || 'Thêm thất bại', 'error');
-      console.error(e);
-    }
-  };
-  const itemTotal =
-    order.items?.reduce((sum: number, i: any) => sum + Number(i.totalPrice), 0) || 0;
-  const packagingTotal =
-    order.items?.reduce((sum: number, i: any) => sum + Number(i.packagingCost || 0), 0) || 0;
+/* ─── Mobile order card (replaces the table on small screens) ─── */
+function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }) {
+  // Tổng cộng khách trả: không gồm phí đóng gói (đó là giá vốn)
+  const total = Number(order.subtotal || 0) - Number(order.discount || 0);
+  const lineInfo =
+    order.orderLines?.length > 0
+      ? `${order.orderLines.length} dòng`
+      : order.recipeId
+        ? 'Công thức'
+        : null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              {statusIcons[order.status] || '📋'} Chi tiết đơn hàng
-            </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-500 font-mono">{order.id.slice(0, 8)}...</span>
-              <button
-                onClick={() => {
-                  copyToClipboard(order.id);
-                }}
-                className="copy-btn"
-                title="Sao chép mã đơn hàng"
-              >
-                📋 <span className="copy-icon">Sao chép</span>
-              </button>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="btn-ghost btn-icon hover:bg-gray-100 rounded-full"
-            aria-label="Đóng"
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-pink-50/60 transition-colors cursor-pointer"
+    >
+      <div className="w-10 h-10 rounded-full bg-mint-400 flex items-center justify-center text-white text-sm font-bold shadow-sm flex-shrink-0">
+        {order.customer?.name?.charAt(0) || '?'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold text-gray-900 truncate">{order.customer?.name || 'N/A'}</p>
+          <span className="font-bold text-gray-900 tabular-nums text-sm flex-shrink-0">
+            {formatCurrency(total)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+              statusPillClasses[order.status] || 'bg-gray-50 text-gray-600 ring-1 ring-gray-200'
+            }`}
           >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-6">
-          <OrderTimeline currentStatus={order.status} />
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500">Khách hàng</span>
-              <p className="font-medium text-gray-900 mt-0.5">{order.customer?.name || 'N/A'}</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500">Trạng thái</span>
-              <p className="mt-0.5">
-                <span className={statusColors[order.status]}>
-                  {statusIcons[order.status]} {order.status}
-                </span>
-              </p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500">Ngày đặt</span>
-              <p className="font-medium text-gray-900 mt-0.5 text-sm">
-                {formatDateTime(order.orderDate)}
-              </p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-xl">
-              <span className="text-xs text-gray-500">Tổng cộng</span>
-              <p className="font-bold text-lg text-purple-600 mt-0.5">
-                {formatCurrency(Number(order.totalCost))}
-              </p>
-            </div>
-          </div>
-
-          {/* Order Lines info */}
-          {order.orderLines && order.orderLines.length > 0 && (
-            <div className="mt-6 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📋 Chi tiết đơn hàng</span>
-                <span className="badge-gray text-xs">{order.orderLines.length} dòng</span>
-              </h3>
-              {order.orderLines.map((ol: any, i: number) => (
-                <div
-                  key={ol.id || i}
-                  className="p-3 bg-purple-50 rounded-xl border border-purple-100"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase">
-                      Dòng {i + 1}
-                    </span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${ol.type === 'RECIPE' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}
-                    >
-                      {ol.type === 'RECIPE' ? '📋 Công thức' : '📦 Sản phẩm'}
-                    </span>
-                  </div>
-                  {ol.type === 'RECIPE' ? (
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">
-                        {ol.recipe?.name || 'Công thức'}
-                      </p>
-                      {ol.customInput && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-xs text-purple-500">Input:</span>
-                          <div className="flex gap-0.5">
-                            {ol.customInput.split('').map((char: string, j: number) => (
-                              <span
-                                key={j}
-                                className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono bg-white rounded text-purple-700 border border-purple-200"
-                              >
-                                {char}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {ol.quantity > 1 && (
-                        <p className="text-xs text-purple-500 mt-1">× {ol.quantity}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">
-                        {ol.product?.name || 'Sản phẩm'}
-                      </p>
-                      <p className="text-xs text-gray-500">× {ol.quantity || 1}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                statusDotColors[order.status] || 'bg-gray-400'
+              }`}
+            />
+            {statusLabels[order.status] || order.status}
+          </span>
+          {order.deadline && <DeadlineChip order={order} />}
+          {lineInfo && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-avocado-600 bg-avocado-50">
+              📋 {lineInfo}
+            </span>
           )}
-
-          {/* Legacy Recipe info */}
-          {!order.orderLines?.length && order.recipe && (
-            <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">📋</span>
-                <h3 className="text-sm font-semibold text-purple-700">
-                  Công thức: {order.recipe.name}
-                </h3>
-              </div>
-              {order.customInput && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-purple-500">Custom Input:</span>
-                  <div className="flex gap-0.5">
-                    {order.customInput.split('').map((char: string, i: number) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono bg-white rounded text-purple-700 border border-purple-200"
-                      >
-                        {char}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Cost breakdown */}
-          <div className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Chi tiết chi phí</h3>
-            <div className="space-y-2">
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Giá vốn (Material Cost)</span>
-                <span className="detail-value">{formatCurrency(Number(order.materialCost))}</span>
-              </div>
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Tạm tính ({order.items?.length || 0} sản phẩm)</span>
-                <span className="detail-value">{formatCurrency(itemTotal)}</span>
-              </div>
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Giảm giá</span>
-                <span className="detail-value text-red-600">
-                  -{formatCurrency(Number(order.discount))}
-                </span>
-              </div>
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Phí đóng gói</span>
-                <span className="detail-value">
-                  {formatCurrency(Number(order.packagingCost) || packagingTotal)}
-                </span>
-              </div>
-              <div className="detail-row py-1.5">
-                <span className="detail-label">Phí vận chuyển</span>
-                <span className="detail-value">{formatCurrency(Number(order.shippingCost))}</span>
-              </div>
-              <div className="detail-row py-2 border-t-2 border-gray-200">
-                <span className="text-sm font-semibold text-gray-800">Tổng chi phí</span>
-                <span className="text-base font-bold text-purple-600">
-                  {formatCurrency(Number(order.totalCost))}
-                </span>
-              </div>
-            </div>
-
-            {/* Snapshot - captured when order was confirmed */}
-            {order.confirmedAt && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    📸 Snapshot
-                  </span>
-                  <span className="text-xs text-gray-400">Giá trị tại thời điểm xác nhận</span>
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  {order.salePriceSnapshot != null && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Giá bán (snapshot)</span>
-                      <span className="font-medium text-gray-700">
-                        {formatCurrency(Number(order.salePriceSnapshot))}
-                      </span>
-                    </div>
-                  )}
-                  {order.costSnapshot != null && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Tổng chi phí (snapshot)</span>
-                      <span className="font-medium text-gray-700">
-                        {formatCurrency(Number(order.costSnapshot))}
-                      </span>
-                    </div>
-                  )}
-                  {order.recipeSnapshot && (
-                    <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100">
-                      <p className="text-xs font-medium text-amber-800 mb-1">
-                        📋 Công thức: {order.recipeSnapshot.name}
-                      </p>
-                      {order.recipeSnapshot.products?.map((p: any, i: number) => (
-                        <div key={i} className="flex justify-between text-[10px] text-amber-700">
-                          <span>
-                            {p.productName} ×{p.quantity}
-                          </span>
-                          <span>{formatCurrency(p.productCost * p.quantity)}</span>
-                        </div>
-                      ))}
-                      {order.customInput && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-[10px] text-amber-600">Input:</span>
-                          <div className="flex gap-0.5">
-                            {order.customInput.split('').map((char: string, i: number) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center justify-center w-4 h-4 text-[8px] font-mono bg-white rounded text-amber-700 border border-amber-200"
-                              >
-                                {char}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Items */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📦 Sản phẩm</span>
-                <span className="badge-gray text-xs">{order.items?.length || 0}</span>
-              </h3>
-              {order.status === 'Draft' && (
-                <button
-                  onClick={() => setShowAddProduct(true)}
-                  className="btn-ghost btn-xs text-purple-600"
-                >
-                  + Thêm sản phẩm
-                </button>
-              )}
-            </div>
-
-            {order.items && order.items.length > 0 ? (
-              <div className="table-wrap -mx-6">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sản phẩm</th>
-                      <th className="text-right">SL</th>
-                      <th className="text-right">Đơn giá</th>
-                      <th className="text-right">Đóng gói</th>
-                      <th className="text-right">Tổng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items.map((item: any) => (
-                      <tr key={item.id}>
-                        <td className="font-medium">{item.product?.name || 'Unknown'}</td>
-                        <td className="text-right tabular-nums">{item.quantity}</td>
-                        <td className="text-right tabular-nums">
-                          {formatCurrency(Number(item.unitPrice))}
-                        </td>
-                        <td className="text-right text-gray-500 tabular-nums">
-                          {formatCurrency(Number(item.packagingCost))}
-                        </td>
-                        <td className="text-right font-medium tabular-nums">
-                          {formatCurrency(Number(item.totalPrice))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                <p className="text-xs text-gray-400">Chưa có sản phẩm nào</p>
-              </div>
-            )}
-
-            {/* Add product mini form for Draft orders */}
-            {showAddProduct && order.status === 'Draft' && (
-              <div className="mt-3 p-4 bg-purple-50 rounded-xl border border-purple-100">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-purple-700">+ Thêm sản phẩm</span>
-                  <button
-                    onClick={() => setShowAddProduct(false)}
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-purple-600 mb-1 block">Sản phẩm</label>
-                    <select
-                      className="input text-sm"
-                      value={addForm.productId}
-                      onChange={(e) => {
-                        const product = products?.find((p: any) => p.id === e.target.value);
-                        setAddForm({
-                          productId: e.target.value,
-                          quantity: 1,
-                          unitPrice: Number(product?.cost || 0),
-                        });
-                      }}
-                    >
-                      <option value="">Chọn...</option>
-                      {products?.map((p: any) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — {formatCurrency(Number(p.cost))}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="w-20">
-                    <label className="text-[10px] text-purple-600 mb-1 block">SL</label>
-                    <input
-                      className="input text-sm"
-                      type="number"
-                      min={1}
-                      value={addForm.quantity}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, quantity: Math.max(1, Number(e.target.value)) })
-                      }
-                    />
-                  </div>
-                  <div className="w-28">
-                    <label className="text-[10px] text-purple-600 mb-1 block">Đơn giá</label>
-                    <input
-                      className="input text-sm"
-                      type="number"
-                      min={0}
-                      step={100}
-                      value={addForm.unitPrice}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, unitPrice: Number(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <button
-                    onClick={handleAddProduct}
-                    disabled={!addForm.productId}
-                    className="btn-primary btn-sm whitespace-nowrap"
-                  >
-                    Thêm
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-6 border-t flex justify-between items-center">
-          <div className="text-xs text-gray-400">
-            {order.confirmedAt && <span>Confirmed: {formatDateTime(order.confirmedAt)}</span>}
-            {order.completedAt && (
-              <span className="ml-4">Completed: {formatDateTime(order.completedAt)}</span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="btn-secondary">
-              Đóng
-            </button>
-            {PREV_STATUS[order.status] && (
-              <button onClick={handleReturn} className="btn-ghost border border-gray-200 group">
-                <span className="mr-1.5 group-hover:-translate-x-0.5 transition-transform">←</span>
-                <span>
-                  {statusLabels[PREV_STATUS[order.status]] ||
-                    PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-              </button>
-            )}
-            {NEXT_STATUS[order.status] && (
-              <button onClick={handleAdvance} className="btn-primary group">
-                <span>
-                  Chuyển sang{' '}
-                  {statusLabels[NEXT_STATUS[order.status]] ||
-                    NEXT_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-                <span className="ml-1.5 group-hover:translate-x-0.5 transition-transform">→</span>
-              </button>
-            )}
-          </div>
         </div>
       </div>
+      <svg
+        className="w-4 h-4 text-gray-300 flex-shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
     </div>
   );
 }
@@ -590,38 +155,55 @@ export default function OrdersPage() {
   const { token } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [deadlineFilter, setDeadlineFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    customerId: '',
-    notes: '',
-    orderLines: [] as Array<{
-      type: 'RECIPE' | 'PRODUCT';
-      recipeId: string;
-      customInput: string;
-      salePrice: number;
-      productId: string;
-      quantity: number;
-      unitPrice: number;
-      notes: string;
-    }>,
-  });
+  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const { toast, showToast } = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
   const [matchingRules, setMatchingRules] = useState<any[]>([]);
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const { toast, showToast } = useToast();
+  const [packagingTemplates, setPackagingTemplates] = useState<any[]>([]);
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const loadCounts = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await apiClient<any>('/orders/counts', { token });
+      if (res.data) setStatusCounts(res.data);
+    } catch {
+      /* ignore */
+    }
+  }, [token]);
 
   const loadOrders = useCallback(async () => {
     if (!token) return;
     try {
       const params: Record<string, string> = { page: String(page), limit: '20' };
-      if (statusFilter) params.status = statusFilter;
+      if (statusFilter.length) params.status = statusFilter.join(',');
+      if (deadlineFilter) params.deadlineFilter = deadlineFilter;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (customerFilter) params.customerId = customerFilter;
+      if (dateFrom) params.startDate = new Date(dateFrom + 'T00:00:00').toISOString();
+      if (dateTo) params.endDate = new Date(dateTo + 'T23:59:59').toISOString();
       const res = await apiClient<any>(`/orders?${new URLSearchParams(params).toString()}`, {
         token,
       });
@@ -631,10 +213,47 @@ export default function OrdersPage() {
       showToast(e.message || 'Failed', 'error');
     }
     setLoading(false);
-  }, [token, page, statusFilter, showToast]);
+  }, [
+    token,
+    page,
+    statusFilter,
+    deadlineFilter,
+    debouncedSearch,
+    customerFilter,
+    dateFrom,
+    dateTo,
+    showToast,
+  ]);
+
+  useEffect(() => {
+    // Deep-link support: /orders?status=WaitingConfirm or /orders?id=...
+    // Keyed on [token] because AuthProvider hydrates token from localStorage
+    // asynchronously — on a fresh page load token is null on first render.
+    if (!token) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const id = params.get('id');
+    if (status) {
+      const arr = status.split(',').filter(Boolean);
+      if (arr.join(',') !== statusFilter.join(',')) {
+        setPage(1);
+        setStatusFilter(arr);
+      }
+    }
+    if (id) {
+      apiClient(`/orders/${id}`, { token })
+        .then((res: any) => {
+          if (res.data) setSelectedOrder(res.data);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   useEffect(() => {
     loadOrders();
+    loadCounts();
     if (token) {
       apiClient('/customers?limit=100', { token })
         .then((r: any) => setCustomers(r.data || []))
@@ -648,874 +267,662 @@ export default function OrdersPage() {
       apiClient('/matching-rules/all', { token })
         .then((r: any) => setMatchingRules(r.data || []))
         .catch(() => {});
+      apiClient('/packaging?limit=100', { token })
+        .then((r: any) => setPackagingTemplates(r.data || []))
+        .catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadOrders, token]);
 
-  // Helper: count matching chars using a regex pattern (mirrors backend costEngineService)
-  function countMatchingChars(input: string, pattern: string): number {
-    try {
-      const regex = new RegExp(pattern, 'g');
-      const matches = input.match(regex);
-      return matches ? matches.length : 0;
-    } catch {
-      return 0;
-    }
-  }
+  const [confirmAdvanceTable, setConfirmAdvanceTable] = useState<{
+    id: string;
+    status: string;
+    label: string;
+  } | null>(null);
 
-  // Compute cost preview for a single RECIPE line
-  const getRecipeLineCost = (line: { recipeId: string; customInput: string }) => {
-    const recipe = recipes.find((r: any) => r.id === line.recipeId);
-    if (!recipe) return null;
-    const recipeProducts = (recipe as any).recipeProducts || [];
-    let materialCost = 0;
-    const items = recipeProducts.map((rp: any) => {
-      const product = rp.product;
-      if (!product) return { ...rp, estimatedCost: 0, matchCount: 0 };
-      let cost: number;
-      let matchCount = 0;
-      if (product.type === 'BASE') {
-        cost = Number(product.cost) * rp.quantity;
-      } else {
-        if (rp.matchingRuleId) {
-          const rule = matchingRules.find((mr: any) => mr.id === rp.matchingRuleId);
-          if (rule && rule.pattern) {
-            matchCount = countMatchingChars(line.customInput, rule.pattern);
-          }
-        }
-        cost = matchCount * Number(product.cost) * rp.quantity;
-      }
-      materialCost += cost;
-      return { ...rp, estimatedCost: cost, matchCount };
-    });
-    return { materialCost, items };
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const advanceOrder = (id: string, status: string, orderObj?: any) => {
     if (!token) return;
-    if (!form.customerId) {
-      setFormErrors({ customerId: 'Vui lòng chọn khách hàng' });
-      return;
-    }
-    if (form.orderLines.length === 0) {
-      setFormErrors({ orderLines: 'Vui lòng thêm ít nhất một dòng sản phẩm hoặc công thức' });
-      return;
-    }
-    // Validate each line has required fields
-    for (let i = 0; i < form.orderLines.length; i++) {
-      const line = form.orderLines[i]!;
-      if (line.type === 'RECIPE') {
-        if (!line.recipeId) {
-          setFormErrors({ [`line_${i}`]: 'Vui lòng chọn công thức' });
-          return;
-        }
-        if (!line.customInput) {
-          setFormErrors({ [`line_${i}`]: 'Vui lòng nhập custom input cho công thức' });
-          return;
-        }
-        if (!line.salePrice || Number(line.salePrice) <= 0) {
-          setFormErrors({ [`line_${i}`]: 'Vui lòng nhập giá bán cho công thức' });
-          return;
-        }
-      }
-      if (line.type === 'PRODUCT' && !line.productId) {
-        setFormErrors({ [`line_${i}`]: 'Vui lòng chọn sản phẩm' });
+
+    if (orderObj?.status === 'InProgress') {
+      const paid = Number(orderObj.paidAmount) || 0;
+      const salePriceTotal = Number(orderObj.subtotal || 0) - Number(orderObj.discount || 0);
+      const remaining = salePriceTotal - paid;
+      if (remaining > 0) {
+        showToast(
+          'Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói',
+          'error',
+        );
         return;
       }
     }
-    try {
-      const body = {
-        notes: form.notes || undefined,
-        orderLines: form.orderLines.map((line) => {
-          if (line.type === 'RECIPE') {
-            return {
-              type: 'RECIPE',
-              recipeId: line.recipeId,
-              customInput: line.customInput,
-              salePrice: Number(line.salePrice) || 0,
-              quantity: line.quantity || 1,
-              notes: line.notes || undefined,
-            };
-          }
-          return {
-            type: 'PRODUCT',
-            productId: line.productId,
-            quantity: line.quantity || 1,
-            unitPrice: Number(line.unitPrice) || 0,
-            notes: line.notes || undefined,
-          };
-        }),
-      };
 
-      if (editingOrderId) {
-        await apiClient(`/orders/${editingOrderId}/lines`, { method: 'PUT', body, token });
-        showToast('Đã lưu thay đổi');
-      } else {
-        await apiClient('/orders', {
-          method: 'POST',
-          body: { ...body, customerId: form.customerId },
-          token,
-        });
-        showToast('Đã tạo đơn hàng');
-      }
-
-      setShowForm(false);
-      setEditingOrderId(null);
-      setForm({ customerId: '', notes: '', orderLines: [] });
-      setFormErrors({});
-      loadOrders();
-    } catch (e: any) {
-      showToast(e.message || 'Thao tác thất bại', 'error');
-    }
+    const label = statusLabels[status] || status.replace(/([A-Z])/g, ' $1').trim();
+    setConfirmAdvanceTable({ id, status, label });
   };
 
-  const advanceOrder = async (id: string, status: string, isReturn = false) => {
-    if (!token) return;
-    const label = statusLabels[status] || status.replace(/([A-Z])/g, ' $1').trim();
-    if (isReturn && !confirm(`Quay lại trạng thái "${label}"?`)) return;
+  const doAdvanceTable = async () => {
+    if (!token || !confirmAdvanceTable) return;
+    const { id, status } = confirmAdvanceTable;
+    setConfirmAdvanceTable(null);
     try {
       await apiClient(`/orders/${id}/status`, { method: 'PATCH', body: { status }, token });
-      showToast(`Đã chuyển sang ${label}`);
+      showToast(
+        `Đã chuyển sang ${statusLabels[status] || status.replace(/([A-Z])/g, ' $1').trim()}`,
+      );
       loadOrders();
+      loadCounts();
     } catch (e: any) {
       showToast(e.message || 'Cập nhật thất bại', 'error');
     }
   };
 
-  // Stats
-  const statusCounts = statusFlow.reduce(
+  // Sort
+  const { sortedData, sortKey, sortDir, toggleSort } = useSort(orders, 'orderDate', 'desc');
+
+  // Stats (use fetched counts, fall back to local page counts)
+  const localCounts = statusFlow.reduce(
     (acc, s) => ({ ...acc, [s]: orders.filter((o: any) => o.status === s).length }),
     {} as Record<string, number>,
   );
+  const effectiveCounts = Object.keys(statusCounts).length > 0 ? statusCounts : localCounts;
+  const hasActiveFilters =
+    statusFilter.length > 0 ||
+    !!deadlineFilter ||
+    !!debouncedSearch.trim() ||
+    !!customerFilter ||
+    !!dateFrom ||
+    !!dateTo;
+  const activeFilterCount =
+    statusFilter.length +
+    (deadlineFilter ? 1 : 0) +
+    (debouncedSearch.trim() ? 1 : 0) +
+    (customerFilter ? 1 : 0) +
+    (dateFrom || dateTo ? 1 : 0);
+  const clearAllFilters = () => {
+    setStatusFilter([]);
+    setDeadlineFilter('');
+    setSearch('');
+    setCustomerFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setPage(1);
+  };
+  const emptyMessage = hasActiveFilters
+    ? 'Không có đơn hàng nào phù hợp với bộ lọc hiện tại. Thử thay đổi điều kiện lọc.'
+    : 'Hãy tạo đơn hàng đầu tiên.';
 
   return (
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Đơn hàng</h1>
-          <p className="text-gray-500 mt-1 text-sm">Theo dõi đơn hàng trong quy trình sản xuất</p>
-        </div>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setEditingOrderId(null);
-            setFormErrors({});
-          }}
-          className="btn-primary"
-        >
-          + Đơn hàng mới
-        </button>
-      </div>
-
-      {/* Status summary chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => {
-            setStatusFilter('');
-            setPage(1);
-          }}
-          className={`filter-chip ${!statusFilter ? 'filter-chip-active' : ''}`}
-        >
-          Tất cả <span className="text-gray-400 ml-1">({orders.length})</span>
-        </button>
-        {statusFlow.map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              setStatusFilter(s);
-              setPage(1);
-            }}
-            className={`filter-chip ${statusFilter === s ? 'filter-chip-active' : ''}`}
-          >
-            {statusIcons[s]} {statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}
-            <span className="text-gray-400 ml-1">({statusCounts[s] || 0})</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Create Order Modal */}
-      {showForm && (
+      {/* Page header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
         <div
-          className="modal-overlay"
-          onClick={() => {
-            setShowForm(false);
-            setEditingOrderId(null);
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
           }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">
-                {editingOrderId ? 'Chỉnh sửa đơn hàng' : 'Đơn hàng mới'}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {editingOrderId
-                  ? 'Điều chỉnh sản phẩm và thông tin đơn hàng'
-                  : 'Tạo đơn hàng mới cho khách — mỗi dòng có thể là sản phẩm hoặc công thức'}
+        />
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-sm">
+                <FlaticonIcon name="receipt" size="md" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                  Đơn hàng
+                </h1>
+                {orders.length > 0 && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {orders.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Theo dõi đơn hàng trong quy trình sản xuất
               </p>
             </div>
+          </div>
+          <button
+            onClick={() => {
+              setEditingOrder(null);
+              setShowForm(true);
+            }}
+            className="btn-primary !gap-1.5 !px-4"
+          >
+            <span>＋ Đơn hàng mới</span>
+          </button>
+        </div>
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
+      </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="label label-required">Khách hàng</label>
-                <select
-                  className={`input ${formErrors.customerId ? 'input-error' : ''}`}
-                  value={form.customerId}
-                  onChange={(e) => {
-                    setForm({ ...form, customerId: e.target.value });
-                    setFormErrors({});
-                  }}
-                  disabled={!!editingOrderId}
+      {/* ─── Filter bar ─── */}
+      <div className="relative rounded-xl bg-white border border-gray-200/80 shadow-sm mb-4 sm:mb-6">
+        {/* Header */}
+        <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center text-white shadow-sm">
+              <FlaticonIcon name="bars-filter" size="sm" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800">Bộ lọc</h2>
+              <p className="text-[11px] text-gray-400">
+                Lọc theo trạng thái, hạn chót, khách hàng và ngày tạo
+              </p>
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-pink-600 bg-pink-50 hover:bg-pink-100 border border-pink-200/70 rounded-full px-3 py-1.5 transition-colors flex-shrink-0"
+            >
+              <FlaticonIcon name="refresh" size="xs" />
+              Xóa bộ lọc ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* Search + customer + date range */}
+          <div className="flex flex-col xl:flex-row gap-3">
+            <div className="filter-search flex-1 !max-w-none">
+              <span className="search-icon">
+                <FlaticonIcon name="search" size="sm" />
+              </span>
+              <input
+                className="input !pl-9 !pr-9"
+                placeholder="Tìm khách hàng, SĐT hoặc mã đơn..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors text-xs"
                 >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.email ? `— ${c.email}` : ''}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.customerId && (
-                  <p className="mt-1 text-xs text-red-600">{formErrors.customerId}</p>
-                )}
-              </div>
-
-              {/* Order Lines */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="label label-required mb-0">Sản phẩm / Công thức</label>
-                  <span className="text-[10px] text-gray-400">{form.orderLines.length} dòng</span>
-                </div>
-
-                {form.orderLines.length === 0 && (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <p className="text-xs text-gray-400 mb-3">Chưa có dòng nào</p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm({
-                          ...form,
-                          orderLines: [
-                            ...form.orderLines,
-                            {
-                              type: 'PRODUCT',
-                              productId: '',
-                              quantity: 1,
-                              unitPrice: 0,
-                              recipeId: '',
-                              customInput: '',
-                              salePrice: 0,
-                              notes: '',
-                            },
-                          ],
-                        })
-                      }
-                      className="btn-primary btn-sm"
-                    >
-                      + Thêm sản phẩm
-                    </button>
-                  </div>
-                )}
-
-                {form.orderLines.map((line, idx) => {
-                  const isRecipe = line.type === 'RECIPE';
-                  const recipeCost = isRecipe ? getRecipeLineCost(line as any) : null;
-                  return (
-                    <div
-                      key={idx}
-                      className="border rounded-xl p-4 mb-3 bg-white shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                            Dòng {idx + 1}
-                          </span>
-                          <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const lines = [...form.orderLines];
-                                lines[idx] = {
-                                  type: 'RECIPE',
-                                  recipeId: '',
-                                  customInput: '',
-                                  salePrice: 0,
-                                  quantity: 1,
-                                  productId: '',
-                                  unitPrice: 0,
-                                  notes: '',
-                                };
-                                setForm({ ...form, orderLines: lines });
-                              }}
-                              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-all ${isRecipe ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500'}`}
-                            >
-                              📋 Công thức
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const lines = [...form.orderLines];
-                                lines[idx] = {
-                                  type: 'PRODUCT',
-                                  productId: '',
-                                  quantity: 1,
-                                  unitPrice: 0,
-                                  recipeId: '',
-                                  customInput: '',
-                                  salePrice: 0,
-                                  notes: '',
-                                };
-                                setForm({ ...form, orderLines: lines });
-                              }}
-                              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-all ${!isRecipe ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500'}`}
-                            >
-                              📦 Sản phẩm
-                            </button>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm({
-                              ...form,
-                              orderLines: form.orderLines.filter((_, i) => i !== idx),
-                            })
-                          }
-                          className="w-6 h-6 bg-red-50 text-red-400 rounded-lg flex items-center justify-center text-[10px] hover:bg-red-100 hover:text-red-600 transition-all"
-                          aria-label="Xóa dòng"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {isRecipe ? (
-                        <div className="space-y-3">
-                          <div>
-                            <select
-                              className={`input text-sm ${formErrors[`line_${idx}`] ? 'input-error' : ''}`}
-                              value={line.recipeId}
-                              onChange={(e) => {
-                                const lines = [...form.orderLines];
-                                const selectedRecipe = recipes.find(
-                                  (r: any) => r.id === e.target.value,
-                                );
-                                lines[idx] = {
-                                  ...lines[idx]!,
-                                  recipeId: e.target.value,
-                                  salePrice: 0,
-                                };
-                                setForm({ ...form, orderLines: lines });
-                                setFormErrors({});
-                              }}
-                            >
-                              <option value="">Chọn công thức...</option>
-                              {recipes.map((r: any) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {line.recipeId && (
-                            <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
-                              <div className="space-y-1.5 text-xs">
-                                {(
-                                  (recipes.find((r: any) => r.id === line.recipeId) as any)
-                                    ?.recipeProducts || []
-                                ).map((rp: any) => {
-                                  const costItem = recipeCost?.items?.find(
-                                    (ci: any) => ci.productId === rp.productId,
-                                  );
-                                  const estimatedCost =
-                                    costItem?.estimatedCost ??
-                                    Number(rp.product?.cost || 0) * rp.quantity;
-                                  return (
-                                    <div key={rp.id} className="flex justify-between items-center">
-                                      <div className="flex items-center gap-1.5">
-                                        <span>{rp.product?.type === 'BASE' ? '🔷' : '✨'}</span>
-                                        <span className="font-medium">{rp.product?.name}</span>
-                                        <span className="text-gray-400">×{rp.quantity}</span>
-                                        {costItem?.matchCount != null &&
-                                          costItem.matchCount > 0 && (
-                                            <span className="text-[10px] text-purple-500 bg-purple-50 px-1 py-0.5 rounded">
-                                              {costItem.matchCount}ký tự
-                                            </span>
-                                          )}
-                                      </div>
-                                      <span className="font-semibold tabular-nums">
-                                        {formatCurrency(estimatedCost)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          <div>
-                            <label className="text-xs text-gray-500 mb-1 block">
-                              Custom Input <span className="text-gray-400">(VD: TANDAT__)</span>
-                            </label>
-                            <input
-                              className="input text-sm font-mono"
-                              value={line.customInput}
-                              onChange={(e) => {
-                                const lines = [...form.orderLines];
-                                lines[idx] = {
-                                  ...lines[idx]!,
-                                  customInput: e.target.value.toUpperCase(),
-                                };
-                                setForm({ ...form, orderLines: lines });
-                              }}
-                              placeholder="Nhập chuỗi ký tự..."
-                            />
-                            {line.customInput && (
-                              <div className="mt-1 flex flex-wrap gap-0.5">
-                                {line.customInput.split('').map((char: string, i: number) => (
-                                  <span
-                                    key={i}
-                                    className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono bg-gray-100 rounded text-gray-600"
-                                  >
-                                    {char}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-xs text-gray-500 mb-1 block">Số lượng</label>
-                              <input
-                                className="input text-sm"
-                                type="number"
-                                min={1}
-                                value={line.quantity}
-                                onChange={(e) => {
-                                  const lines = [...form.orderLines];
-                                  lines[idx] = {
-                                    ...lines[idx]!,
-                                    quantity: Math.max(1, Number(e.target.value)),
-                                  };
-                                  setForm({ ...form, orderLines: lines });
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 mb-1 block">
-                                Giá bán (VNĐ)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">
-                                  đ
-                                </span>
-                                <input
-                                  className="input text-sm pl-5"
-                                  type="number"
-                                  min={0}
-                                  step={1000}
-                                  value={line.salePrice}
-                                  onChange={(e) => {
-                                    const lines = [...form.orderLines];
-                                    lines[idx] = {
-                                      ...lines[idx]!,
-                                      salePrice: Number(e.target.value),
-                                    };
-                                    setForm({ ...form, orderLines: lines });
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Recipe cost preview */}
-                          {recipeCost && line.salePrice > 0 && (
-                            <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-500">Giá vốn</span>
-                                <span className="font-semibold">
-                                  {formatCurrency(recipeCost.materialCost)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-500">Lợi nhuận</span>
-                                <span
-                                  className={`font-bold ${line.salePrice > recipeCost.materialCost ? 'text-emerald-600' : 'text-red-500'}`}
-                                >
-                                  {formatCurrency(line.salePrice - recipeCost.materialCost)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <select
-                                className={`input text-sm ${formErrors[`line_${idx}`] ? 'input-error' : ''}`}
-                                value={line.productId}
-                                onChange={(e) => {
-                                  const lines = [...form.orderLines];
-                                  const product = products.find(
-                                    (p: any) => p.id === e.target.value,
-                                  );
-                                  const autoPrice = Number(product?.cost || 0);
-                                  lines[idx] = {
-                                    ...lines[idx]!,
-                                    productId: e.target.value,
-                                    unitPrice: lines[idx]!.unitPrice || autoPrice,
-                                  };
-                                  setForm({ ...form, orderLines: lines });
-                                }}
-                              >
-                                <option value="">Chọn sản phẩm...</option>
-                                {products.map((p: any) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.type === 'BASE' ? '🔷' : '✨'} {p.name} —{' '}
-                                    {formatCurrency(Number(p.cost))}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="w-20">
-                              <input
-                                className="input text-sm"
-                                type="number"
-                                placeholder="SL"
-                                min={1}
-                                value={line.quantity}
-                                onChange={(e) => {
-                                  const lines = [...form.orderLines];
-                                  lines[idx] = {
-                                    ...lines[idx]!,
-                                    quantity: Math.max(1, Number(e.target.value)),
-                                  };
-                                  setForm({ ...form, orderLines: lines });
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[11px] text-gray-500 mb-1 block">
-                                Đơn giá (VNĐ)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">
-                                  đ
-                                </span>
-                                <input
-                                  className="input text-sm pl-5"
-                                  type="number"
-                                  min={0}
-                                  step={100}
-                                  value={line.unitPrice}
-                                  onChange={(e) => {
-                                    const lines = [...form.orderLines];
-                                    lines[idx] = {
-                                      ...lines[idx]!,
-                                      unitPrice: Number(e.target.value),
-                                    };
-                                    setForm({ ...form, orderLines: lines });
-                                  }}
-                                  placeholder="0"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="text-[11px] text-gray-500 mb-1 block">
-                                Thành tiền
-                              </label>
-                              <div className="h-[38px] flex items-center px-3 bg-gray-50 rounded-lg text-sm font-semibold text-gray-700 border border-gray-100">
-                                {formatCurrency(
-                                  (Number(line.unitPrice) || 0) * (line.quantity || 1),
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Add line button */}
-                {form.orderLines.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        orderLines: [
-                          ...form.orderLines,
-                          {
-                            type: 'PRODUCT',
-                            productId: '',
-                            quantity: 1,
-                            unitPrice: 0,
-                            recipeId: '',
-                            customInput: '',
-                            salePrice: 0,
-                            notes: '',
-                          },
-                        ],
-                      })
-                    }
-                    className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50/50 transition-all"
-                  >
-                    + Thêm sản phẩm
-                  </button>
-                )}
-
-                {formErrors.orderLines && (
-                  <p className="mt-1 text-xs text-red-600">{formErrors.orderLines}</p>
-                )}
-              </div>
-
-              {/* Order total preview */}
-              {(() => {
-                let totalSalePrice = 0;
-                form.orderLines.forEach((line) => {
-                  if (line.type === 'RECIPE')
-                    totalSalePrice += (Number(line.salePrice) || 0) * (line.quantity || 1);
-                  else totalSalePrice += (Number(line.unitPrice) || 0) * (line.quantity || 1);
-                });
-                if (totalSalePrice <= 0) return null;
-                return (
-                  <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-50/30 rounded-xl border border-purple-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700">
-                        Tổng giá trị đơn hàng
-                      </span>
-                      <span className="text-lg font-bold text-purple-600">
-                        {formatCurrency(totalSalePrice)}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      {form.orderLines.filter((l) => l.type === 'RECIPE' && l.recipeId).length} công
-                      thức,{' '}
-                      {form.orderLines.filter((l) => l.type === 'PRODUCT' && l.productId).length}{' '}
-                      sản phẩm
-                    </p>
-                  </div>
-                );
-              })()}
-
-              <div>
-                <label className="label">
-                  Ghi chú <span className="text-gray-400 font-normal">(không bắt buộc)</span>
-                </label>
-                <textarea
-                  className="input"
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Ghi chú hoặc yêu cầu đặc biệt"
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <CustomSelect
+                className="w-full sm:w-56"
+                value={customerFilter}
+                onChange={(customerId) => {
+                  setCustomerFilter(customerId);
+                  setPage(1);
+                }}
+                options={[
+                  { value: '', label: 'Tất cả khách hàng' },
+                  ...customers.map((customer: any) => ({
+                    value: customer.id,
+                    label: customer.name,
+                  })),
+                ]}
+              />
+              <div className="grid gap-2 sm:flex sm:items-center sm:gap-2">
+                <CustomDate
+                  className="w-full sm:w-40"
+                  value={dateFrom}
+                  placeholder="Từ ngày"
+                  onChange={(v) => {
+                    setDateFrom(v);
+                    setPage(1);
+                  }}
+                />
+                <span className="hidden sm:inline text-gray-400 text-sm flex-shrink-0">→</span>
+                <CustomDate
+                  className="w-full sm:w-40"
+                  value={dateTo}
+                  placeholder="Đến ngày"
+                  onChange={(v) => {
+                    setDateTo(v);
+                    setPage(1);
+                  }}
                 />
               </div>
+            </div>
+          </div>
 
-              <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+          {/* Status chips — swipeable on mobile, wrap on desktop */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="w-1 h-3.5 rounded-full bg-pink-400 inline-block" />
+              Trạng thái
+            </p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+              <button
+                onClick={() => {
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip flex-shrink-0 ${statusFilter.length === 0 ? 'filter-chip-active' : ''}`}
+              >
+                Tất cả <span className="text-gray-400 ml-1">({orders.length})</span>
+              </button>
+              {statusFlow.map((s) => (
                 <button
-                  type="button"
+                  key={s}
                   onClick={() => {
-                    setShowForm(false);
-                    setEditingOrderId(null);
+                    setStatusFilter((prev) =>
+                      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
+                    );
+                    setPage(1);
                   }}
-                  className="btn-secondary"
+                  className={`filter-chip flex-shrink-0 ${statusFilter.includes(s) ? 'filter-chip-active' : ''} ${
+                    statusFilter.includes(s) && filterChipActiveColors[s]
+                      ? filterChipActiveColors[s]
+                      : filterChipHoverColors[s] || ''
+                  }`}
                 >
-                  Hủy
+                  {statusIcons[s] ? (
+                    <FlaticonIcon name={statusIcons[s]} size="sm" className="inline-flex" />
+                  ) : null}
+                  <span>{statusLabels[s] || s.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <span className="text-gray-400 ml-1">({effectiveCounts[s] || 0})</span>
                 </button>
-                <button type="submit" className="btn-primary">
-                  {editingOrderId ? 'Lưu thay đổi' : 'Tạo đơn hàng'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
+          </div>
+
+          {/* Deadline chips */}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span className="w-1 h-3.5 rounded-full bg-amber-400 inline-block" />
+              Hạn chót
+            </p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+              <button
+                onClick={() => {
+                  setDeadlineFilter('');
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${!deadlineFilter ? 'filter-chip-active' : 'hover:!border-gray-200 hover:!text-gray-600'}`}
+              >
+                📅 Mọi hạn chót
+              </button>
+              <button
+                onClick={() => {
+                  setDeadlineFilter('overdue');
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${deadlineFilter === 'overdue' ? 'filter-chip-active !bg-red-50 !border-red-300 !text-red-700 !shadow-sm' : 'hover:!border-red-200 hover:!text-red-600 hover:!bg-red-50/50'}`}
+              >
+                🔴 Quá hạn
+              </button>
+              <button
+                onClick={() => {
+                  setDeadlineFilter('soon');
+                  setStatusFilter([]);
+                  setPage(1);
+                }}
+                className={`filter-chip text-xs flex-shrink-0 ${deadlineFilter === 'soon' ? 'filter-chip-active !bg-amber-50 !border-amber-300 !text-amber-700 !shadow-sm' : 'hover:!border-amber-200 hover:!text-amber-600 hover:!bg-amber-50/50'}`}
+              >
+                🟡 Sắp hết hạn
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Create/Edit Order Form */}
+      <OrderForm
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setEditingOrder(null);
+        }}
+        editingOrder={editingOrder}
+        token={token}
+        customers={customers}
+        products={products}
+        recipes={recipes}
+        matchingRules={matchingRules}
+        packagingTemplates={packagingTemplates}
+        onSuccess={() => {
+          loadOrders();
+          loadCounts();
+        }}
+        onCustomerCreated={(c) => setCustomers((prev) => [...prev, c])}
+        showToast={showToast}
+      />
 
       {/* Orders list */}
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th>Trạng thái</th>
-                  <th className="text-center">Loại</th>
-                  <th className="text-right">SL</th>
-                  <th className="text-right">Tổng</th>
-                  <th>Ngày</th>
-                  <th className="text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3].map((i) => (
-                  <SkeletonRow key={i} cols={7} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Khách hàng</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Số sản phẩm</th>
+                    <th className="text-right">Tổng</th>
+                    <th className="text-left">📅 Hạn chót</th>
+                    <th className="text-left">Ngày tạo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonRow key={i} cols={6} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th>Trạng thái</th>
-                  <th className="text-center">Loại</th>
-                  <th className="text-right">SL</th>
-                  <th className="text-right">Tổng</th>
-                  <th>Ngày</th>
-                  <th className="text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden">
+            <div className="card p-0 overflow-hidden divide-y divide-gray-100">
+              {sortedData.length === 0 ? (
+                <table className="w-full">
+                  <tbody>
+                    <EmptyState emoji="🛒" title="Không tìm thấy đơn hàng" message={emptyMessage} />
+                  </tbody>
+                </table>
+              ) : (
+                sortedData.map((order) => (
+                  <MobileOrderCard
                     key={order.id}
-                    className="cursor-pointer group"
+                    order={order}
                     onClick={() => {
                       if (order.status === 'Draft') {
-                        const orderLines = (order.orderLines || []).map((ol: any) => ({
-                          type: ol.type,
-                          recipeId: ol.recipeId || '',
-                          customInput: ol.customInput || '',
-                          salePrice: Number(ol.salePrice || 0),
-                          productId: ol.productId || '',
-                          quantity: ol.quantity || 1,
-                          unitPrice: Number(ol.unitPrice || 0),
-                          notes: ol.notes || '',
-                        }));
-                        setForm({
-                          customerId: order.customerId,
-                          notes: order.notes || '',
-                          orderLines,
-                        });
-                        setEditingOrderId(order.id);
+                        setEditingOrder(order);
                         setShowForm(true);
-                        setFormErrors({});
                       } else {
                         setSelectedOrder(order);
                       }
                     }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setSelectedOrder(order)}
-                  >
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                          {order.customer?.name?.charAt(0) || '?'}
-                        </div>
-                        <span className="font-medium">{order.customer?.name || 'N/A'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={statusColors[order.status]}>
-                        {statusIcons[order.status]} {statusLabels[order.status] || order.status}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      {order.orderLines?.length > 0 ? (
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
-                          title={`${order.orderLines.length} dòng`}
-                        >
-                          📋 {order.orderLines.length} dòng
-                        </span>
-                      ) : order.recipeId ? (
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded-full"
-                          title="Đơn hàng theo công thức"
-                        >
-                          📋 Công thức
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-gray-300">—</span>
-                      )}
-                    </td>
-                    <td className="text-right text-gray-600 tabular-nums">
-                      {order.items?.length || 0}
-                    </td>
-                    <td className="font-semibold tabular-nums text-right">
-                      {formatCurrency(Number(order.totalCost))}
-                    </td>
-                    <td className="text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
-                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="btn-ghost btn-xs"
-                          title="Xem chi tiết"
-                          aria-label="Xem đơn hàng"
-                        >
-                          👁️
-                        </button>
-                        {PREV_STATUS[order.status] && (
-                          <button
-                            onClick={() => advanceOrder(order.id, PREV_STATUS[order.status], true)}
-                            className="btn-xs btn-ghost border border-gray-200 group"
-                            title={`Quay lại ${statusLabels[PREV_STATUS[order.status]] || PREV_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}`}
-                          >
-                            <span className="group-hover:-translate-x-0.5 transition-transform inline-block">
-                              ←
-                            </span>
-                          </button>
-                        )}
-                        {NEXT_STATUS[order.status] && (
-                          <button
-                            onClick={() => advanceOrder(order.id, NEXT_STATUS[order.status])}
-                            className="btn-xs btn-success group"
-                            title={`Chuyển sang ${statusLabels[NEXT_STATUS[order.status]] || NEXT_STATUS[order.status].replace(/([A-Z])/g, ' $1').trim()}`}
-                          >
-                            <span className="group-hover:translate-x-0.5 transition-transform inline-block">
-                              →
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {orders.length === 0 && (
-                  <EmptyState
-                    icon="🛒"
-                    title="Không tìm thấy đơn hàng"
-                    message={
-                      statusFilter
-                        ? `Không có đơn hàng nào ở trạng thái "${statusFilter}". Thử bộ lọc khác.`
-                        : 'Hãy tạo đơn hàng đầu tiên.'
-                    }
                   />
-                )}
-              </tbody>
-            </table>
+                ))
+              )}
+            </div>
+            <div className="mt-3">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+
+          {/* Desktop table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('customer.name')}
+                    >
+                      Khách hàng{' '}
+                      <SortIcon sortKey="customer.name" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('status')}
+                    >
+                      Trạng thái <SortIcon sortKey="status" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th className="text-left">Số sản phẩm</th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('subtotal')}
+                    >
+                      Tổng <SortIcon sortKey="subtotal" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('deadline')}
+                    >
+                      📅 Hạn chót <SortIcon sortKey="deadline" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('orderDate')}
+                    >
+                      Ngày tạo <SortIcon sortKey="orderDate" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((order) => {
+                    return (
+                      <tr
+                        key={order.id}
+                        className="cursor-pointer group transition-all duration-200 hover:bg-mint-50/40"
+                        onClick={() => {
+                          if (order.status === 'Draft') {
+                            setEditingOrder(order);
+                            setShowForm(true);
+                          } else {
+                            setSelectedOrder(order);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedOrder(order)}
+                      >
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-mint-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                              {order.customer?.name?.charAt(0) || '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-medium truncate">
+                                {order.customer?.name || 'N/A'}
+                              </span>
+                              {order.customer &&
+                                (order.customer.facebook ||
+                                  order.customer.instagram ||
+                                  order.customer.tiktok ||
+                                  order.customer.threads ||
+                                  order.customer.phone) && (
+                                  <div className="flex items-center gap-0.5 mt-0.5 flex-wrap">
+                                    {(() => {
+                                      return SOCIAL_PLATFORMS.map((sl) => {
+                                        let val = order.customer?.[sl.key];
+                                        if (sl.phoneBased) {
+                                          val = order.customer?.phone || null;
+                                          if (!val) return null;
+                                        } else if (!val) {
+                                          return null;
+                                        }
+                                        const href = val.startsWith('http')
+                                          ? val
+                                          : `${sl.domain}${val.replace(/^@/, '')}`;
+                                        const finalHref = sl.phoneBased
+                                          ? `https://zalo.me/${val.replace(/[^0-9]/g, '')}`
+                                          : href;
+                                        return (
+                                          <a
+                                            key={sl.key}
+                                            href={finalHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-3.5 h-3.5 flex items-center justify-center rounded bg-white border border-gray-200 hover:shadow-sm hover:scale-110 transition-all duration-200"
+                                            title={`Mở ${sl.label}`}
+                                          >
+                                            {sl.icon}
+                                          </a>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-0">
+                              {(() => {
+                                const orderIdx = statusFlow.indexOf(order.status);
+                                return statusFlow.map((step, i) => {
+                                  const isDone = i < orderIdx;
+                                  const isCurrent = i === orderIdx;
+                                  return (
+                                    <div key={step} className="flex items-center">
+                                      <div
+                                        className={`w-[22px] h-[22px] rounded-full flex items-center justify-center transition-all duration-300 ring-1 ${
+                                          isDone || isCurrent
+                                            ? `${STEP_DOT_COLORS[i]} text-white shadow-sm`
+                                            : 'bg-white border border-gray-200 ring-gray-200'
+                                        }`}
+                                        title={statusLabels[step]}
+                                      >
+                                        <FlaticonIcon
+                                          name={statusIcons[step]}
+                                          size="xs"
+                                          className={
+                                            isDone || isCurrent ? 'text-white' : 'text-gray-300'
+                                          }
+                                        />
+                                      </div>
+                                      {i < statusFlow.length - 1 && (
+                                        <div
+                                          className={`w-[6px] h-[3px] mx-[1.5px] rounded-full transition-all duration-300 ${
+                                            i < orderIdx ? STEP_LINE_COLORS[i] : 'bg-gray-200'
+                                          }`}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                            {Array.isArray(order.shipping) &&
+                              order.shipping.some(
+                                (s: any) => s.status === 'Failed' && !s.deletedAt,
+                              ) && (
+                                <div className="relative group flex-shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-sm shadow-red-200">
+                                    <FlaticonIcon
+                                      name="triangle-warning"
+                                      size="xs"
+                                      className="text-white"
+                                    />
+                                  </div>
+                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping opacity-75" />
+                                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg z-50">
+                                    Vận chuyển thất bại
+                                  </span>
+                                </div>
+                              )}
+                          </div>
+                        </td>
+                        <td className="text-left">
+                          {order.orderLines?.length > 0 ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-avocado-600 bg-avocado-50 px-1.5 py-0.5 rounded-full"
+                              title={`${order.orderLines.length} dòng`}
+                            >
+                              📋 {order.orderLines.length} dòng
+                            </span>
+                          ) : order.recipeId ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-medium text-avocado-600 bg-avocado-50 px-1.5 py-0.5 rounded-full"
+                              title="Đơn hàng theo công thức"
+                            >
+                              📋 Công thức
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="font-semibold tabular-nums text-left">
+                          {formatCurrency(
+                            Number(order.subtotal || 0) - Number(order.discount || 0),
+                          )}
+                        </td>
+                        <td className="text-left">
+                          {order.deadline ? (
+                            <DeadlineChip order={order} />
+                          ) : (
+                            <span className="text-[10px] text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="text-left">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                            <FlaticonIcon name="calendar" size="xs" className="text-gray-400" />
+                            <span className="font-medium">{formatDate(order.orderDate)}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {orders.length === 0 && (
+                    <EmptyState emoji="🛒" title="Không tìm thấy đơn hàng" message={emptyMessage} />
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        </>
       )}
 
       {selectedOrder && (
         <OrderDetail
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onStatusChange={() => {
-            setSelectedOrder(null);
+          onStatusChange={(openEditAfterDraft) => {
             loadOrders();
+            loadCounts();
+            if (openEditAfterDraft) {
+              setSelectedOrder(null);
+              if (selectedOrder) {
+                setEditingOrder(selectedOrder);
+                setShowForm(true);
+              }
+            } else if (selectedOrder && token) {
+              apiClient(`/orders/${selectedOrder.id}`, { token })
+                .then((res: any) => {
+                  if (res.data) setSelectedOrder(res.data);
+                })
+                .catch(() => {});
+            }
           }}
           token={token}
-          products={products}
           showToast={showToast}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmAdvanceTable}
+        onClose={() => setConfirmAdvanceTable(null)}
+        onConfirm={doAdvanceTable}
+        title="Xác nhận chuyển trạng thái"
+        message={`Bạn có chắc muốn chuyển sang trạng thái "${confirmAdvanceTable?.label}"?`}
+        confirmLabel="Xác nhận"
+        variant="primary"
+      />
     </div>
   );
 }

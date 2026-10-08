@@ -35,6 +35,9 @@ export const shippingRepository = {
     shippingMethod: string;
     carrier?: string;
     trackingNumber?: string;
+    trackingUrl?: string;
+    driverName?: string;
+    driverPhone?: string;
     eta?: Date;
     cost?: number;
   }) {
@@ -46,7 +49,10 @@ export const shippingRepository = {
     data: {
       status?: string;
       trackingNumber?: string;
+      trackingUrl?: string;
       carrier?: string;
+      driverName?: string;
+      driverPhone?: string;
       eta?: Date;
       shippedAt?: Date;
       deliveredAt?: Date;
@@ -58,5 +64,18 @@ export const shippingRepository = {
 
   async softDelete(id: string) {
     return prisma.shipping.update({ where: { id }, data: { deletedAt: new Date() } });
+  },
+
+  async getCounts() {
+    const counts = await prisma.shipping.groupBy({
+      by: ['status'],
+      where: { deletedAt: null },
+      _count: { id: true },
+    });
+    const result: Record<string, number> = {};
+    for (const c of counts) {
+      result[c.status] = c._count.id;
+    }
+    return result;
   },
 };

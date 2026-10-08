@@ -12,6 +12,13 @@ async function main() {
     process.exit(1);
   }
 
+  // ── Check if already seeded (look for admin user) ──
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    console.log(`✅ Database already has ${existingUsers} users — skipping seed.`);
+    return;
+  }
+
   // ── Clear existing data (in reverse dependency order) ──
   await prisma.inventoryTransaction.deleteMany();
   await prisma.orderLine.deleteMany();
@@ -32,6 +39,7 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.create({
     data: {
+      username: 'admin',
       email: 'admin@handmadeshop.com',
       password: adminPassword,
       name: 'Admin',
@@ -41,20 +49,20 @@ async function main() {
   const staffPasswordHash = await bcrypt.hash('staff123', 10);
   await prisma.user.create({
     data: {
+      username: 'staff',
       email: 'staff@handmadeshop.com',
       password: staffPasswordHash,
       name: 'Staff User',
       role: 'Staff',
     },
   });
-  console.log(`Created users (admin: ${admin.email})`);
+  console.log(`Created users (admin: ${admin.username})`);
 
   // ── Customers ──
   const customers = await Promise.all([
     prisma.customer.create({
       data: {
         name: 'Nguyen Van A',
-        email: 'nguyenvana@example.com',
         phone: '0912345678',
         address: '123 Le Loi, District 1, HCMC',
       },
@@ -62,7 +70,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Tran Thi B',
-        email: 'tranthib@example.com',
         phone: '0987654321',
         address: '456 Nguyen Hue, District 1, HCMC',
       },
@@ -70,7 +77,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Le Van C',
-        email: 'levanc@example.com',
         phone: '0909090909',
         address: '789 Vo Van Tan, District 3, HCMC',
       },
@@ -78,7 +84,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Pham Thi D',
-        email: 'phamthid@example.com',
         phone: '0911111111',
         address: '321 Nguyen Trai, District 5, HCMC',
       },
@@ -86,7 +91,6 @@ async function main() {
     prisma.customer.create({
       data: {
         name: 'Hoang Van E',
-        email: 'hoangvane@example.com',
         phone: '0922222222',
         address: '654 Le Van Sy, District 3, HCMC',
       },
@@ -327,9 +331,22 @@ async function main() {
   console.log('Created cost rules');
 
   // ── Orders ──
+  // Generate IDs manually for seed data (avoid calling orderSequence upsert in seed)
+  const now = new Date();
+  const yy = now.getFullYear().toString().slice(2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const today = `${yy}${mm}${dd}`;
+  let seedCounter = 0;
+  const nextSeedId = () => {
+    seedCounter++;
+    return `${today}-${String(seedCounter).padStart(3, '0')}`;
+  };
+
   // Order 1: Draft - single recipe
   await prisma.order.create({
     data: {
+      id: nextSeedId(),
       customerId: customers[0]!.id,
       status: 'Draft',
       recipeId: recipe1.id,
@@ -360,6 +377,7 @@ async function main() {
   // Order 2: WaitingConfirm - single recipe
   await prisma.order.create({
     data: {
+      id: nextSeedId(),
       customerId: customers[1]!.id,
       status: 'WaitingConfirm',
       recipeId: recipe2.id,
@@ -390,6 +408,7 @@ async function main() {
   // Order 3: InProgress (confirmed - has snapshot) - multi-line
   await prisma.order.create({
     data: {
+      id: nextSeedId(),
       customerId: customers[2]!.id,
       status: 'InProgress',
       confirmedAt: new Date(),
@@ -433,6 +452,7 @@ async function main() {
   // Order 4: Completed - finished order
   await prisma.order.create({
     data: {
+      id: nextSeedId(),
       customerId: customers[3]!.id,
       status: 'Completed',
       confirmedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -466,6 +486,27 @@ async function main() {
       },
     },
   });
+
+  // ── Add shipping records for completed orders ──
+  // Get the last order (Order 4: Completed)
+  const lastOrder = await prisma.order.findFirstOrThrow({
+    where: { customerId: customers[3]!.id, status: 'Completed' },
+    orderBy: { createdAt: 'desc' },
+  });
+  await prisma.shipping.create({
+    data: {
+      orderId: lastOrder.id,
+      deliveryType: 'SPX Express',
+      shippingMethod: 'SPX Express',
+      carrier: 'SPX',
+      trackingNumber: 'SPXVN060664065977',
+      status: 'Delivered',
+      cost: 30000,
+      shippedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      deliveredAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+  });
+  console.log('  + Added shipping record for Order 4 (Completed)');
 
   console.log('Created 4 sample orders (Draft, WaitingConfirm, InProgress, Completed)');
 
@@ -582,8 +623,8 @@ async function main() {
 
   console.log('\n✅ Seed completed successfully!');
   console.log('━'.repeat(40));
-  console.log('📧 Admin login: admin@handmadeshop.com / admin123');
-  console.log('📧 Staff login: staff@handmadeshop.com / staff123');
+  console.log('🔑 Admin login: admin / admin123');
+  console.log('🔑 Staff login: staff / staff123');
   console.log('📊 5 customers, 9 products, 3 recipes, 3 packaging templates');
   console.log('📦 4 sample orders across different statuses');
   console.log('📈 8 matching rules, 2 cost rules, 13 inventory transactions');

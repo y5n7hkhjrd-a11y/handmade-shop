@@ -8,50 +8,16 @@ import { useToast } from '@/hooks/useToast';
 import Toast from '@/components/Toast';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
+import FlaticonIcon from '@/components/FlaticonIcon';
 import Pagination from '@/components/Pagination';
-
-interface MatchingRule {
-  id: string;
-  code: string;
-  name: string;
-  pattern: string;
-}
-interface RecipeProduct {
-  id: string;
-  productId: string;
-  quantity: number;
-  matchingRuleId?: string | null;
-  product: { id: string; name: string; type: string; cost: number };
-}
-interface Product {
-  id: string;
-  name: string;
-  type: string;
-  cost: number;
-  isActive?: boolean;
-}
-interface Recipe {
-  id: string;
-  name: string;
-  description?: string;
-  notes?: string;
-  recipeProducts?: RecipeProduct[];
-}
-
-function ProductTypeBadge({ type }: { type: string }) {
-  if (type === 'BASE') {
-    return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">
-        🔷 Nền tảng
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-pink-50 text-pink-700">
-      ✨ Bổ sung
-    </span>
-  );
-}
+import {
+  ProductTypeBadge,
+  type Recipe,
+  type RecipeProduct,
+  type Product,
+  type MatchingRule,
+} from './recipeConstants';
+import RecipeForm from './RecipeForm';
 
 export default function RecipesPage() {
   const { token } = useAuth();
@@ -63,19 +29,9 @@ export default function RecipesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    notes: '',
-    baseProductId: '',
-    charmProducts: [] as Array<{ productId: string; matchingRuleId: string }>,
-  });
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null);
   const { toast, showToast } = useToast();
-
-  const baseProducts = products.filter((p) => p.isActive !== false && p.type === 'BASE');
-  const charmProductsMaster = products.filter((p) => p.isActive !== false && p.type === 'CHARM');
 
   const loadRecipes = useCallback(async () => {
     if (!token) return;
@@ -103,83 +59,6 @@ export default function RecipesPage() {
         .catch(() => {});
     }
   }, [token]);
-
-  const resetForm = () => {
-    const defaultBaseId = baseProducts.length > 0 ? baseProducts[0]!.id : '';
-    setForm({
-      name: '',
-      description: '',
-      notes: '',
-      baseProductId: defaultBaseId,
-      charmProducts: [],
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    if (!form.baseProductId) {
-      showToast('Vui lòng chọn sản phẩm nền tảng (BASE)', 'error');
-      return;
-    }
-
-    // Validate: mỗi CHARM đã chọn phải có quy tắc ghép (prefix)
-    const invalidCharms = form.charmProducts.filter((cp) => cp.productId && !cp.matchingRuleId);
-    if (invalidCharms.length > 0) {
-      showToast('Vui lòng chọn quy tắc ghép (Prefix) cho tất cả CHARM đã chọn', 'error');
-      return;
-    }
-
-    try {
-      const recipeProducts = [
-        { productId: form.baseProductId, quantity: 1 },
-        ...form.charmProducts
-          .filter((cp) => cp.productId)
-          .map((cp) => ({
-            productId: cp.productId,
-            quantity: 1,
-            matchingRuleId: cp.matchingRuleId || undefined,
-          })),
-      ];
-      const body = {
-        name: form.name,
-        description: form.description || undefined,
-        notes: form.notes || undefined,
-        recipeProducts,
-      };
-      if (editingId) {
-        await apiClient(`/recipes/${editingId}`, { method: 'PUT', body, token });
-        showToast('Đã cập nhật sản phẩm bán');
-      } else {
-        await apiClient('/recipes', { method: 'POST', body, token });
-        showToast('Đã tạo sản phẩm bán');
-      }
-      setShowForm(false);
-      setEditingId(null);
-      resetForm();
-      loadRecipes();
-    } catch (e: any) {
-      showToast(e.message || 'Thất bại', 'error');
-    }
-  };
-
-  const handleEdit = (r: Recipe) => {
-    const rps = r.recipeProducts || [];
-    const baseRp = rps.find((rp) => rp.product?.type === 'BASE');
-    const charms = rps.filter((rp) => rp.product?.type === 'CHARM');
-    setForm({
-      name: r.name,
-      description: r.description || '',
-      notes: r.notes || '',
-      baseProductId: baseRp?.productId || '',
-      charmProducts: charms.map((c) => ({
-        productId: c.productId,
-        matchingRuleId: c.matchingRuleId || '',
-      })),
-    });
-    setEditingId(r.id);
-    setShowForm(true);
-  };
 
   const handleDuplicate = async (recipe: Recipe) => {
     if (!token) return;
@@ -234,18 +113,24 @@ export default function RecipesPage() {
         <button id="delete-btn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">Xóa</button>
       </div>
     `;
-    dialog
-      .querySelector('#cancel-btn')!
-      .addEventListener('click', () => document.body.removeChild(overlay));
-    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const removeOverlay = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
       document.body.removeChild(overlay);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') removeOverlay();
+    };
+    dialog.querySelector('#cancel-btn')!.addEventListener('click', () => removeOverlay());
+    dialog.querySelector('#delete-btn')!.addEventListener('click', () => {
+      removeOverlay();
       handleDelete(recipe.id);
     });
     overlay.appendChild(dialog);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) document.body.removeChild(overlay);
-    });
     document.body.appendChild(overlay);
+    window.addEventListener('keydown', onKeyDown);
   };
 
   const filteredRecipes = recipes.filter(
@@ -255,41 +140,67 @@ export default function RecipesPage() {
       r.description?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  // Build used matching rule IDs from current form CHARM selections
-  const getUsedRuleIds = () => {
-    const used = new Set<string>();
-    form.charmProducts.forEach((cp) => {
-      if (cp.matchingRuleId) used.add(cp.matchingRuleId);
-    });
-    return used;
-  };
-
   return (
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Sản phẩm bán</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Công thức định nghĩa sản phẩm cuối cùng — {recipes.length} sản phẩm
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingId(null);
-            resetForm();
-            setShowForm(true);
+      {/* Page header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/50 border border-pink-100/60 p-4 sm:p-6 mb-4 sm:mb-6 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)]">
+        <div className="absolute -top-6 -right-6 w-32 h-32 bg-pink-200/30 rounded-full blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-mint-200/25 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-avocado-200/20 rounded-full blur-2xl" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
           }}
-          className="btn-primary"
-        >
-          + Thêm sản phẩm bán
-        </button>
+        />
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-sm">
+                <FlaticonIcon name="receipt" size="md" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-avocado-400/20 to-mint-500/20 blur-sm -z-10" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                  Sản phẩm bán
+                </h1>
+                {recipes.length > 0 && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-white border border-gray-200 rounded-full text-gray-600 shadow-sm flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {recipes.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Công thức định nghĩa sản phẩm cuối cùng
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setEditingRecipe(null);
+              setShowForm(true);
+            }}
+            className="btn-primary !gap-1.5 !px-4"
+          >
+            <span>＋ Thêm sản phẩm bán</span>
+          </button>
+        </div>
+        <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-pink-300/40 to-transparent" />
       </div>
 
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <FlaticonIcon
+            name="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm sản phẩm..."
@@ -303,322 +214,19 @@ export default function RecipesPage() {
         <span className="text-sm text-gray-500 ml-auto">{filteredRecipes.length} sản phẩm</span>
       </div>
 
-      {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowForm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-content max-w-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">
-                {editingId ? 'Chỉnh sửa' : 'Thêm sản phẩm bán'}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {editingId ? 'Cập nhật sản phẩm' : 'Tạo sản phẩm cuối cùng để bán'}
-              </p>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="label label-required">Tên sản phẩm bán</label>
-                <input
-                  className="input"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                  placeholder="VD: Móc khóa Custom"
-                />
-              </div>
-              <div>
-                <label className="label">Mô tả</label>
-                <textarea
-                  className="input"
-                  rows={2}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Mô tả sản phẩm bán ra"
-                />
-              </div>
-
-              {/* BASE section */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-50/30 rounded-xl p-5 border border-blue-100/80 transition-all duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-base shadow-sm">
-                      🔷
-                    </div>
-                    <div>
-                      <label className="font-semibold text-gray-800 text-sm">
-                        Sản phẩm nền tảng
-                      </label>
-                      <p className="text-[11px] text-gray-500">
-                        Chọn 1 BASE làm nền cho sản phẩm bán
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-100/80 px-2.5 py-1 rounded-full">
-                    Bắt buộc
-                  </span>
-                </div>
-                {baseProducts.length === 0 ? (
-                  <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <span className="text-amber-500">⚠️</span>
-                    <p className="text-xs text-amber-700">
-                      Chưa có sản phẩm BASE. Vui lòng tạo nguyên vật liệu BASE trước.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <select
-                      className="input w-full pr-24 appearance-none"
-                      value={form.baseProductId}
-                      onChange={(e) => setForm({ ...form, baseProductId: e.target.value })}
-                    >
-                      {baseProducts.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-blue-100/60 px-2 py-1 rounded-md pointer-events-none">
-                      <span className="text-[10px] text-blue-500 font-medium">Giá vốn</span>
-                      <span className="text-xs font-bold text-blue-700 tabular-nums">
-                        {(() => {
-                          const p = products.find((pr) => pr.id === form.baseProductId);
-                          return p ? formatCurrency(Number(p.cost)) : '0₫';
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* CHARM section */}
-              <div className="bg-gradient-to-br from-pink-50 to-pink-50/30 rounded-xl p-5 border border-pink-100/80 transition-all duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center text-base shadow-sm">
-                      ✨
-                    </div>
-                    <div>
-                      <label className="font-semibold text-gray-800 text-sm">
-                        Phụ kiện bổ sung
-                      </label>
-                      <p className="text-[11px] text-gray-500">
-                        Thêm CHARM để cá nhân hóa sản phẩm
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold text-pink-600 bg-pink-100/80 px-2.5 py-1 rounded-full">
-                    Không bắt buộc
-                  </span>
-                </div>
-
-                {/* Header row */}
-                {form.charmProducts.length > 0 && (
-                  <div className="hidden sm:grid grid-cols-[7fr_3fr_auto] gap-2 px-1 mb-1.5">
-                    <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                      Sản phẩm
-                    </span>
-                    <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                      Quy tắc ghép
-                    </span>
-                  </div>
-                )}
-
-                {/* Charm rows */}
-                {form.charmProducts.map((cp, idx) => {
-                  const selectedProduct = products.find((p) => p.id === cp.productId);
-                  const usedRuleIds = getUsedRuleIds();
-                  if (cp.matchingRuleId) usedRuleIds.delete(cp.matchingRuleId);
-                  const availableRules = matchingRules.filter((r) => !usedRuleIds.has(r.id));
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-lg border border-pink-200/60 p-2.5 shadow-sm mb-2 last:mb-3 transition-all duration-200 hover:border-pink-300/80 hover:shadow-md"
-                    >
-                      {/* Mobile: flex row for select + delete */}
-                      <div className="flex items-center gap-2 mb-2 sm:hidden">
-                        <select
-                          className="input text-sm flex-1 appearance-none"
-                          value={cp.productId}
-                          onChange={(e) => {
-                            const cps = [...form.charmProducts];
-                            cps[idx] = { productId: e.target.value, matchingRuleId: '' };
-                            setForm({ ...form, charmProducts: cps });
-                          }}
-                        >
-                          <option value="">Chọn CHARM...</option>
-                          {charmProductsMaster.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm({
-                              ...form,
-                              charmProducts: form.charmProducts.filter((_, i) => i !== idx),
-                            })
-                          }
-                          className="w-7 h-7 bg-red-50 text-red-400 rounded-lg flex items-center justify-center text-xs hover:bg-red-100 hover:text-red-600 transition-all duration-200 flex-shrink-0"
-                          aria-label="Xóa CHARM"
-                          title="Xóa CHARM"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      {/* Mobile: rule select + cost below */}
-                      <div className="sm:hidden space-y-2">
-                        {cp.productId &&
-                          (availableRules.length > 0 ? (
-                            <select
-                              className="input text-xs w-full appearance-none"
-                              value={cp.matchingRuleId}
-                              onChange={(e) => {
-                                const cps = [...form.charmProducts];
-                                cps[idx] = { ...cps[idx], matchingRuleId: e.target.value };
-                                setForm({ ...form, charmProducts: cps });
-                              }}
-                            >
-                              <option value="">Chọn quy tắc...</option>
-                              {availableRules.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div className="text-[11px] text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md text-center">
-                              ⚠ Hết quy tắc
-                            </div>
-                          ))}
-                        <p className="text-xs text-gray-500">
-                          Giá vốn:{' '}
-                          <span className="font-semibold text-pink-700">
-                            {selectedProduct ? formatCurrency(Number(selectedProduct.cost)) : '0₫'}
-                          </span>
-                        </p>
-                      </div>
-
-                      {/* Desktop: grid layout — Charm 70%, prefix 30% */}
-                      <div className="hidden sm:grid sm:grid-cols-[7fr_3fr_auto] gap-2 items-center">
-                        {/* Product select với badge giá vốn inline */}
-                        <div className="relative">
-                          <select
-                            className="input text-xs w-full pr-24 appearance-none"
-                            value={cp.productId}
-                            onChange={(e) => {
-                              const cps = [...form.charmProducts];
-                              cps[idx] = { productId: e.target.value, matchingRuleId: '' };
-                              setForm({ ...form, charmProducts: cps });
-                            }}
-                          >
-                            <option value="">Chọn CHARM...</option>
-                            {charmProductsMaster.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-pink-100/60 px-2 py-1 rounded-md pointer-events-none">
-                            <span className="text-[10px] text-pink-500 font-medium">Giá vốn</span>
-                            <span className="text-xs font-bold text-pink-700 tabular-nums">
-                              {selectedProduct
-                                ? formatCurrency(Number(selectedProduct.cost))
-                                : '0₫'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Matching rule — luôn hiện trong grid */}
-                        {availableRules.length > 0 ? (
-                          <select
-                            className="input text-xs w-full appearance-none"
-                            value={cp.matchingRuleId}
-                            onChange={(e) => {
-                              const cps = [...form.charmProducts];
-                              cps[idx] = { ...cps[idx], matchingRuleId: e.target.value };
-                              setForm({ ...form, charmProducts: cps });
-                            }}
-                          >
-                            <option value="">Chọn quy tắc...</option>
-                            {availableRules.map((r) => (
-                              <option key={r.id} value={r.id}>
-                                {r.name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="text-[11px] text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-md text-center">
-                            <span>⚠ Hết quy tắc</span>
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm({
-                              ...form,
-                              charmProducts: form.charmProducts.filter((_, i) => i !== idx),
-                            })
-                          }
-                          className="w-7 h-7 bg-red-50 text-red-400 rounded-lg flex items-center justify-center text-xs hover:bg-red-100 hover:text-red-600 transition-all duration-200 flex-shrink-0 justify-self-center"
-                          aria-label="Xóa CHARM"
-                          title="Xóa CHARM"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Add CHARM button */}
-                {(() => {
-                  const allUsed =
-                    charmProductsMaster.length > 0 &&
-                    charmProductsMaster.every((p) =>
-                      form.charmProducts.some((cp) => cp.productId === p.id),
-                    );
-                  return !allUsed ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm({
-                          ...form,
-                          charmProducts: [
-                            ...form.charmProducts,
-                            { productId: '', matchingRuleId: '' },
-                          ],
-                        })
-                      }
-                      className="w-full py-2.5 border-2 border-dashed border-pink-200/70 rounded-lg text-sm font-medium text-pink-500 hover:text-pink-700 hover:border-pink-300 hover:bg-pink-50/50 transition-all duration-200 flex items-center justify-center gap-2 group/add"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center text-xs group-hover/add:bg-pink-200 transition-colors">
-                        +
-                      </span>
-                      Thêm CHARM
-                    </button>
-                  ) : null;
-                })()}
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingId ? 'Cập nhật' : 'Tạo sản phẩm'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <RecipeForm
+        isOpen={showForm}
+        editingRecipe={editingRecipe}
+        token={token}
+        products={products}
+        matchingRules={matchingRules}
+        showToast={showToast}
+        onClose={() => {
+          setShowForm(false);
+          setEditingRecipe(null);
+        }}
+        onSuccess={loadRecipes}
+      />
 
       {loading ? (
         <div className="space-y-4">
@@ -651,8 +259,8 @@ export default function RecipesPage() {
                   onClick={() => setExpandedRecipe(expandedRecipe === recipe.id ? null : recipe.id)}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-lg shadow-sm">
-                      📋
+                    <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center text-white shadow-sm">
+                      <FlaticonIcon name="receipt" size="md" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">{recipe.name}</h3>
@@ -682,9 +290,8 @@ export default function RecipesPage() {
                         }}
                         className="btn-ghost btn-xs opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600"
                         title="Xóa"
-                        aria-label="Xóa"
                       >
-                        🗑️
+                        <FlaticonIcon name="trash" size="sm" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -693,19 +300,19 @@ export default function RecipesPage() {
                         }}
                         className="btn-ghost btn-xs opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Nhân bản"
-                        aria-label="Nhân bản"
                       >
-                        📋
+                        <FlaticonIcon name="clipboard" size="sm" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEdit(recipe);
+                          setEditingRecipe(recipe);
+                          setShowForm(true);
                         }}
                         className="btn-ghost btn-xs"
                         aria-label="Chỉnh sửa"
                       >
-                        ✏️
+                        <FlaticonIcon name="pencil" size="sm" />
                       </button>
                       <span
                         className={
@@ -713,7 +320,7 @@ export default function RecipesPage() {
                           (expandedRecipe === recipe.id ? 'rotate-90' : '')
                         }
                       >
-                        ▶
+                        <FlaticonIcon name="angle-right" size="sm" />
                       </span>
                     </div>
                   </div>
@@ -723,18 +330,18 @@ export default function RecipesPage() {
                     {baseRp && (
                       <div className="mb-5">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-xs shadow-sm">
-                            🔷
+                          <div className="w-7 h-7 rounded-lg bg-avocado-100 flex items-center justify-center shadow-sm">
+                            <FlaticonIcon name="square" size="xs" className="text-mint-600" />
                           </div>
                           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Nền tảng
                           </h4>
                         </div>
-                        <div className="bg-white rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200">
+                        <div className="bg-white rounded-xl p-4 border border-mint-100 shadow-sm hover:shadow-md transition-all duration-200">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3.5">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-lg shadow-sm">
-                                🔷
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-avocado-50 to-avocado-100 flex items-center justify-center shadow-sm">
+                                <FlaticonIcon name="square" size="sm" className="text-mint-600" />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2.5">
@@ -763,8 +370,8 @@ export default function RecipesPage() {
                       <div className="mb-5">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center text-xs shadow-sm">
-                              ✨
+                            <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center shadow-sm">
+                              <FlaticonIcon name="stars" size="xs" className="text-pink-600" />
                             </div>
                             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                               Phụ kiện bổ sung
@@ -784,8 +391,12 @@ export default function RecipesPage() {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3.5">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center text-lg shadow-sm">
-                                      ✨
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center shadow-sm">
+                                      <FlaticonIcon
+                                        name="stars"
+                                        size="sm"
+                                        className="text-pink-600"
+                                      />
                                     </div>
                                     <div>
                                       <div className="flex items-center gap-2.5">
@@ -800,8 +411,12 @@ export default function RecipesPage() {
                                           {formatCurrency(Number(rp.product.cost))}
                                         </span>
                                         {ruleCode && (
-                                          <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-medium">
-                                            <span className="text-[10px]">🔤</span>
+                                          <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-avocado-50 text-avocado-600 font-medium">
+                                            <FlaticonIcon
+                                              name="text"
+                                              size="xs"
+                                              className="text-avocado-500"
+                                            />{' '}
                                             {ruleCode}
                                           </span>
                                         )}
@@ -824,14 +439,13 @@ export default function RecipesPage() {
 
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                       <div className="flex items-center gap-2 mb-4">
-                        <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-xs shadow-sm">
-                          📊
+                        <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shadow-sm">
+                          <FlaticonIcon name="analyse" size="xs" className="text-gray-500" />
                         </div>
                         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Tổng chi phí
                         </h4>
                       </div>
-
                       <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-600">Giá vốn (thành phần)</span>
                         <span className="text-sm font-bold text-gray-900 tabular-nums">
@@ -846,7 +460,7 @@ export default function RecipesPage() {
           })}
           {filteredRecipes.length === 0 && (
             <EmptyState
-              icon="📋"
+              emoji="📋"
               title={search ? 'Không tìm thấy phù hợp' : 'Chưa có sản phẩm bán nào'}
               message={search ? 'Thử từ khóa khác.' : 'Tạo sản phẩm bán đầu tiên từ công thức.'}
             />

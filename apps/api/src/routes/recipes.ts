@@ -2,18 +2,21 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { prisma } from '../lib/prisma.js';
 import { recipeRepository } from '../repositories/recipeRepository.js';
 import { validate } from '../middleware/validate.js';
-import { createRecipeSchema, updateRecipeSchema, paginationSchema } from '@handmade-shop/shared';
+import {
+  createRecipeSchema,
+  updateRecipeSchema,
+  listRecipesQuerySchema,
+} from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
 export const recipeRouter: Router = Router();
 
 recipeRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listRecipesQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const search = req.query.search as string | undefined;
+      const { page, limit, search } = req.query as any;
       const result = await recipeRepository.list({ page, limit, search });
       res.json({
         success: true,

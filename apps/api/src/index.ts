@@ -14,6 +14,7 @@ import { reportRouter } from './routes/reports.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
+import { startTrackingCron } from './services/cronService.js';
 
 const app: Express = express();
 const PORT = process.env.API_PORT ? parseInt(process.env.API_PORT) : 4000;
@@ -48,6 +49,8 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Handmade Shop API running on port ${PORT}`);
+  // Start background cron for auto-tracking shipments
+  startTrackingCron();
 });
 
 export default app;

@@ -2,8 +2,64 @@ import { OrderStatus } from '@handmade-shop/shared';
 import { orderRepository } from '../repositories/orderRepository.js';
 import { productRepository } from '../repositories/productRepository.js';
 import { recipeRepository } from '../repositories/recipeRepository.js';
+import { packagingRepository } from '../repositories/packagingRepository.js';
 import { costEngineService } from './costEngineService.js';
 import { AppError } from '../middleware/errorHandler.js';
+
+/**
+ * Resolve packaging costs for an order.
+ * - ITEM templates: cost applies per unit → multiply by line quantity.
+ * - ORDER templates: cost applies once for the whole order.
+ * Returns { itemCosts, orderCost, itemTemplateIds } where itemCosts maps line index → cost.
+ */
+async function resolvePackagingCosts(
+  orderLines: Array<{
+    type?: string;
+    quantity?: number;
+    packagingTemplateId?: string;
+  }>,
+): Promise<{
+  linePackagingCosts: Map<number, number>;
+  lineTemplateIds: Map<number, string>;
+  orderPackagingCost: number;
+  orderTemplateId: string | null;
+}> {
+  const linePackagingCosts = new Map<number, number>();
+  const lineTemplateIds = new Map<number, string>();
+  let orderPackagingCost = 0;
+  let orderTemplateId: string | null = null;
+
+  const templateCache = new Map<string, { type: string; totalCost: number }>();
+  const getTemplate = async (id: string) => {
+    if (!templateCache.has(id)) {
+      const tpl = await packagingRepository.findById(id);
+      if (!tpl || tpl.deletedAt) throw new AppError(`Mẫu đóng gói không tồn tại: ${id}`, 400);
+      templateCache.set(id, { type: tpl.type, totalCost: Number(tpl.totalCost) });
+    }
+    return templateCache.get(id)!;
+  };
+
+  for (let i = 0; i < orderLines.length; i++) {
+    const line = orderLines[i];
+    if (!line) continue;
+    const tplId = line.packagingTemplateId;
+    if (!tplId) continue;
+    const tpl = await getTemplate(tplId);
+    if (tpl.type === 'ITEM') {
+      const qty = line.quantity || 1;
+      linePackagingCosts.set(i, tpl.totalCost * qty);
+      lineTemplateIds.set(i, tplId);
+    } else if (tpl.type === 'ORDER') {
+      if (orderTemplateId && orderTemplateId !== tplId) {
+        throw new AppError('Chỉ được chọn một mẫu đóng gói cho cả đơn hàng', 400);
+      }
+      orderTemplateId = tplId;
+      orderPackagingCost += tpl.totalCost;
+    }
+  }
+
+  return { linePackagingCosts, lineTemplateIds, orderPackagingCost, orderTemplateId };
+}
 
 // Valid workflow transitions
 const validTransitions: Record<string, string[]> = {
@@ -18,10 +74,13 @@ const validTransitions: Record<string, string[]> = {
 export const orderService = {
   async create(data: {
     customerId: string;
+    deadline?: string;
     notes?: string;
+    paidAmount?: number;
     recipeId?: string;
     customInput?: string;
     salePrice?: number;
+    orderPackagingTemplateId?: string;
     items: Array<{
       productId: string;
       quantity: number;
@@ -84,28 +143,52 @@ export const orderService = {
           if (!product) throw new AppError(`Product ${line.productId} not found`, 404);
 
           const qty = line.quantity || 1;
-          const unitPrice = line.unitPrice || Number(product.cost);
+          const salePrice = line.unitPrice || 0; // User-entered sale price (giá bán)
+          const productCost = Number(product.cost); // Actual cost (giá vốn)
+
           allItems.push({
             productId: line.productId!,
             quantity: qty,
-            unitPrice,
+            unitPrice: productCost, // Store cost price for OrderItem cost tracking
             notes: line.notes,
           });
-          totalSubtotal += unitPrice * qty;
+          totalSubtotal += salePrice * qty; // Subtotal uses sale price
+          totalMaterialCost += productCost * qty; // Track actual material cost
         }
       }
 
-      const totalCost = totalSubtotal + totalPackagingCost;
+      // ─── Resolve packaging templates (ITEM per line, ORDER for whole order) ───
+      const packaging = await resolvePackagingCosts([
+        ...data.orderLines,
+        ...(data.orderPackagingTemplateId
+          ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+          : []),
+      ]);
+      totalPackagingCost = packaging.orderPackagingCost;
+      data.orderLines.forEach((_, i) => {
+        totalPackagingCost += packaging.linePackagingCosts.get(i) || 0;
+      });
+
+      // Attach per-line packaging template ids (ITEM type) onto the stored lines
+      const linesToStore = data.orderLines.map((line, i) => ({
+        ...line,
+        packagingTemplateId: packaging.lineTemplateIds.get(i) || undefined,
+      }));
+
+      // totalCost = actual item costs + packaging, not sale prices
+      const totalCost = totalMaterialCost + totalPackagingCost;
 
       return orderRepository.create({
         customerId: data.customerId,
         notes: data.notes,
+        paidAmount: data.paidAmount,
         subtotal: totalSubtotal,
         materialCost: totalMaterialCost,
         packagingCost: totalPackagingCost,
         totalCost,
         items: allItems,
-        orderLines: data.orderLines,
+        orderLines: linesToStore,
+        orderPackagingTemplateId: packaging.orderTemplateId || undefined,
       });
     }
 
@@ -140,42 +223,93 @@ export const orderService = {
         quantity: 1,
       };
 
+      const itemsTotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      const totalCost = itemsTotal + costResult.packagingCost;
+
       return orderRepository.create({
         customerId: data.customerId,
         notes: data.notes,
+        paidAmount: data.paidAmount,
         recipeId: data.recipeId,
         customInput: data.customInput,
         subtotal: salePrice,
         materialCost: costResult.materialCost,
         packagingCost: costResult.packagingCost,
+        totalCost,
         items,
         orderLines: [orderLine],
       });
     }
 
     // ─── Legacy: product-based order ───
+    // Fetch products and build fixed items with proper cost/sale price separation
+    let legacyMaterialCost = 0;
+    let legacySubtotal = 0;
+    let legacyPackagingCost = 0;
+    const fixedItems: Array<{
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      packagingTemplateId?: string;
+      packagingCost?: number;
+      notes?: string;
+    }> = [];
+    const orderLines: Array<{
+      type: 'PRODUCT';
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      packagingTemplateId?: string;
+      notes?: string;
+    }> = [];
+    const packaging = await resolvePackagingCosts([
+      ...data.items,
+      ...(data.orderPackagingTemplateId
+        ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+        : []),
+    ]);
     for (const item of data.items) {
       const product = await productRepository.findById(item.productId);
       if (!product) {
         throw new AppError(`Product ${item.productId} not found`, 404);
       }
+      const cost = Number(product.cost);
+      const salePrice = item.unitPrice || 0;
+      legacyMaterialCost += cost * item.quantity;
+      legacySubtotal += salePrice * item.quantity;
+      fixedItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: cost, // Cost price for OrderItem cost tracking
+        packagingTemplateId: item.packagingTemplateId,
+        notes: item.notes,
+      });
+      orderLines.push({
+        type: 'PRODUCT' as const,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: salePrice, // Sale price for display
+        packagingTemplateId: item.packagingTemplateId,
+        notes: item.notes,
+      });
     }
-
-    // Create OrderLines for product-based items
-    const orderLines = data.items.map((item) => ({
-      type: 'PRODUCT' as const,
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      packagingTemplateId: item.packagingTemplateId,
-      notes: item.notes,
-    }));
+    // Packaging: ITEM templates per line + ORDER template for the whole order
+    data.items.forEach((_, i) => {
+      legacyPackagingCost += packaging.linePackagingCosts.get(i) || 0;
+    });
+    legacyPackagingCost += packaging.orderPackagingCost;
 
     return orderRepository.create({
       customerId: data.customerId,
       notes: data.notes,
-      items: data.items,
+      paidAmount: data.paidAmount,
+      subtotal: legacySubtotal,
+      materialCost: legacyMaterialCost,
+      packagingCost: legacyPackagingCost,
+      totalCost: legacyMaterialCost + legacyPackagingCost,
+      items: fixedItems,
       orderLines,
+      orderPackagingTemplateId: packaging.orderTemplateId || undefined,
     });
   },
 
@@ -190,6 +324,20 @@ export const orderService = {
 
     if (!allowed || !allowed.includes(newStatus)) {
       throw new AppError(`Cannot transition from ${currentStatus} to ${newStatus}`);
+    }
+
+    // Ensure payment before moving to Packaging (InProgress → Packaging)
+    if (currentStatus === OrderStatus.InProgress && newStatus === OrderStatus.Packaging) {
+      const paid = Number(order.paidAmount) || 0;
+      // Tổng khách trả không gồm phí đóng gói (đó là giá vốn)
+      const salePriceTotal =
+        Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.shippingCost || 0);
+      const remaining = salePriceTotal - paid;
+      if (remaining > 0) {
+        throw new AppError(
+          'Vui lòng xác nhận khách hàng đã thanh toán trước khi chuyển sang Đơn đã gói',
+        );
+      }
     }
 
     // Snapshot prices on confirmation
@@ -220,7 +368,8 @@ export const orderService = {
     return orderRepository.addItem(id, {
       productId: data.productId,
       quantity: data.quantity,
-      unitPrice: data.unitPrice || Number(product.cost),
+      unitPrice: data.unitPrice || 0, // Sale price (0 if not entered)
+      unitCost: Number(product.cost), // Actual cost for OrderItem tracking
       notes: data.notes,
     });
   },
@@ -229,6 +378,9 @@ export const orderService = {
     id: string,
     data: {
       notes?: string;
+      paidAmount?: number;
+      deadline?: string;
+      orderPackagingTemplateId?: string;
       orderLines: Array<{
         type: 'RECIPE' | 'PRODUCT';
         recipeId?: string;
@@ -237,6 +389,7 @@ export const orderService = {
         productId?: string;
         quantity?: number;
         unitPrice?: number;
+        packagingTemplateId?: string;
         notes?: string;
       }>;
     },
@@ -263,16 +416,22 @@ export const orderService = {
     }> = [];
     for (const line of data.orderLines) {
       if (line.type === 'PRODUCT' && line.productId) {
+        const product = await productRepository.findById(line.productId);
+        if (!product) throw new AppError(`Product ${line.productId} not found`, 404);
+
         const qty = line.quantity || 1;
-        const unitPrice = line.unitPrice || 0;
+        const salePrice = line.unitPrice || 0; // User-entered sale price
+        const productCost = Number(product.cost); // Actual cost
+
         items.push({
           productId: line.productId,
           quantity: qty,
-          unitPrice,
-          totalPrice: unitPrice * qty,
+          unitPrice: productCost, // Store cost price for OrderItem cost tracking
+          totalPrice: productCost * qty, // Cost * qty for cost tracking
           notes: line.notes,
         });
-        subtotal += unitPrice * qty;
+        subtotal += salePrice * qty; // Subtotal uses sale price
+        materialCost += productCost * qty; // Track material cost
       } else if (line.type === 'RECIPE' && line.recipeId) {
         // Use cost engine for accurate material cost including CHARM matching rules
         if (!line.customInput) throw new AppError('Custom input is required for recipe lines', 400);
@@ -298,15 +457,59 @@ export const orderService = {
       }
     }
 
-    return orderRepository.replaceLines(id, data, items, subtotal, materialCost);
+    // ─── Resolve packaging templates (ITEM per line, ORDER for whole order) ───
+    const packaging = await resolvePackagingCosts([
+      ...data.orderLines,
+      ...(data.orderPackagingTemplateId
+        ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+        : []),
+    ]);
+    let packagingCost = packaging.orderPackagingCost;
+    data.orderLines.forEach((_, i) => {
+      packagingCost += packaging.linePackagingCosts.get(i) || 0;
+    });
+    // Attach per-line packaging template ids (ITEM type) onto the stored lines.
+    // ORDER-type template is stored separately in orders.order_packaging_template_id —
+    // it must NOT overwrite a line's ITEM template.
+    const linesToStore = data.orderLines.map((line, i) => ({
+      ...line,
+      packagingTemplateId: packaging.lineTemplateIds.get(i) || undefined,
+    }));
+
+    return orderRepository.replaceLines(
+      id,
+      { ...data, orderLines: linesToStore },
+      items,
+      subtotal,
+      materialCost,
+      packagingCost,
+    );
   },
 
-  async update(id: string, data: { discount?: number; notes?: string }) {
+  async update(
+    id: string,
+    data: {
+      discount?: number;
+      paidAmount?: number;
+      deadline?: string;
+      shippingCost?: number;
+      shippingPaidBy?: string;
+      notes?: string;
+    },
+  ) {
     const order = await orderRepository.findById(id);
     if (!order) {
       throw new AppError('Order not found', 404);
     }
-    if (order.status !== OrderStatus.Draft && order.status !== OrderStatus.WaitingConfirm) {
+    // Allow shipping-related fields to be updated at any status; block other field changes post-confirmation
+    const shippingOnly = Object.keys(data).every((k) =>
+      ['shippingCost', 'shippingPaidBy'].includes(k),
+    );
+    if (
+      !shippingOnly &&
+      order.status !== OrderStatus.Draft &&
+      order.status !== OrderStatus.WaitingConfirm
+    ) {
       throw new AppError('Cannot modify order after it has been confirmed');
     }
     return orderRepository.update(id, data);
@@ -317,10 +520,16 @@ export const orderService = {
     limit: number;
     status?: string;
     customerId?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
+    deadlineFilter?: string;
   }) {
     return orderRepository.list(params);
+  },
+
+  async getStatusCounts() {
+    return orderRepository.getStatusCounts();
   },
 
   async getById(id: string) {
@@ -329,5 +538,16 @@ export const orderService = {
       throw new AppError('Order not found', 404);
     }
     return order;
+  },
+
+  async markPaid(id: string, paidAmount: number) {
+    const order = await orderRepository.findById(id);
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+    if (paidAmount < 0) {
+      throw new AppError('Số tiền đã thanh toán không hợp lệ');
+    }
+    return orderRepository.update(id, { paidAmount });
   },
 };

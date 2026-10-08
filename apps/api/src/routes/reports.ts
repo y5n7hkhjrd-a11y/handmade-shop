@@ -4,6 +4,16 @@ import { OrderStatus } from '@handmade-shop/shared';
 
 export const reportRouter: Router = Router();
 
+/** ISO week key like "2026-W32" */
+function isoWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
 reportRouter.get('/revenue', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { startDate, endDate } = req.query;
@@ -136,9 +146,13 @@ reportRouter.get('/profit', async (req: Request, res: Response, next: NextFuncti
       ) => {
         const date = order.completedAt ? new Date(order.completedAt) : new Date();
         const key =
-          groupBy === 'month'
-            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-            : `${date.getFullYear()}`;
+          groupBy === 'day'
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            : groupBy === 'week'
+              ? isoWeekKey(date)
+              : groupBy === 'month'
+                ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+                : `${date.getFullYear()}`;
         if (!acc[key]) acc[key] = { revenue: 0, cost: 0, profit: 0, orderCount: 0 };
         acc[key]!.revenue += Number(order.salePriceSnapshot || 0);
         acc[key]!.cost += Number(order.costSnapshot || 0);

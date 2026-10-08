@@ -13,12 +13,12 @@ This guide walks through setting up **four Vercel projects** — two per environ
 
 We deploy **two separate Vercel projects** per environment because the web (Next.js) and API (Express) are independent apps with different build commands, environment variables, and lifecycles.
 
-| Environment    | Vercel Project              | App              | Root Directory | Framework       |
-| -------------- | --------------------------- | ---------------- | -------------- | --------------- |
-| **STAGING**    | `handmade-shop-web-staging` | Next.js frontend | `apps/web`     | Next.js         |
-| **STAGING**    | `handmade-shop-api-staging` | Express API      | `apps/api`     | Other (Node.js) |
-| **PRODUCTION** | `handmade-shop-web-prod`    | Next.js frontend | `apps/web`     | Next.js         |
-| **PRODUCTION** | `handmade-shop-api-prod`    | Express API      | `apps/api`     | Other (Node.js) |
+| Environment    | Vercel Project              | App              | Root Directory | Framework |
+| -------------- | --------------------------- | ---------------- | -------------- | --------- |
+| **STAGING**    | `handmade-shop-web-staging` | Next.js frontend | `apps/web`     | Next.js   |
+| **STAGING**    | `handmade-shop-api-staging` | Express API      | `apps/api`     | Express   |
+| **PRODUCTION** | `handmade-shop-web-prod`    | Next.js frontend | `apps/web`     | Next.js   |
+| **PRODUCTION** | `handmade-shop-api-prod`    | Express API      | `apps/api`     | Express   |
 
 ### URL Structure
 
@@ -90,7 +90,7 @@ The API project gets its build configuration from `apps/api/vercel.json` (alread
    >
    > **Why `cd ../..`?** Vercel treats `apps/api` as the project root. The lockfile and workspace config are at the monorepo root, so we navigate up two levels to access them.
    >
-   > **Why no build step for the API itself?** Vercel's `@vercel/node` runtime compiles the serverless function entry (`api/index.ts`) and its imports on-the-fly. The TypeScript build (`tsc`) is not needed.
+   > **Why no build step for the API itself?** Vercel's Express framework preset (`"framework": "express"` in `apps/api/vercel.json`) bundles the app exported from `src/index.ts` into a single serverless function at deploy time. The TypeScript build (`tsc`) is not needed.
 
 3. **Environment Variables** — add now (these are critical):
 
@@ -111,7 +111,7 @@ Repeat steps 3.1 and 3.2 for the staging environment:
 | Project | Name                        | Root Dir   | Framework |
 | ------- | --------------------------- | ---------- | --------- |
 | Web     | `handmade-shop-web-staging` | `apps/web` | Next.js   |
-| API     | `handmade-shop-api-staging` | `apps/api` | Other     |
+| API     | `handmade-shop-api-staging` | `apps/api` | Express   |
 
 Use the same build/install commands as their production counterparts, but with **staging** environment variables:
 
@@ -165,23 +165,18 @@ The API's build settings are defined in `apps/api/vercel.json`:
 {
   "buildCommand": "cd ../.. && pnpm --filter @handmade-shop/shared build && pnpm --filter @handmade-shop/api prisma:generate",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index.ts" }],
-  "functions": {
-    "api/index.ts": {
-      "memory": 256,
-      "maxDuration": 10
-    }
-  }
+  "framework": "express",
+  "regions": ["hnd1"]
 }
 ```
 
 **Key points:**
 
-- `framework: null` — tells Vercel this is not a built-in framework (it's Express).
-- `rewrites` — sends all requests to `api/index.ts`, which exports the Express app.
-- `functions` — allocates 256 MB memory and a 10-second max duration. Adjust `maxDuration` up to 30–60s if your API has slow queries.
-- The `installCommand` and `buildCommand` both navigate to the monorepo root via `cd ../..`.
+- `framework: "express"` — uses Vercel's built-in Express preset: the app exported from `src/index.ts` becomes a **single serverless function** with automatic routing to all paths (no `rewrites` needed). This overrides the "Other" (static) preset, which would otherwise demand an output directory (default `public`) and fail the build with `No Output Directory named "public" found`.
+- `regions: ["hnd1"]` — pins the serverless function to **Tokyo** (Vercel region `hnd1`), matching the Supabase database region (`ap-northeast-1`). Without this, the function runs in `iad1` (US East) by default and every DB query crosses the Pacific (~200 ms round-trip each). If you change the database region, update this to the matching Vercel region (e.g. `sin1` Singapore, `iad1` US East, `sfo1` San Francisco).
+- **No `rewrites`, `functions`, or `outputDirectory` needed** — the Express preset handles routing, function limits (configure memory/max duration in the Dashboard → Functions), and does not require any static output.
+- The `installCommand` and `buildCommand` both navigate to the monorepo root via `cd ../..`. The buildCommand generates Prisma Client and builds the shared package before the function is bundled.
+- **Do NOT add `outputDirectory`** — it makes Vercel treat the deployment as pre-built static files and skip compiling the function entirely (the API then returns raw TypeScript source, HTTP 200).
 
 > ⚠️ The `vercel.json` file is already committed to the repo. When Vercel imports the project (Section 3.2), it automatically picks up these settings. **Do not override the Build Command or Install Command in the Dashboard** — let `vercel.json` manage them to avoid config drift.
 
@@ -331,17 +326,27 @@ commands:
     steps:
       - run:
           command: |
-            cd << parameters.app-dir >>
+            # MUST run from the monorepo root, NOT from inside the app dir: the
+            # Vercel CLI resolves the project's Root Directory (apps/web or
+            # apps/api) relative to cwd, so deploying from inside the app dir
+            # doubles the path and fails with "The provided path .../apps/web/
+            # apps/web does not exist".
             mkdir -p .vercel
             echo "{\"projectId\":\"${<< parameters.project-id-env >>}\",\"orgId\":\"${VERCEL_ORG_ID}\"}" > .vercel/project.json
+            # Vercel CLI v58 checks VERCEL_ORG_ID/VERCEL_PROJECT_ID env vars BEFORE
+            # reading .vercel/project.json: if VERCEL_ORG_ID is set without
+            # VERCEL_PROJECT_ID it aborts with "You specified `VERCEL_ORG_ID` but you
+            # forgot to specify `VERCEL_PROJECT_ID`". Export both to target the project.
+            export VERCEL_PROJECT_ID="${<< parameters.project-id-env >>}"
             npx vercel deploy --prod --token=$VERCEL_TOKEN --yes
 ```
 
 This:
 
-1. Navigates to the app directory.
-2. Creates a `.vercel/project.json` with the correct project and org IDs.
-3. Runs `vercel deploy --prod` to deploy.
+1. Runs from the monorepo root (the CircleCI `working_directory: ~/project`) so the CLI can resolve the project's Root Directory (`apps/web` or `apps/api`) against the local checkout.
+2. Creates a `.vercel/project.json` with the correct project and org IDs (fallback link).
+3. Exports `VERCEL_PROJECT_ID` (alongside the already-set `VERCEL_ORG_ID`) so the CLI targets the intended project — this works around a v58 CLI check that rejects `VERCEL_ORG_ID` without `VERCEL_PROJECT_ID` before it even reads `project.json`.
+4. Runs `vercel deploy --prod` to deploy. The CLI uploads the monorepo (root lockfile and `packages/shared` included) while Vercel builds from the Root Directory — which is why the `cd ../..` commands in the committed `vercel.json` files work.
 
 > **`--prod`** flag deploys to the Production environment (the `main` branch in Vercel's terms). For staging, the `staging` branch still uses `--prod` because we want it to replace the staging project's current production deployment.
 >
@@ -475,7 +480,7 @@ git push origin main
 ### Deploy fails with "No matching framework detected"
 
 **Problem:** Vercel can't detect the framework for the API project.
-**Fix:** Ensure `apps/api/vercel.json` has `"framework": null` (or set it to `"other"` in the Dashboard). Also verify the `installCommand` and `buildCommand` correctly navigate to the monorepo root with `cd ../..`.
+**Fix:** Ensure `apps/api/vercel.json` sets `"framework": "express"` (this also fixes the `No Output Directory named "public" found` error, which comes from the "Other"/static preset). Also verify the `installCommand` and `buildCommand` correctly navigate to the monorepo root with `cd ../..`.
 
 ### "Module not found: @handmade-shop/shared"
 
@@ -495,8 +500,8 @@ git push origin main
 **Problem:** The Express app isn't handling requests.
 **Fix:**
 
-1. Verify `apps/api/api/index.ts` exports the Express app correctly.
-2. Verify `vercel.json` rewrites are correct: `{ "source": "/(.*)", "destination": "/api/index.ts" }`.
+1. Verify `apps/api/src/index.ts` exports the Express app as the default export.
+2. Verify `apps/api/vercel.json` has `"framework": "express"` so all routes are automatically routed to the app (a single Vercel Function).
 3. Check the function logs in Vercel Dashboard → API Project → Logs.
 
 ### "Deploy failed: Build exceeded serverless function limit"

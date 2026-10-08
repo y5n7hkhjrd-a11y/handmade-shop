@@ -1,28 +1,28 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { orderService } from '../services/orderService.js';
 import { validate } from '../middleware/validate.js';
-import { createOrderSchema, updateOrderSchema, paginationSchema } from '@handmade-shop/shared';
+import { AppError } from '../middleware/errorHandler.js';
+import { createOrderSchema, updateOrderSchema, listOrdersQuerySchema } from '@handmade-shop/shared';
 import { OrderStatus } from '@handmade-shop/shared';
 
 export const orderRouter: Router = Router();
 
 orderRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listOrdersQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const status = req.query.status as string | undefined;
-      const customerId = req.query.customerId as string | undefined;
-      const startDate = req.query.startDate as string | undefined;
-      const endDate = req.query.endDate as string | undefined;
+      const { page, limit, status, customerId, search, startDate, endDate, deadlineFilter } =
+        req.query as any;
       const result = await orderService.list({
         page,
         limit,
         status,
         customerId,
+        search,
         startDate,
         endDate,
+        deadlineFilter,
       });
       res.json({
         success: true,
@@ -39,6 +39,15 @@ orderRouter.get(
     }
   },
 );
+
+orderRouter.get('/counts', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counts = await orderService.getStatusCounts();
+    res.json({ success: true, data: counts });
+  } catch (error) {
+    next(error);
+  }
+});
 
 orderRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -64,7 +73,14 @@ orderRouter.post(
 
 orderRouter.patch('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status } = req.body;
+    const { status, shippingCost, shippingPaidBy } = req.body;
+    // Save shipping info if provided
+    if (shippingCost !== undefined || shippingPaidBy !== undefined) {
+      const updateData: any = {};
+      if (shippingCost !== undefined) updateData.shippingCost = shippingCost;
+      if (shippingPaidBy !== undefined) updateData.shippingPaidBy = shippingPaidBy;
+      await orderService.update(req.params.id!, updateData);
+    }
     const order = await orderService.updateStatus(req.params.id!, status as OrderStatus);
     res.json({ success: true, data: order });
   } catch (error) {
@@ -89,8 +105,30 @@ orderRouter.post('/:id/items', async (req: Request, res: Response, next: NextFun
 
 orderRouter.put('/:id/lines', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { orderLines, notes } = req.body;
-    const order = await orderService.updateLines(req.params.id!, { orderLines, notes });
+    const { orderLines, notes, paidAmount, deadline, orderPackagingTemplateId } = req.body;
+    if (paidAmount !== undefined && (typeof paidAmount !== 'number' || paidAmount < 0)) {
+      throw new Error('Số tiền đã thanh toán không hợp lệ');
+    }
+    const order = await orderService.updateLines(req.params.id!, {
+      orderLines,
+      notes,
+      paidAmount,
+      deadline,
+      orderPackagingTemplateId,
+    });
+    res.json({ success: true, data: order });
+  } catch (error) {
+    next(error);
+  }
+});
+
+orderRouter.patch('/:id/payment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { paidAmount } = req.body;
+    if (typeof paidAmount !== 'number' || paidAmount < 0) {
+      throw new AppError('Số tiền đã thanh toán không hợp lệ');
+    }
+    const order = await orderService.markPaid(req.params.id!, paidAmount);
     res.json({ success: true, data: order });
   } catch (error) {
     next(error);

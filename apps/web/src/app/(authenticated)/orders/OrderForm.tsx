@@ -1,0 +1,1237 @@
+'use client';
+
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { apiClient } from '@/lib/api';
+import { formatCurrency } from '@handmade-shop/shared';
+import FlaticonIcon from '@/components/FlaticonIcon';
+import { NumberInput } from '@/components/NumberInput';
+import CustomSelect from '@/components/CustomSelect';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { SOCIAL_PLATFORMS } from './orderConstants';
+
+interface OrderLineInput {
+  type: 'RECIPE' | 'PRODUCT';
+  recipeId: string;
+  customInput: string;
+  salePrice: number;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  packagingTemplateId: string;
+  notes: string;
+}
+
+interface PackagingTemplateOption {
+  id: string;
+  name: string;
+  type: string;
+  totalCost: number;
+}
+
+interface OrderFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  editingOrder: {
+    id: string;
+    customerId: string;
+    deadline?: string;
+    notes?: string;
+    paidAmount?: number;
+    orderPackagingTemplateId?: string;
+    orderLines: Array<{
+      type: string;
+      recipeId?: string;
+      customInput?: string;
+      salePrice?: number;
+      productId?: string;
+      quantity?: number;
+      unitPrice?: number;
+      packagingTemplateId?: string;
+      notes?: string;
+    }>;
+  } | null;
+  token: string | null;
+  customers: any[];
+  products: any[];
+  recipes: any[];
+  matchingRules: any[];
+  packagingTemplates: PackagingTemplateOption[];
+  onSuccess: () => void;
+  onCustomerCreated: (customer: any) => void;
+  showToast: (message: string, type?: 'success' | 'error') => void;
+}
+
+function getRuleMatchInfo(input: string, pattern: string): { count: number; chars: string[] } {
+  try {
+    const regex = new RegExp(pattern, 'g');
+    const matches = input.match(regex);
+    return { count: matches ? matches.length : 0, chars: matches || [] };
+  } catch {
+    return { count: 0, chars: [] };
+  }
+}
+
+function getSocialId(value: string): string {
+  return value
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?/i, '')
+    .replace(/^(?:instagram\.com|threads\.(?:net|com)|facebook\.com|fb\.com|tiktok\.com)\/?/i, '')
+    .replace(/^@/, '')
+    .split(/[/?#]/)[0];
+}
+
+function getCustomerOptionLabel(customer: any): string {
+  const details: string[] = [];
+  const phoneDigits = customer.phone?.replace(/\D/g, '');
+
+  if (phoneDigits) details.push(phoneDigits.slice(-4));
+
+  const social = [
+    ['facebook', 'FB'],
+    ['instagram', 'IG'],
+    ['threads', 'Threads'],
+    ['tiktok', 'TikTok'],
+  ].find(([key]) => customer[key]);
+
+  if (social) {
+    const id = getSocialId(customer[social[0]]);
+    if (id) details.push(`${social[1]}: ${id}`);
+  }
+
+  return details.length > 0 ? `${customer.name} — ${details.join(' · ')}` : customer.name;
+}
+
+function getCustomerSortName(name: string): string {
+  const nameParts = name.trim().split(/\s+/);
+  const givenName = nameParts[nameParts.length - 1] || name;
+  return givenName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase();
+}
+
+function parseDateValue(value: string): Date | null {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  return year && month && day ? new Date(year, month - 1, day) : null;
+}
+
+function formatDateValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+interface OrderFormState {
+  customerId: string;
+  deadline: string;
+  notes: string;
+  paidAmount: number;
+  orderPackagingTemplateId: string;
+  orderLines: OrderLineInput[];
+}
+
+const EMPTY_ORDER_FORM: OrderFormState = {
+  customerId: '',
+  deadline: '',
+  notes: '',
+  paidAmount: 0,
+  orderPackagingTemplateId: '',
+  orderLines: [],
+};
+
+export default function OrderForm({
+  isOpen,
+  onClose,
+  editingOrder,
+  token,
+  customers,
+  products,
+  recipes,
+  matchingRules,
+  packagingTemplates,
+  onSuccess,
+  onCustomerCreated,
+  showToast,
+}: OrderFormProps) {
+  const [form, setForm] = useState<OrderFormState>({ ...EMPTY_ORDER_FORM });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false);
+  const [isDeadlinePickerOpen, setIsDeadlinePickerOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const NEW_CUSTOMER_INIT = {
+    name: '',
+    phone: '',
+    address: '',
+    notes: '',
+    facebook: '',
+    instagram: '',
+    tiktok: '',
+    threads: '',
+  };
+  const [newCustomer, setNewCustomer] = useState({ ...NEW_CUSTOMER_INIT });
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const advanceAfterSave = useRef(false);
+  const customerMenuRef = useRef<HTMLDivElement>(null);
+  const deadlinePickerRef = useRef<HTMLDivElement>(null);
+  const selectedCustomer = customers.find((customer) => customer.id === form.customerId);
+  // Mẫu đóng gói theo loại: ITEM cho từng dòng, ORDER cho cả đơn
+  const itemPackaging = useMemo(
+    () => (packagingTemplates || []).filter((p) => p.type === 'ITEM'),
+    [packagingTemplates],
+  );
+  const orderPackaging = useMemo(
+    () => (packagingTemplates || []).filter((p) => p.type === 'ORDER'),
+    [packagingTemplates],
+  );
+  const selectedOrderPackaging = orderPackaging.find((p) => p.id === form.orderPackagingTemplateId);
+  const sortedCustomers = useMemo(
+    () =>
+      [...customers].sort(
+        (a, b) =>
+          getCustomerSortName(a.name).localeCompare(getCustomerSortName(b.name)) ||
+          a.name.localeCompare(b.name, 'vi'),
+      ),
+    [customers],
+  );
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: firstWeekday + daysInMonth }, (_, index) =>
+      index < firstWeekday ? null : new Date(year, month, index - firstWeekday + 1),
+    );
+  }, [calendarMonth]);
+
+  // Escape closes only the top-most modal (AddCustomer first, then the main form)
+  useEscapeClose(
+    onClose,
+    isOpen && !showAddCustomer && !isCustomerMenuOpen && !isDeadlinePickerOpen,
+  );
+  useEscapeClose(() => setShowAddCustomer(false), showAddCustomer);
+  useEscapeClose(() => setIsCustomerMenuOpen(false), isCustomerMenuOpen);
+  useEscapeClose(() => setIsDeadlinePickerOpen(false), isDeadlinePickerOpen);
+  useBodyScrollLock(isOpen);
+
+  useEffect(() => {
+    if (!isCustomerMenuOpen) return;
+
+    const closeMenuOnOutsideClick = (event: MouseEvent) => {
+      if (!customerMenuRef.current?.contains(event.target as Node)) {
+        setIsCustomerMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closeMenuOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeMenuOnOutsideClick);
+  }, [isCustomerMenuOpen]);
+
+  useEffect(() => {
+    if (!isDeadlinePickerOpen) return;
+
+    const closePickerOnOutsideClick = (event: MouseEvent) => {
+      if (!deadlinePickerRef.current?.contains(event.target as Node)) {
+        setIsDeadlinePickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closePickerOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closePickerOnOutsideClick);
+  }, [isDeadlinePickerOpen]);
+
+  // Initialize form when opening
+  useEffect(() => {
+    if (isOpen) {
+      if (editingOrder) {
+        const orderLines = (editingOrder.orderLines || []).map((ol) => ({
+          type: (ol.type || 'PRODUCT') as 'RECIPE' | 'PRODUCT',
+          recipeId: ol.recipeId || '',
+          customInput: ol.customInput || '',
+          salePrice: Number(ol.salePrice || 0),
+          productId: ol.productId || '',
+          quantity: ol.quantity || 1,
+          unitPrice: Number(ol.unitPrice || 0),
+          packagingTemplateId: ol.packagingTemplateId || '',
+          notes: ol.notes || '',
+        }));
+        // Đóng gói cả đơn (ORDER) lưu ở cột riêng orders.order_packaging_template_id,
+        // tách hẳn với mẫu đóng gói ITEM của từng dòng sản phẩm.
+        setForm({
+          customerId: editingOrder.customerId,
+          deadline: editingOrder.deadline ? editingOrder.deadline.split('T')[0] : '',
+          notes: editingOrder.notes || '',
+          paidAmount: Number(editingOrder.paidAmount) || 0,
+          orderPackagingTemplateId: editingOrder.orderPackagingTemplateId || '',
+          orderLines,
+        });
+      } else {
+        setForm({ ...EMPTY_ORDER_FORM });
+      }
+      setFormErrors({});
+    }
+  }, [isOpen, editingOrder, packagingTemplates]);
+
+  // Compute cost preview for a single RECIPE line
+  const getRecipeLineCost = (line: { recipeId: string; customInput: string }) => {
+    const recipe = recipes.find((r: any) => r.id === line.recipeId);
+    if (!recipe) return null;
+    const recipeProducts = (recipe as any).recipeProducts || [];
+    let materialCost = 0;
+    const items = recipeProducts.map((rp: any) => {
+      const product = rp.product;
+      if (!product) return { ...rp, estimatedCost: 0, ruleInfo: null };
+      let cost = 0;
+      let ruleInfo: { name: string; code: string; count: number } | null = null;
+      if (product.type === 'BASE') {
+        cost = Number(product.cost) * rp.quantity;
+      } else if (rp.matchingRuleId) {
+        const rule = matchingRules.find((mr: any) => mr.id === rp.matchingRuleId);
+        if (rule && rule.pattern) {
+          const info = getRuleMatchInfo(line.customInput, rule.pattern);
+          ruleInfo = { name: rule.name, code: rule.code, count: info.count };
+          cost = info.count * Number(product.cost) * rp.quantity;
+        }
+      }
+      materialCost += cost;
+      return { ...rp, estimatedCost: cost, ruleInfo };
+    });
+    return { materialCost, items };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    if (!form.customerId) {
+      setFormErrors({ customerId: 'Vui lòng chọn khách hàng' });
+      return;
+    }
+    if (form.orderLines.length === 0) {
+      setFormErrors({ orderLines: 'Vui lòng thêm ít nhất một dòng sản phẩm hoặc công thức' });
+      return;
+    }
+    for (let i = 0; i < form.orderLines.length; i++) {
+      const line = form.orderLines[i]!;
+      if (line.type === 'RECIPE') {
+        if (!line.recipeId) {
+          setFormErrors({ [`line_${i}`]: 'Vui lòng chọn công thức' });
+          return;
+        }
+        if (!line.customInput) {
+          setFormErrors({ [`line_${i}`]: 'Vui lòng nhập custom input cho công thức' });
+          return;
+        }
+        if (!line.salePrice || Number(line.salePrice) <= 0) {
+          setFormErrors({ [`line_${i}`]: 'Vui lòng nhập giá bán cho công thức' });
+          return;
+        }
+      }
+      if (line.type === 'PRODUCT' && !line.productId) {
+        setFormErrors({ [`line_${i}`]: 'Vui lòng chọn sản phẩm' });
+        return;
+      }
+    }
+    try {
+      const body: Record<string, any> = {
+        deadline: form.deadline || undefined,
+        notes: form.notes,
+        orderPackagingTemplateId: form.orderPackagingTemplateId || undefined,
+        orderLines: form.orderLines.map((line) => {
+          if (line.type === 'RECIPE') {
+            return {
+              type: 'RECIPE' as const,
+              recipeId: line.recipeId,
+              customInput: line.customInput,
+              salePrice: Number(line.salePrice) || 0,
+              quantity: line.quantity || 1,
+              packagingTemplateId: line.packagingTemplateId || undefined,
+              notes: line.notes || undefined,
+            };
+          }
+          return {
+            type: 'PRODUCT' as const,
+            productId: line.productId,
+            quantity: line.quantity || 1,
+            unitPrice: Number(line.unitPrice) || 0,
+            packagingTemplateId: line.packagingTemplateId || undefined,
+            notes: line.notes || undefined,
+          };
+        }),
+      };
+
+      // Reset payment when editing order lines (prices may have changed)
+      if (editingOrder) {
+        body.paidAmount = 0;
+      } else {
+        body.paidAmount = form.paidAmount || 0;
+      }
+
+      if (editingOrder) {
+        await apiClient(`/orders/${editingOrder.id}/lines`, { method: 'PUT', body, token });
+        showToast('Đã lưu thay đổi');
+        if (advanceAfterSave.current) {
+          advanceAfterSave.current = false;
+          try {
+            await apiClient(`/orders/${editingOrder.id}/status`, {
+              method: 'PATCH',
+              body: { status: 'WaitingConfirm' },
+              token,
+            });
+            showToast('Đã xác nhận đơn hàng');
+          } catch (e: any) {
+            showToast(e.message || 'Xác nhận thất bại', 'error');
+          }
+        }
+      } else {
+        await apiClient('/orders', {
+          method: 'POST',
+          body: { ...body, customerId: form.customerId },
+          token,
+        });
+        showToast('Đã tạo đơn hàng');
+      }
+
+      onClose();
+      setForm({ ...EMPTY_ORDER_FORM });
+      setFormErrors({});
+      onSuccess();
+    } catch (e: any) {
+      showToast(e.message || 'Thao tác thất bại', 'error');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Create/Edit Order Modal */}
+      <div className="modal-overlay" role="dialog" aria-modal="true">
+        <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="p-6 border-b flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {editingOrder ? 'Chỉnh sửa đơn hàng' : 'Đơn hàng mới'}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {editingOrder
+                  ? 'Điều chỉnh sản phẩm và thông tin đơn hàng'
+                  : 'Tạo đơn hàng mới cho khách — mỗi dòng có thể là sản phẩm hoặc công thức'}
+              </p>
+            </div>
+            {editingOrder && (
+              <button
+                type="button"
+                onClick={() => {
+                  advanceAfterSave.current = true;
+                  const formEl = document.querySelector('form');
+                  if (formEl) formEl.requestSubmit();
+                }}
+                className="btn-success"
+              >
+                Xác nhận →
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="label !mb-0">
+                    Khách hàng <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomerMenuOpen(false);
+                      setShowAddCustomer(true);
+                      setNewCustomer({ ...NEW_CUSTOMER_INIT });
+                    }}
+                    className="text-xs font-medium text-avocado-600 hover:text-avocado-700 flex items-center gap-1 transition-colors"
+                    title="Thêm khách hàng mới"
+                  >
+                    <FlaticonIcon name="plus" size="xs" /> Thêm mới
+                  </button>
+                </div>
+                <div ref={customerMenuRef} className="relative">
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isCustomerMenuOpen}
+                    className={`input w-full flex items-center justify-between gap-3 text-left ${formErrors.customerId ? 'input-error' : ''}`}
+                    onClick={() => {
+                      setIsDeadlinePickerOpen(false);
+                      setIsCustomerMenuOpen((open) => !open);
+                    }}
+                  >
+                    <span className={selectedCustomer ? 'truncate text-gray-800' : 'text-gray-400'}>
+                      {selectedCustomer
+                        ? getCustomerOptionLabel(selectedCustomer)
+                        : 'Chọn khách hàng...'}
+                    </span>
+                    <svg
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                      className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform ${isCustomerMenuOpen ? 'rotate-180' : ''}`}
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  {isCustomerMenuOpen && (
+                    <div
+                      role="listbox"
+                      className="absolute z-30 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl shadow-gray-200/60"
+                    >
+                      {sortedCustomers.map((customer: any) => {
+                        const isSelected = customer.id === form.customerId;
+                        return (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-mint-50 text-mint-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                            onClick={() => {
+                              setForm({ ...form, customerId: customer.id });
+                              setIsCustomerMenuOpen(false);
+                              if (formErrors.customerId) {
+                                setFormErrors({ ...formErrors, customerId: '' });
+                              }
+                            }}
+                          >
+                            <span className="block truncate">
+                              {getCustomerOptionLabel(customer)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {formErrors.customerId && (
+                  <p className="text-xs text-red-600 mt-1">{formErrors.customerId}</p>
+                )}
+              </div>
+              <div>
+                <label className="label">Hạn chót</label>
+                <div ref={deadlinePickerRef} className="relative">
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded={isDeadlinePickerOpen}
+                    className={`input w-full flex items-center gap-2.5 text-left ${form.deadline ? 'text-gray-800' : 'text-gray-400'}`}
+                    onClick={() => {
+                      const selectedDate = parseDateValue(form.deadline);
+                      setCalendarMonth(selectedDate || new Date());
+                      setIsCustomerMenuOpen(false);
+                      setIsDeadlinePickerOpen((open) => !open);
+                    }}
+                  >
+                    <FlaticonIcon name="calendar" size="xs" className="text-avocado-600" />
+                    <span className="flex-1">
+                      {form.deadline
+                        ? parseDateValue(form.deadline)?.toLocaleDateString('vi-VN')
+                        : 'Chọn hạn chót'}
+                    </span>
+                    <svg viewBox="0 0 20 20" className="w-4 h-4 text-gray-400" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  {isDeadlinePickerOpen && (
+                    <div
+                      role="dialog"
+                      aria-label="Chọn hạn chót"
+                      className="absolute right-0 z-30 mt-1 w-60 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-2.5 shadow-xl shadow-gray-200/60"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          aria-label="Tháng trước"
+                          className="w-7 h-7 rounded-lg text-gray-500 hover:bg-mint-50 hover:text-mint-700 transition-colors"
+                          onClick={() =>
+                            setCalendarMonth(
+                              (month) => new Date(month.getFullYear(), month.getMonth() - 1, 1),
+                            )
+                          }
+                        >
+                          ‹
+                        </button>
+                        <span className="text-sm font-semibold text-gray-800 capitalize">
+                          {calendarMonth.toLocaleDateString('vi-VN', {
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Tháng sau"
+                          className="w-7 h-7 rounded-lg text-gray-500 hover:bg-mint-50 hover:text-mint-700 transition-colors"
+                          onClick={() =>
+                            setCalendarMonth(
+                              (month) => new Date(month.getFullYear(), month.getMonth() + 1, 1),
+                            )
+                          }
+                        >
+                          ›
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-7 mb-1 text-center text-[10px] font-semibold text-gray-400">
+                        {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
+                          <span key={day}>{day}</span>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {calendarDays.map((date, index) => {
+                          if (!date) return <span key={`empty-${index}`} />;
+                          const value = formatDateValue(date);
+                          const isSelected = value === form.deadline;
+                          const isToday = value === formatDateValue(new Date());
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={`h-7 rounded-md text-xs transition-colors ${isSelected ? 'bg-avocado-600 text-white font-semibold shadow-sm' : isToday ? 'bg-mint-50 text-mint-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+                              onClick={() => {
+                                setForm({ ...form, deadline: value });
+                                setIsDeadlinePickerOpen(false);
+                              }}
+                            >
+                              {date.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between border-t border-gray-100 pt-2.5">
+                        <button
+                          type="button"
+                          className="text-xs text-gray-400 hover:text-gray-600"
+                          onClick={() => {
+                            setForm({ ...form, deadline: '' });
+                            setIsDeadlinePickerOpen(false);
+                          }}
+                        >
+                          Xóa ngày
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-avocado-600 hover:text-avocado-700"
+                          onClick={() => {
+                            const today = new Date();
+                            setForm({ ...form, deadline: formatDateValue(today) });
+                            setCalendarMonth(today);
+                            setIsDeadlinePickerOpen(false);
+                          }}
+                        >
+                          Hôm nay
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Order Lines */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="label !mb-0">Sản phẩm / Công thức</label>
+              </div>
+
+              {form.orderLines.map((line, idx) => {
+                const type = line.type;
+                const selectedLinePackaging = itemPackaging.find(
+                  (p) => p.id === line.packagingTemplateId,
+                );
+                return (
+                  <div
+                    key={idx}
+                    className="p-4 mb-3 bg-white border border-gray-200 rounded-xl relative group/line"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const lines = form.orderLines.filter((_, i) => i !== idx);
+                        setForm({ ...form, orderLines: lines });
+                      }}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-300 transition-all opacity-0 group-hover/line:opacity-100 shadow-sm"
+                      title="Xóa dòng này"
+                    >
+                      ✕
+                    </button>
+
+                    {/* Line type toggle */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lines = [...form.orderLines];
+                          lines[idx] = {
+                            ...lines[idx]!,
+                            type: 'RECIPE',
+                            recipeId: line.recipeId || '',
+                            customInput: line.customInput || '',
+                            salePrice: line.salePrice || 0,
+                            productId: '',
+                            quantity: 1,
+                            unitPrice: 0,
+                            packagingTemplateId: line.packagingTemplateId || '',
+                          };
+                          setForm({ ...form, orderLines: lines });
+                        }}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'RECIPE' ? 'bg-avocado-100 text-avocado-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                      >
+                        <FlaticonIcon name="receipt" size="xs" /> Công thức
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lines = [...form.orderLines];
+                          lines[idx] = {
+                            ...lines[idx]!,
+                            type: 'PRODUCT',
+                            recipeId: '',
+                            customInput: '',
+                            salePrice: 0,
+                            productId: line.productId || '',
+                            quantity: line.quantity || 1,
+                            unitPrice: line.unitPrice || 0,
+                            packagingTemplateId: line.packagingTemplateId || '',
+                          };
+                          setForm({ ...form, orderLines: lines });
+                        }}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${type === 'PRODUCT' ? 'bg-avocado-100 text-avocado-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                      >
+                        <FlaticonIcon name="box-open" size="xs" /> Sản phẩm
+                      </button>
+                    </div>
+
+                    {/* RECIPE fields */}
+                    {type === 'RECIPE' && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="col-span-2">
+                            <label className="text-[10px] text-gray-500 font-medium">
+                              Công thức
+                            </label>
+                            <CustomSelect
+                              value={line.recipeId}
+                              onChange={(recipeId) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, recipeId };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              options={[
+                                { value: '', label: 'Chọn...' },
+                                ...recipes.map((r: any) => ({ value: r.id, label: r.name })),
+                              ]}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-medium">
+                              Số lượng
+                            </label>
+                            <NumberInput
+                              className="input text-sm"
+                              value={line.quantity}
+                              onChange={(val) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, quantity: val };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              min={1}
+                              step={1}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                              Custom Input <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              className="input text-sm font-mono uppercase"
+                              value={line.customInput}
+                              onChange={(e) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = {
+                                  ...lines[idx]!,
+                                  customInput: e.target.value.toUpperCase(),
+                                };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              placeholder="VD: ABCD"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 font-medium">
+                              Giá bán <span className="text-red-500">*</span>
+                            </label>
+                            <NumberInput
+                              className="input text-sm"
+                              value={line.salePrice}
+                              onChange={(val) => {
+                                const lines = [...form.orderLines];
+                                lines[idx] = { ...lines[idx]!, salePrice: val };
+                                setForm({ ...form, orderLines: lines });
+                              }}
+                              step={1000}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                        {/* Cost preview — each line shows the charm's matching rule inline */}
+                        {line.recipeId &&
+                          line.customInput &&
+                          (() => {
+                            const info = getRecipeLineCost({
+                              recipeId: line.recipeId,
+                              customInput: line.customInput,
+                            });
+                            if (!info) return null;
+                            return (
+                              <div className="p-2 bg-avocado-50 rounded-lg border border-avocado-100">
+                                <p className="text-[10px] font-medium text-avocado-700 mb-1">
+                                  Chi phí vật liệu ước tính:{' '}
+                                  <strong>{formatCurrency(info.materialCost)}</strong>
+                                </p>
+                                <div className="grid grid-cols-[auto_auto_auto_auto] gap-x-2.5 items-center text-[10px] text-avocado-600">
+                                  {info.items.map((item: any, ii: number) => {
+                                    const ruleInfo = item.ruleInfo;
+                                    return (
+                                      <Fragment key={ii}>
+                                        <span className="truncate font-medium text-avocado-800 min-w-0 max-w-44 py-0.5">
+                                          {item.product?.name || '?'}
+                                        </span>
+                                        <span className="flex items-center gap-1 min-w-0 py-0.5">
+                                          {ruleInfo ? (
+                                            <>
+                                              <span className="truncate min-w-0 max-w-40">
+                                                {ruleInfo.name}
+                                              </span>
+                                              <code className="text-[9px] font-mono px-1 py-px rounded bg-white border border-avocado-100 text-avocado-400 flex-shrink-0">
+                                                {ruleInfo.code}
+                                              </code>
+                                            </>
+                                          ) : null}
+                                        </span>
+                                        <span className="flex-shrink-0 tabular-nums text-right py-0.5">
+                                          {ruleInfo ? (
+                                            <>
+                                              <strong>{ruleInfo.count}</strong> ký tự
+                                            </>
+                                          ) : null}
+                                        </span>
+                                        <span className="flex-shrink-0 tabular-nums text-right py-0.5">
+                                          {formatCurrency(item.estimatedCost)}
+                                        </span>
+                                      </Fragment>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                      </div>
+                    )}
+
+                    {/* PRODUCT fields */}
+                    {type === 'PRODUCT' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] text-gray-500 font-medium">Sản phẩm</label>
+                          <CustomSelect
+                            value={line.productId}
+                            onChange={(productId) => {
+                              const lines = [...form.orderLines];
+                              const p = products.find((p: any) => p.id === productId);
+                              const defaultPrice = p ? Number(p.cost || 0) : 0;
+                              lines[idx] = {
+                                ...lines[idx]!,
+                                productId,
+                                unitPrice: line.unitPrice || defaultPrice,
+                              };
+                              setForm({ ...form, orderLines: lines });
+                            }}
+                            options={[
+                              { value: '', label: 'Chọn...' },
+                              ...products.map((p: any) => ({
+                                value: p.id,
+                                label: `${p.name} (${formatCurrency(Number(p.cost))})`,
+                              })),
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-500 font-medium">Giá bán</label>
+                          <NumberInput
+                            className="input text-sm"
+                            value={line.unitPrice}
+                            onChange={(val) => {
+                              const lines = [...form.orderLines];
+                              lines[idx] = { ...lines[idx]!, unitPrice: val };
+                              setForm({ ...form, orderLines: lines });
+                            }}
+                            step={1000}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Đóng gói cho dòng này (mẫu loại ITEM) */}
+                    {itemPackaging.length > 0 && (
+                      <div className="mt-2">
+                        <label className="text-[10px] text-gray-500 font-medium">
+                          📦 Đóng gói cho sản phẩm này (cost × SL)
+                        </label>
+                        <CustomSelect
+                          value={line.packagingTemplateId || ''}
+                          onChange={(packagingTemplateId) => {
+                            const lines = [...form.orderLines];
+                            lines[idx] = { ...lines[idx]!, packagingTemplateId };
+                            setForm({ ...form, orderLines: lines });
+                          }}
+                          options={[
+                            { value: '', label: 'Không đóng gói' },
+                            ...itemPackaging.map((p) => ({
+                              value: p.id,
+                              label: `${p.name} — ${formatCurrency(Number(p.totalCost))}/sản phẩm`,
+                            })),
+                          ]}
+                        />
+                        {selectedLinePackaging && (
+                          <p className="text-[10px] text-pink-600 mt-1">
+                            Phí đóng gói dòng này:{' '}
+                            <strong>
+                              {formatCurrency(
+                                Number(selectedLinePackaging.totalCost) * (line.quantity || 1),
+                              )}
+                            </strong>{' '}
+                            ({formatCurrency(Number(selectedLinePackaging.totalCost))} ×{' '}
+                            {line.quantity || 1})
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Notes for any type */}
+                    <div className="mt-2">
+                      <textarea
+                        className="input text-sm"
+                        rows={1}
+                        value={line.notes || ''}
+                        onChange={(e) => {
+                          const lines = [...form.orderLines];
+                          lines[idx] = { ...lines[idx]!, notes: e.target.value };
+                          setForm({ ...form, orderLines: lines });
+                        }}
+                        placeholder="Ghi chú cho sản phẩm này..."
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add line button — pink dashed */}
+              <button
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    orderLines: [
+                      ...form.orderLines,
+                      {
+                        type: 'PRODUCT',
+                        productId: '',
+                        quantity: 1,
+                        unitPrice: 0,
+                        recipeId: '',
+                        customInput: '',
+                        salePrice: 0,
+                        packagingTemplateId: '',
+                        notes: '',
+                      },
+                    ],
+                  })
+                }
+                className="w-full py-3 border-2 border-dashed border-pink-200 rounded-xl text-sm font-medium text-avocado-500 hover:text-avocado-600 hover:border-avocado-300 hover:bg-pink-50/50 transition-all"
+              >
+                <FlaticonIcon name="plus" size="xs" className="mr-1" /> Thêm sản phẩm / Công thức
+              </button>
+
+              {formErrors.orderLines && (
+                <p className="mt-1 text-xs text-red-600">{formErrors.orderLines}</p>
+              )}
+            </div>
+
+            {/* Đóng gói cho cả đơn (mẫu loại ORDER) */}
+            <div>
+              <label className="text-[10px] text-gray-500 font-medium">
+                🎁 Đóng gói cho cả đơn <span className="text-gray-400 font-normal">(tùy chọn)</span>
+              </label>
+              {orderPackaging.length > 0 ? (
+                <>
+                  <CustomSelect
+                    value={form.orderPackagingTemplateId}
+                    onChange={(orderPackagingTemplateId) =>
+                      setForm({ ...form, orderPackagingTemplateId })
+                    }
+                    options={[
+                      { value: '', label: 'Không đóng gói cả đơn' },
+                      ...orderPackaging.map((p) => ({
+                        value: p.id,
+                        label: `${p.name} — ${formatCurrency(Number(p.totalCost))}/đơn`,
+                      })),
+                    ]}
+                  />
+                  {selectedOrderPackaging && (
+                    <p className="text-[10px] text-pink-600 mt-1">
+                      Phí đóng gói cả đơn:{' '}
+                      <strong>{formatCurrency(Number(selectedOrderPackaging.totalCost))}</strong>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">
+                  Chưa có mẫu đóng gói cả đơn — tạo tại trang{' '}
+                  <a href="/packaging" target="_blank" className="text-avocado-600 underline">
+                    Đóng gói
+                  </a>
+                </p>
+              )}
+            </div>
+
+            {/* Order total preview */}
+            {(() => {
+              let totalSalePrice = 0;
+              form.orderLines.forEach((line) => {
+                if (line.type === 'RECIPE')
+                  totalSalePrice += (Number(line.salePrice) || 0) * (line.quantity || 1);
+                else totalSalePrice += (Number(line.unitPrice) || 0) * (line.quantity || 1);
+              });
+              // Phí đóng gói ước tính: ITEM × SL + ORDER một lần
+              let packagingCost = 0;
+              form.orderLines.forEach((line) => {
+                if (!line.packagingTemplateId) return;
+                const tpl = itemPackaging.find((p) => p.id === line.packagingTemplateId);
+                if (tpl) packagingCost += Number(tpl.totalCost) * (line.quantity || 1);
+              });
+              const orderTpl = orderPackaging.find((p) => p.id === form.orderPackagingTemplateId);
+              if (orderTpl) packagingCost += Number(orderTpl.totalCost);
+              if (totalSalePrice <= 0 && packagingCost <= 0) return null;
+              return (
+                <div className="p-3 bg-gradient-to-br from-avocado-50 to-avocado-50/30 rounded-xl border border-avocado-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">
+                      Tổng giá trị đơn hàng
+                    </span>
+                    <span className="text-lg font-bold text-avocado-600">
+                      {formatCurrency(totalSalePrice)}
+                    </span>
+                  </div>
+                  {packagingCost > 0 && (
+                    <div className="flex items-center justify-between mt-1 text-xs">
+                      <span className="text-gray-500">Phí đóng gói (giá vốn)</span>
+                      <span className="font-semibold text-pink-600">
+                        {formatCurrency(packagingCost)}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {form.orderLines.filter((l) => l.type === 'RECIPE' && l.recipeId).length} công
+                    thức,{' '}
+                    {form.orderLines.filter((l) => l.type === 'PRODUCT' && l.productId).length} sản
+                    phẩm
+                  </p>
+                </div>
+              );
+            })()}
+
+            <div>
+              <label className="label">
+                Ghi chú <span className="text-gray-400 font-normal">(không bắt buộc)</span>
+              </label>
+              <textarea
+                className="input"
+                rows={2}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Ghi chú hoặc yêu cầu đặc biệt"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button type="button" onClick={onClose} className="btn-secondary">
+                Hủy
+              </button>
+              <button type="submit" className="btn-primary">
+                {editingOrder ? 'Lưu thay đổi' : 'Tạo đơn hàng'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Add Customer Modal */}
+      {showAddCustomer && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                👤 Thêm khách hàng mới
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddCustomer(false)}
+                className="btn-ghost btn-icon hover:bg-gray-100 rounded-full"
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="label label-required">Tên khách hàng</label>
+                <input
+                  className="input"
+                  value={newCustomer.name}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                  placeholder="Nhập tên khách hàng"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <div>
+                  <label className="label">Số điện thoại</label>
+                  <input
+                    className="input"
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    placeholder="Số điện thoại"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label">Địa chỉ</label>
+                <input
+                  className="input"
+                  value={newCustomer.address}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                  placeholder="Địa chỉ"
+                />
+              </div>
+              <div>
+                <label className="label">Ghi chú</label>
+                <textarea
+                  className="input"
+                  rows={2}
+                  value={newCustomer.notes}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })}
+                  placeholder="Ghi chú về khách hàng"
+                />
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="px-5 pb-1">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <span className="w-1 h-3.5 rounded-full bg-avocado-400 inline-block" />
+                Mạng xã hội
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {SOCIAL_PLATFORMS.filter((p) => !p.phoneBased).map((platform) => (
+                  <div key={platform.key}>
+                    <label className="text-[11px] text-gray-400 mb-1 flex items-center gap-1.5">
+                      <span className="w-3.5 h-3.5">{platform.icon}</span>
+                      {platform.label}
+                    </label>
+                    <input
+                      className="input text-sm"
+                      value={(newCustomer as any)[platform.key] || ''}
+                      onChange={(e) =>
+                        setNewCustomer({ ...newCustomer, [platform.key]: e.target.value })
+                      }
+                      placeholder="URL hoặc username"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2.5 p-2.5 bg-mint-50 rounded-lg border border-mint-100">
+                <div className="flex items-center gap-1.5 text-[11px] text-mint-700">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="#0068FF">
+                    <path d="M12.49 10.2722v-.4496h1.3467v6.3218h-.7704a.576.576 0 01-.5763-.5729l-.0006.0005a3.273 3.273 0 01-1.9372.6321c-1.8138 0-3.2844-1.4697-3.2844-3.2823 0-1.8125 1.4706-3.2822 3.2844-3.2822a3.273 3.273 0 011.9372.6321l.0006.0005zM6.9188 7.7896v.205c0 .3823-.051.6944-.2995 1.0605l-.03.0343c-.0542.0615-.1815.206-.2421.2843L2.024 14.8h4.8948v.7682a.5764.5764 0 01-.5767.5761H0v-.3622c0-.4436.1102-.6414.2495-.8476L4.8582 9.23H.1922V7.7896h6.7266zm8.5513 8.3548a.4805.4805 0 01-.4803-.4798v-7.875h1.4416v8.3548H15.47zM20.6934 9.6C22.52 9.6 24 11.0807 24 12.9044c0 1.8252-1.4801 3.306-3.3066 3.306-1.8264 0-3.3066-1.4808-3.3066-3.306 0-1.8237 1.4802-3.3044 3.3066-3.3044zm-10.1412 5.253c1.0675 0 1.9324-.8645 1.9324-1.9312 0-1.065-.865-1.9295-1.9324-1.9295s-1.9324.8644-1.9324 1.9295c0 1.0667.865 1.9312 1.9324 1.9312zm10.1412-.0033c1.0737 0 1.945-.8707 1.945-1.9453 0-1.073-.8713-1.9436-1.945-1.9436-1.0753 0-1.945.8706-1.945 1.9436 0 1.0746.8697 1.9453 1.945 1.9453z" />
+                  </svg>
+                  <span>Zalo sẽ dùng số điện thoại của khách hàng</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddCustomer(false)}
+                className="btn-secondary"
+                disabled={creatingCustomer}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!token) return;
+                  if (!newCustomer.name.trim()) {
+                    showToast('Vui lòng nhập tên khách hàng', 'error');
+                    return;
+                  }
+                  setCreatingCustomer(true);
+                  try {
+                    const res = await apiClient<any>('/customers', {
+                      method: 'POST',
+                      body: {
+                        name: newCustomer.name.trim(),
+                        phone: newCustomer.phone || undefined,
+                        address: newCustomer.address || undefined,
+                        notes: newCustomer.notes || undefined,
+                        facebook: newCustomer.facebook || undefined,
+                        instagram: newCustomer.instagram || undefined,
+                        tiktok: newCustomer.tiktok || undefined,
+                        threads: newCustomer.threads || undefined,
+                      },
+                      token,
+                    });
+                    const created = res.data;
+                    onCustomerCreated(created);
+                    setForm({ ...form, customerId: created.id });
+                    setShowAddCustomer(false);
+                    showToast('Đã thêm khách hàng mới', 'success');
+                  } catch (e: any) {
+                    showToast(e.message || 'Thêm khách hàng thất bại', 'error');
+                  } finally {
+                    setCreatingCustomer(false);
+                  }
+                }}
+                className="btn-primary"
+                disabled={creatingCustomer}
+              >
+                {creatingCustomer ? 'Đang thêm...' : 'Thêm khách hàng'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 export interface AuthRequest extends Request {
   user?: {
     id: string;
-    email: string;
+    username: string;
     role: UserRole;
   };
 }
@@ -30,7 +30,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
-      email: string;
+      username: string;
       role: UserRole;
     };
     req.user = decoded;

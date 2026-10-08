@@ -2,19 +2,21 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { prisma } from '../lib/prisma.js';
 import { productRepository } from '../repositories/productRepository.js';
 import { validate } from '../middleware/validate.js';
-import { createProductSchema, updateProductSchema, paginationSchema } from '@handmade-shop/shared';
+import {
+  createProductSchema,
+  updateProductSchema,
+  listProductsQuerySchema,
+} from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
 export const productRouter: Router = Router();
 
 productRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listProductsQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const type = req.query.type as string | undefined;
-      const search = req.query.search as string | undefined;
+      const { page, limit, type, search } = req.query as any;
       const result = await productRepository.list({ page, limit, type, search });
       res.json({
         success: true,

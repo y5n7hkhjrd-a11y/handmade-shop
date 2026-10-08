@@ -12,8 +12,8 @@ authRouter.post(
   validate(loginSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password } = req.body;
-      const result = await authService.login(email, password);
+      const { username, password } = req.body;
+      const result = await authService.login(username, password);
       res.json({ success: true, data: result });
     } catch (error) {
       next(error);

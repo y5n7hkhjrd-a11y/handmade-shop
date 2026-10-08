@@ -1,4 +1,27 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const DEV_API_URL = 'http://localhost:4000/api';
+
+/**
+ * Resolve the API base URL.
+ *
+ * `NEXT_PUBLIC_API_URL` always wins when set (it is inlined at build time by
+ * Next.js). When it is missing — e.g. it was never added to the Vercel
+ * project's environment variables — we derive the URL at runtime from the
+ * current hostname so the deployed app works without any dashboard config:
+ *
+ *   https://handmade-shop-web-staging.vercel.app  →  https://handmade-shop-api-staging.vercel.app/api
+ *   https://handmade-shop-web-prod.vercel.app     →  https://handmade-shop-api-prod.vercel.app/api
+ */
+function resolveApiUrl(): string {
+  if (typeof window === 'undefined') return DEV_API_URL;
+  const { hostname } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return DEV_API_URL;
+  if (hostname.includes('-web-')) {
+    return `https://${hostname.replace('-web-', '-api-')}/api`;
+  }
+  return DEV_API_URL;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || resolveApiUrl();
 
 interface ApiOptions {
   method?: string;
@@ -36,13 +59,19 @@ export async function apiClient<T>(endpoint: string, options: ApiOptions = {}): 
 
 // Auth helpers
 export const authApi = {
-  login: (email: string, password: string) =>
+  login: (username: string, password: string) =>
     apiClient<{ success: boolean; data: { token: string; user: any } }>('/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { username, password },
     }),
 
-  register: (data: { email: string; password: string; name: string; role?: string }) =>
+  register: (data: {
+    username: string;
+    password: string;
+    name: string;
+    role?: string;
+    email?: string;
+  }) =>
     apiClient<{ success: boolean; data: any }>('/auth/register', {
       method: 'POST',
       body: data,

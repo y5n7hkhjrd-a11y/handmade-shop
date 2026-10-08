@@ -3,6 +3,7 @@
 import { useAuth } from '@/lib/auth-context';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import FlaticonIcon from '@/components/FlaticonIcon';
 import { copyToClipboard } from '@/lib/clipboard';
 
 export default function SettingsPage() {
@@ -12,9 +13,41 @@ export default function SettingsPage() {
   return (
     <div className="page-enter">
       <Toast toast={toast} />
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Cài đặt</h1>
-        <p className="text-gray-500 mt-1 text-sm">Cấu hình hệ thống và hồ sơ</p>
+      {/* ─── Header ─── */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-mint-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-pink-100/10 rounded-full blur-xl" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #cddda9 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div className="relative px-4 py-3 sm:px-6 sm:py-5">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3.5">
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                    <FlaticonIcon name="settings" size="lg" />
+                  </div>
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                      Cài đặt
+                    </h1>
+                  </div>
+                  <p className="text-sm text-gray-400 mt-0.5">Cấu hình hệ thống và hồ sơ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -22,19 +55,47 @@ export default function SettingsPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="card text-center">
             <div className="relative inline-block">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#E88DAB] to-[#D97D9E] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#7FA345] to-[#66863A] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mt-4">{user?.name || 'User'}</h2>
-            <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
-            <div className="mt-2">
+            <div className="mt-2.5 flex items-center justify-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-mint-50 to-avocado-50 border border-avocado-200/70 text-[#66863A] font-semibold text-sm shadow-sm">
+                <FlaticonIcon name="user" size="xs" />@{user?.username || user?.email || '—'}
+              </span>
+              {user?.username && (
+                <button
+                  onClick={() => copyToClipboard(user.username!)}
+                  className="copy-btn"
+                  title="Copy username"
+                >
+                  📋
+                </button>
+              )}
+            </div>
+            <div className="mt-2.5">
               <span className={`badge-${user?.role === 'Admin' ? 'pink' : 'blue'}`}>
                 {user?.role || '—'}
               </span>
             </div>
             <div className="mt-6 pt-4 border-t border-gray-100 space-y-2 text-left">
+              <div className="detail-row">
+                <span className="detail-label">Tên đăng nhập</span>
+                <div className="flex items-center gap-1">
+                  <span className="detail-value text-xs font-mono">{user?.username || '—'}</span>
+                  {user?.username && (
+                    <button
+                      onClick={() => copyToClipboard(user.username!)}
+                      className="copy-btn"
+                      title="Copy username"
+                    >
+                      📋
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="detail-row">
                 <span className="detail-label">User ID</span>
                 <div className="flex items-center gap-1">
@@ -73,14 +134,14 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <div className="p-3 bg-[#FCE7F3] rounded-lg border border-[#F9D6E5]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-[#D97D9E]">Admin</span>
+                  <span className="text-xs font-semibold text-[#66863A]">Admin</span>
                   <span className="badge-pink text-[10px]">Toàn quyền</span>
                 </div>
-                <p className="text-xs text-[#E88DAB] font-mono">admin@handmadeshop.com</p>
+                <p className="text-xs text-[#7FA345] font-mono">admin</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-xs text-[#D97D9E] font-mono">admin123</p>
+                  <p className="text-xs text-[#66863A] font-mono">admin123</p>
                   <button
-                    onClick={() => copyToClipboard('admin@handmadeshop.com / admin123')}
+                    onClick={() => copyToClipboard('admin / admin123')}
                     className="copy-btn"
                     title="Copy credentials"
                   >
@@ -88,16 +149,16 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="p-3 bg-mint-50 rounded-lg border border-mint-100">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-blue-700">Nhân viên</span>
+                  <span className="text-xs font-semibold text-mint-700">Nhân viên</span>
                   <span className="badge-blue text-[10px]">Hạn chế</span>
                 </div>
-                <p className="text-xs text-blue-600 font-mono">staff@handmadeshop.com</p>
+                <p className="text-xs text-mint-600 font-mono">staff</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-xs text-blue-500 font-mono">staff123</p>
+                  <p className="text-xs text-mint-500 font-mono">staff123</p>
                   <button
-                    onClick={() => copyToClipboard('staff@handmadeshop.com / staff123')}
+                    onClick={() => copyToClipboard('staff / staff123')}
                     className="copy-btn"
                     title="Copy credentials"
                   >
@@ -123,7 +184,7 @@ export default function SettingsPage() {
                     Ứng dụng
                   </p>
                 </div>
-                <p className="font-medium">Handmade Shop Management System</p>
+                <p className="font-medium">Linus</p>
               </div>
               <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
                 <div className="flex items-center gap-2 mb-1">
@@ -189,7 +250,7 @@ export default function SettingsPage() {
                   method: 'POST',
                   path: '/api/auth/login',
                   desc: 'Đăng nhập',
-                  color: 'text-[#D97D9E]',
+                  color: 'text-[#66863A]',
                 },
                 {
                   method: 'GET',

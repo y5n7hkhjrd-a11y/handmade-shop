@@ -4,11 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient } from '@/lib/api';
 import { formatCurrency } from '@handmade-shop/shared';
+import { NumberInput } from '@/components/NumberInput';
 import { useToast } from '@/hooks/useToast';
+import { useEscapeClose } from '@/hooks/useEscapeClose';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import Toast from '@/components/Toast';
+import FlaticonIcon from '@/components/FlaticonIcon';
+import { useSort, SortIcon } from '@/hooks/useSort';
 import { SkeletonRow } from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
+import CustomSelect from '@/components/CustomSelect';
 
 interface Product {
   id: string;
@@ -27,8 +33,8 @@ interface MatchingRule {
 }
 
 const typeConfig: Record<string, { icon: string; badge: string; desc: string }> = {
-  BASE: { icon: '🔷', badge: 'badge-blue', desc: 'Base component' },
-  CHARM: { icon: '✨', badge: 'badge-pink', desc: 'Charm / add-on' },
+  BASE: { icon: 'box', badge: 'badge-blue', desc: 'Base component' },
+  CHARM: { icon: 'stars', badge: 'badge-pink', desc: 'Charm / add-on' },
 };
 
 export default function ProductsPage() {
@@ -51,6 +57,9 @@ export default function ProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast, showToast } = useToast();
+
+  useEscapeClose(() => setShowForm(false), showForm);
+  useBodyScrollLock(showForm);
 
   const loadProducts = useCallback(async () => {
     if (!token) return;
@@ -158,16 +167,32 @@ export default function ProductsPage() {
     icon.appendChild(btnRow);
     dialog.appendChild(icon);
     overlay.appendChild(dialog);
-    cancelBtn.addEventListener('click', () => document.body.removeChild(overlay));
-    deleteBtn.addEventListener('click', () => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const removeOverlay = () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
       document.body.removeChild(overlay);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') removeOverlay();
+    };
+    cancelBtn.addEventListener('click', () => removeOverlay());
+    deleteBtn.addEventListener('click', () => {
+      removeOverlay();
       handleDelete(product.id);
     });
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) document.body.removeChild(overlay);
-    });
     document.body.appendChild(overlay);
+    window.addEventListener('keydown', onKeyDown);
   };
+
+  const filteredProducts = products.filter(
+    (p) =>
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && p.isActive) ||
+      (statusFilter === 'inactive' && !p.isActive),
+  );
+  const { sortedData, sortKey, sortDir, toggleSort } = useSort(filteredProducts, 'name', 'asc');
 
   const handleToggleStatus = async (product: Product) => {
     if (!token) return;
@@ -188,29 +213,70 @@ export default function ProductsPage() {
     <div className="page-enter">
       <Toast toast={toast} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nguyên vật liệu</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Định nghĩa giá trị (giá vốn) cho các thành phần — {products.length} loại
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setForm({ type: 'BASE', name: '', description: '', cost: 0, trackInventory: true });
-            setFormErrors({});
-            setShowForm(true);
+      {/* ─── Header ─── */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-50 via-white to-avocado-50/70 border border-pink-100/70 shadow-[0_2px_12px_-4px_rgba(127,163,69,0.15)] mb-4 sm:mb-6">
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-gradient-to-br from-pink-200/25 to-mint-200/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-gradient-to-tr from-mint-200/20 to-pink-200/20 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/3 w-16 h-16 bg-pink-100/10 rounded-full blur-xl" />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, #cddda9 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
           }}
-          className="btn-primary"
-        >
-          + Thêm nguyên vật liệu
-        </button>
+        />
+        <div className="relative px-4 py-3 sm:px-6 sm:py-5">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-3.5">
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-xl bg-pink-500 flex items-center justify-center text-white shadow-md ring-1 ring-white/60">
+                    <FlaticonIcon name="box" size="lg" />
+                  </div>
+                  <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-pink-300/30 to-mint-300/30 blur-sm -z-10" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                      Nguyên vật liệu
+                    </h1>
+                    {products.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-100 text-pink-700 shadow-sm ring-1 ring-pink-200/50">
+                        <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
+                        {products.length}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    Định nghĩa giá trị (giá vốn) cho các thành phần
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setEditingId(null);
+                setForm({ type: 'BASE', name: '', description: '', cost: 0, trackInventory: true });
+                setFormErrors({});
+                setShowForm(true);
+              }}
+              className="btn-primary !gap-1.5 !px-4"
+            >
+              <span className="text-base leading-none">＋</span>
+              Thêm
+            </button>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-transparent" />
       </div>
 
       <div className="action-bar">
         <div className="relative flex-1 max-w-xs">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <FlaticonIcon
+            name="search"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             className="input pl-9"
             placeholder="Tìm kiếm..."
@@ -222,18 +288,19 @@ export default function ProductsPage() {
             onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
           />
         </div>
-        <select
-          className="input max-w-[140px]"
+        <CustomSelect
+          className="w-full sm:max-w-[140px]"
           value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value);
+          onChange={(type) => {
+            setTypeFilter(type);
             setPage(1);
           }}
-        >
-          <option value="">Tất cả loại</option>
-          <option value="BASE">🔷 BASE</option>
-          <option value="CHARM">✨ CHARM</option>
-        </select>
+          options={[
+            { value: '', label: 'Tất cả loại' },
+            { value: 'BASE', label: '🔷 BASE' },
+            { value: 'CHARM', label: '✨ CHARM' },
+          ]}
+        />
         <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
           {(['all', 'active', 'inactive'] as const).map((s) => (
             <button
@@ -241,7 +308,7 @@ export default function ProductsPage() {
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
                 statusFilter === s
-                  ? 'bg-white text-[#D97D9E] shadow-sm'
+                  ? 'bg-white text-[#66863A] shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -252,12 +319,7 @@ export default function ProductsPage() {
       </div>
 
       {showForm && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowForm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b">
               <h2 className="text-xl font-semibold">
@@ -271,16 +333,17 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Loại</label>
-                  <select
-                    className={`input ${formErrors.type ? 'input-error' : ''}`}
+                  <CustomSelect
                     value={form.type}
-                    onChange={(e) => {
-                      setForm({ ...form, type: e.target.value });
+                    onChange={(type) => {
+                      setForm({ ...form, type });
                     }}
-                  >
-                    <option value="BASE">🔷 BASE — Thành phần cơ bản</option>
-                    <option value="CHARM">✨ CHARM — Phụ kiện</option>
-                  </select>
+                    options={[
+                      { value: 'BASE', label: '🔷 BASE — Thành phần cơ bản' },
+                      { value: 'CHARM', label: '✨ CHARM — Phụ kiện' },
+                    ]}
+                    hasError={!!formErrors.type}
+                  />
                 </div>
               </div>
 
@@ -317,13 +380,11 @@ export default function ProductsPage() {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                     đ
                   </span>
-                  <input
+                  <NumberInput
                     className={`input pl-7 ${formErrors.cost ? 'input-error' : ''}`}
-                    type="number"
-                    min={0}
-                    step={100}
                     value={form.cost}
-                    onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })}
+                    step={100}
+                    onChange={(val) => setForm({ ...form, cost: val })}
                     required
                     placeholder="0"
                   />
@@ -340,7 +401,7 @@ export default function ProductsPage() {
                 <input
                   type="checkbox"
                   id="trackInventory"
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  className="w-4 h-4 rounded border-gray-300 text-avocado-600 focus:ring-avocado-500"
                   checked={form.trackInventory}
                   onChange={(e) => setForm({ ...form, trackInventory: e.target.checked })}
                 />
@@ -371,61 +432,191 @@ export default function ProductsPage() {
       )}
 
       {loading ? (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tên</th>
-                  <th>Loại</th>
-                  <th className="text-right">Giá vốn</th>
-                  <th>Kho</th>
-                  <th>Trạng thái</th>
-                  <th className="text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <SkeletonRow key={i} cols={6} />
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile skeleton cards */}
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-1/2" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          {/* Desktop skeleton table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tên</th>
+                    <th>Loại</th>
+                    <th className="text-left">Giá vốn</th>
+                    <th>Kho</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <SkeletonRow key={i} cols={6} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="card p-0 overflow-hidden">
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tên</th>
-                  <th>Loại</th>
-                  <th className="text-right">Giá vốn</th>
-                  <th>Kho</th>
-                  <th>Trạng thái</th>
-                  <th className="text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products
-                  .filter(
-                    (p) =>
-                      statusFilter === 'all' ||
-                      (statusFilter === 'active' && p.isActive) ||
-                      (statusFilter === 'inactive' && !p.isActive),
-                  )
-                  .map((p) => (
+        <>
+          {/* Mobile product cards */}
+          <div className="md:hidden">
+            <div className="card p-0 overflow-hidden divide-y divide-gray-100">
+              {sortedData.map((p) => (
+                <div key={p.id} className="px-4 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${
+                        p.type === 'BASE'
+                          ? 'from-avocado-50 to-avocado-100'
+                          : 'from-pink-50 to-pink-100'
+                      } flex items-center justify-center text-lg shadow-sm flex-shrink-0`}
+                    >
+                      {typeConfig[p.type]?.icon ? (
+                        <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
+                      ) : (
+                        '📦'
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-gray-900 text-sm truncate">{p.name}</p>
+                        <span
+                          className={`${typeConfig[p.type]?.badge || 'badge-gray'} flex-shrink-0`}
+                        >
+                          {p.type}
+                        </span>
+                      </div>
+                      {p.description && (
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{p.description}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-gray-900 tabular-nums">
+                          {formatCurrency(Number(p.cost))}
+                        </span>
+                        <button
+                          onClick={() => handleToggleStatus(p)}
+                          className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full transition-all duration-150 ${
+                            p.isActive
+                              ? 'bg-emerald-50 text-emerald-600 active:bg-emerald-100'
+                              : 'bg-gray-100 text-gray-400 active:bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              p.isActive ? 'bg-emerald-500' : 'bg-gray-400'
+                            }`}
+                          />
+                          {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
+                        </button>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                            p.trackInventory !== false
+                              ? 'bg-mint-50 text-mint-600'
+                              : 'bg-gray-100 text-gray-400'
+                          }`}
+                        >
+                          {p.trackInventory !== false ? 'Theo dõi kho' : 'Không theo dõi'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(p)}
+                        className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:bg-mint-50 hover:text-mint-600 transition-all duration-150"
+                        title="Sửa"
+                        aria-label="Chỉnh sửa"
+                      >
+                        <FlaticonIcon name="pencil" size="xs" />
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(p)}
+                        className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150"
+                        title="Xóa"
+                        aria-label="Xóa"
+                      >
+                        <FlaticonIcon name="trash" size="xs" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {products.length === 0 && (
+                <table className="w-full">
+                  <tbody>
+                    <EmptyState
+                      emoji="📦"
+                      title="Không tìm thấy nguyên vật liệu"
+                      message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
+                    />
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="mt-3">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </div>
+
+          {/* Desktop product table */}
+          <div className="card p-0 overflow-hidden hidden md:block">
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('name')}
+                    >
+                      Tên <SortIcon sortKey="name" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="cursor-pointer select-none group"
+                      onClick={() => toggleSort('type')}
+                    >
+                      Loại <SortIcon sortKey="type" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th
+                      className="text-left cursor-pointer select-none group"
+                      onClick={() => toggleSort('cost')}
+                    >
+                      Giá vốn <SortIcon sortKey="cost" currentKey={sortKey} dir={sortDir} />
+                    </th>
+                    <th>Kho</th>
+                    <th>Trạng thái</th>
+                    <th className="text-left">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((p) => (
                     <tr key={p.id} className="group">
                       <td>
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
                               p.type === 'BASE'
-                                ? 'from-blue-50 to-blue-100'
+                                ? 'from-avocado-50 to-avocado-100'
                                 : 'from-pink-50 to-pink-100'
                             } flex items-center justify-center text-lg shadow-sm`}
                           >
-                            {typeConfig[p.type]?.icon || '📦'}
+                            {typeConfig[p.type]?.icon ? (
+                              <FlaticonIcon name={typeConfig[p.type]!.icon} size="sm" />
+                            ) : (
+                              '📦'
+                            )}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{p.name}</p>
@@ -440,7 +631,7 @@ export default function ProductsPage() {
                       <td>
                         <span className={typeConfig[p.type]?.badge || 'badge-gray'}>{p.type}</span>
                       </td>
-                      <td className="font-semibold tabular-nums text-right">
+                      <td className="font-semibold tabular-nums text-left">
                         {formatCurrency(Number(p.cost))}
                       </td>
                       <td>
@@ -471,40 +662,41 @@ export default function ProductsPage() {
                           {p.isActive ? 'Đang dùng' : 'Ngừng dùng'}
                         </button>
                       </td>
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <td className="text-left">
+                        <div className="inline-flex items-center border border-gray-200 rounded-full overflow-hidden bg-white shadow-sm">
                           <button
                             onClick={() => handleEdit(p)}
-                            className="btn-ghost btn-xs"
-                            title="Chỉnh sửa"
+                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-mint-50 hover:text-mint-600 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
+                            title="Sửa"
                             aria-label="Chỉnh sửa"
                           >
-                            ✏️
+                            <FlaticonIcon name="pencil" size="xs" />
                           </button>
                           <button
                             onClick={() => confirmDelete(p)}
-                            className="btn-ghost btn-xs hover:text-red-600"
+                            className="flex items-center justify-center w-[28px] h-[28px] hover:bg-red-50 hover:text-red-500 transition-all duration-150 text-gray-400 border-r border-gray-200 last:border-r-0"
                             title="Xóa"
                             aria-label="Xóa"
                           >
-                            🗑️
+                            <FlaticonIcon name="trash" size="xs" />
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                {products.length === 0 && (
-                  <EmptyState
-                    icon="📦"
-                    title="Không tìm thấy nguyên vật liệu"
-                    message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
-                  />
-                )}
-              </tbody>
-            </table>
+                  {products.length === 0 && (
+                    <EmptyState
+                      emoji="📦"
+                      title="Không tìm thấy nguyên vật liệu"
+                      message="Thêm nguyên vật liệu đầu tiên để bắt đầu."
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+        </>
       )}
     </div>
   );

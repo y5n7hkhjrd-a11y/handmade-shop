@@ -5,7 +5,8 @@ import { authApi } from './api';
 
 interface User {
   id: string;
-  email: string;
+  username: string;
+  email?: string;
   name: string;
   role: string;
   createdAt?: string;
@@ -15,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -39,8 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await authApi.login(email, password);
+  const login = useCallback(async (username: string, password: string) => {
+    const response = await authApi.login(username, password);
     const { token: newToken, user: newUser } = response.data;
     setToken(newToken);
     setUser(newUser);

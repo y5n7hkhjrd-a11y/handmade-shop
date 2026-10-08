@@ -1,21 +1,17 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { inventoryRepository } from '../repositories/inventoryRepository.js';
 import { validate } from '../middleware/validate.js';
-import { createInventoryTransactionSchema, paginationSchema } from '@handmade-shop/shared';
+import { createInventoryTransactionSchema, listInventoryQuerySchema } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
 export const inventoryRouter: Router = Router();
 
 inventoryRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listInventoryQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const type = req.query.type as string | undefined;
-      const productId = req.query.productId as string | undefined;
-      const startDate = req.query.startDate as string | undefined;
-      const endDate = req.query.endDate as string | undefined;
+      const { page, limit, type, productId, startDate, endDate } = req.query as any;
       const result = await inventoryRepository.list({
         page,
         limit,

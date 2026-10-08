@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate.js';
 import {
   createPackagingTemplateSchema,
   updatePackagingTemplateSchema,
-  paginationSchema,
+  listPackagingQuerySchema,
 } from '@handmade-shop/shared';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -13,12 +13,10 @@ export const packagingRouter: Router = Router();
 
 packagingRouter.get(
   '/',
-  validate(paginationSchema, 'query'),
+  validate(listPackagingQuerySchema, 'query'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { page, limit } = req.query as any;
-      const type = req.query.type as string | undefined;
-      const search = req.query.search as string | undefined;
+      const { page, limit, type, search } = req.query as any;
       const result = await packagingRepository.list({ page, limit, type, search });
       res.json({
         success: true,
@@ -64,6 +62,16 @@ packagingRouter.put(
   validate(updatePackagingTemplateSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Không cho sửa mẫu đã dùng trong đơn hàng đang hoạt động
+      const orderItemCount = await prisma.orderItem.count({
+        where: { packagingTemplateId: req.params.id!, order: { deletedAt: null } },
+      });
+      if (orderItemCount > 0) {
+        throw new AppError(
+          `Không thể sửa mẫu đóng gói này vì đã được sử dụng trong ${orderItemCount} đơn hàng.`,
+          400,
+        );
+      }
       const template = await packagingRepository.update(req.params.id!, req.body);
       if (!template) throw new AppError('Packaging template not found', 404);
       res.json({ success: true, data: template });
