@@ -445,8 +445,8 @@ export default function OrderDetail({
   // Shipping cost is for management tracking only, not included in sale price
   const computedTotalCost =
     itemTotal + Number(order.packagingCost || 0) + (shopPaysShipping ? shippingCost : 0);
-  const salePriceTotal =
-    Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.packagingCost || 0);
+  // Tổng cộng khách trả: không gồm phí đóng gói (đó là giá vốn)
+  const salePriceTotal = Number(order.subtotal || 0) - Number(order.discount || 0);
   const profit = Number(order.subtotal || 0) - Number(order.discount || 0) - computedTotalCost;
 
   return (
@@ -602,9 +602,6 @@ export default function OrderDetail({
               </span>
               <p className="font-bold text-lg text-avocado-600 mt-0.5">
                 {formatCurrency(salePriceTotal)}
-              </p>
-              <p className="text-[10px] text-gray-400 mt-0.5">
-                (đã gồm {formatCurrency(Number(order.packagingCost || 0))} phí đóng gói)
               </p>
             </div>
           </div>

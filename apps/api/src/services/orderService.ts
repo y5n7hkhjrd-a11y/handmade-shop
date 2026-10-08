@@ -2,8 +2,64 @@ import { OrderStatus } from '@handmade-shop/shared';
 import { orderRepository } from '../repositories/orderRepository.js';
 import { productRepository } from '../repositories/productRepository.js';
 import { recipeRepository } from '../repositories/recipeRepository.js';
+import { packagingRepository } from '../repositories/packagingRepository.js';
 import { costEngineService } from './costEngineService.js';
 import { AppError } from '../middleware/errorHandler.js';
+
+/**
+ * Resolve packaging costs for an order.
+ * - ITEM templates: cost applies per unit → multiply by line quantity.
+ * - ORDER templates: cost applies once for the whole order.
+ * Returns { itemCosts, orderCost, itemTemplateIds } where itemCosts maps line index → cost.
+ */
+async function resolvePackagingCosts(
+  orderLines: Array<{
+    type?: string;
+    quantity?: number;
+    packagingTemplateId?: string;
+  }>,
+): Promise<{
+  linePackagingCosts: Map<number, number>;
+  lineTemplateIds: Map<number, string>;
+  orderPackagingCost: number;
+  orderTemplateId: string | null;
+}> {
+  const linePackagingCosts = new Map<number, number>();
+  const lineTemplateIds = new Map<number, string>();
+  let orderPackagingCost = 0;
+  let orderTemplateId: string | null = null;
+
+  const templateCache = new Map<string, { type: string; totalCost: number }>();
+  const getTemplate = async (id: string) => {
+    if (!templateCache.has(id)) {
+      const tpl = await packagingRepository.findById(id);
+      if (!tpl || tpl.deletedAt) throw new AppError(`Mẫu đóng gói không tồn tại: ${id}`, 400);
+      templateCache.set(id, { type: tpl.type, totalCost: Number(tpl.totalCost) });
+    }
+    return templateCache.get(id)!;
+  };
+
+  for (let i = 0; i < orderLines.length; i++) {
+    const line = orderLines[i];
+    if (!line) continue;
+    const tplId = line.packagingTemplateId;
+    if (!tplId) continue;
+    const tpl = await getTemplate(tplId);
+    if (tpl.type === 'ITEM') {
+      const qty = line.quantity || 1;
+      linePackagingCosts.set(i, tpl.totalCost * qty);
+      lineTemplateIds.set(i, tplId);
+    } else if (tpl.type === 'ORDER') {
+      if (orderTemplateId && orderTemplateId !== tplId) {
+        throw new AppError('Chỉ được chọn một mẫu đóng gói cho cả đơn hàng', 400);
+      }
+      orderTemplateId = tplId;
+      orderPackagingCost += tpl.totalCost;
+    }
+  }
+
+  return { linePackagingCosts, lineTemplateIds, orderPackagingCost, orderTemplateId };
+}
 
 // Valid workflow transitions
 const validTransitions: Record<string, string[]> = {
@@ -24,6 +80,7 @@ export const orderService = {
     recipeId?: string;
     customInput?: string;
     salePrice?: number;
+    orderPackagingTemplateId?: string;
     items: Array<{
       productId: string;
       quantity: number;
@@ -100,6 +157,24 @@ export const orderService = {
         }
       }
 
+      // ─── Resolve packaging templates (ITEM per line, ORDER for whole order) ───
+      const packaging = await resolvePackagingCosts([
+        ...data.orderLines,
+        ...(data.orderPackagingTemplateId
+          ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+          : []),
+      ]);
+      totalPackagingCost = packaging.orderPackagingCost;
+      data.orderLines.forEach((_, i) => {
+        totalPackagingCost += packaging.linePackagingCosts.get(i) || 0;
+      });
+
+      // Attach per-line packaging template ids (ITEM type) onto the stored lines
+      const linesToStore = data.orderLines.map((line, i) => ({
+        ...line,
+        packagingTemplateId: packaging.lineTemplateIds.get(i) || undefined,
+      }));
+
       // totalCost = actual item costs + packaging, not sale prices
       const totalCost = totalMaterialCost + totalPackagingCost;
 
@@ -112,7 +187,8 @@ export const orderService = {
         packagingCost: totalPackagingCost,
         totalCost,
         items: allItems,
-        orderLines: data.orderLines,
+        orderLines: linesToStore,
+        orderPackagingTemplateId: packaging.orderTemplateId || undefined,
       });
     }
 
@@ -169,11 +245,13 @@ export const orderService = {
     // Fetch products and build fixed items with proper cost/sale price separation
     let legacyMaterialCost = 0;
     let legacySubtotal = 0;
+    let legacyPackagingCost = 0;
     const fixedItems: Array<{
       productId: string;
       quantity: number;
       unitPrice: number;
       packagingTemplateId?: string;
+      packagingCost?: number;
       notes?: string;
     }> = [];
     const orderLines: Array<{
@@ -184,6 +262,12 @@ export const orderService = {
       packagingTemplateId?: string;
       notes?: string;
     }> = [];
+    const packaging = await resolvePackagingCosts([
+      ...data.items,
+      ...(data.orderPackagingTemplateId
+        ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+        : []),
+    ]);
     for (const item of data.items) {
       const product = await productRepository.findById(item.productId);
       if (!product) {
@@ -209,6 +293,11 @@ export const orderService = {
         notes: item.notes,
       });
     }
+    // Packaging: ITEM templates per line + ORDER template for the whole order
+    data.items.forEach((_, i) => {
+      legacyPackagingCost += packaging.linePackagingCosts.get(i) || 0;
+    });
+    legacyPackagingCost += packaging.orderPackagingCost;
 
     return orderRepository.create({
       customerId: data.customerId,
@@ -216,10 +305,11 @@ export const orderService = {
       paidAmount: data.paidAmount,
       subtotal: legacySubtotal,
       materialCost: legacyMaterialCost,
-      packagingCost: 0,
-      totalCost: legacyMaterialCost,
+      packagingCost: legacyPackagingCost,
+      totalCost: legacyMaterialCost + legacyPackagingCost,
       items: fixedItems,
       orderLines,
+      orderPackagingTemplateId: packaging.orderTemplateId || undefined,
     });
   },
 
@@ -239,11 +329,9 @@ export const orderService = {
     // Ensure payment before moving to Packaging (InProgress → Packaging)
     if (currentStatus === OrderStatus.InProgress && newStatus === OrderStatus.Packaging) {
       const paid = Number(order.paidAmount) || 0;
+      // Tổng khách trả không gồm phí đóng gói (đó là giá vốn)
       const salePriceTotal =
-        Number(order.subtotal || 0) -
-        Number(order.discount || 0) +
-        Number(order.packagingCost || 0) +
-        Number(order.shippingCost || 0);
+        Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.shippingCost || 0);
       const remaining = salePriceTotal - paid;
       if (remaining > 0) {
         throw new AppError(
@@ -292,6 +380,7 @@ export const orderService = {
       notes?: string;
       paidAmount?: number;
       deadline?: string;
+      orderPackagingTemplateId?: string;
       orderLines: Array<{
         type: 'RECIPE' | 'PRODUCT';
         recipeId?: string;
@@ -300,6 +389,7 @@ export const orderService = {
         productId?: string;
         quantity?: number;
         unitPrice?: number;
+        packagingTemplateId?: string;
         notes?: string;
       }>;
     },
@@ -367,7 +457,33 @@ export const orderService = {
       }
     }
 
-    return orderRepository.replaceLines(id, data, items, subtotal, materialCost);
+    // ─── Resolve packaging templates (ITEM per line, ORDER for whole order) ───
+    const packaging = await resolvePackagingCosts([
+      ...data.orderLines,
+      ...(data.orderPackagingTemplateId
+        ? [{ packagingTemplateId: data.orderPackagingTemplateId }]
+        : []),
+    ]);
+    let packagingCost = packaging.orderPackagingCost;
+    data.orderLines.forEach((_, i) => {
+      packagingCost += packaging.linePackagingCosts.get(i) || 0;
+    });
+    // Attach per-line packaging template ids (ITEM type) onto the stored lines.
+    // ORDER-type template is stored separately in orders.order_packaging_template_id —
+    // it must NOT overwrite a line's ITEM template.
+    const linesToStore = data.orderLines.map((line, i) => ({
+      ...line,
+      packagingTemplateId: packaging.lineTemplateIds.get(i) || undefined,
+    }));
+
+    return orderRepository.replaceLines(
+      id,
+      { ...data, orderLines: linesToStore },
+      items,
+      subtotal,
+      materialCost,
+      packagingCost,
+    );
   },
 
   async update(

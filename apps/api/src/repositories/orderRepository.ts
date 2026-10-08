@@ -113,6 +113,7 @@ export const orderRepository = {
     materialCost?: number;
     packagingCost?: number;
     totalCost?: number;
+    orderPackagingTemplateId?: string;
     items: Array<{
       productId: string;
       quantity: number;
@@ -160,7 +161,10 @@ export const orderRepository = {
         orderLines:
           orderLines && orderLines.length > 0
             ? {
-                create: orderLines,
+                create: orderLines.map((line) => ({
+                  ...line,
+                  packagingTemplateId: line.packagingTemplateId || undefined,
+                })),
               }
             : undefined,
       },
@@ -340,7 +344,13 @@ export const orderRepository = {
 
   async replaceLines(
     id: string,
-    data: { notes?: string; paidAmount?: number; deadline?: string; orderLines: any[] },
+    data: {
+      notes?: string;
+      paidAmount?: number;
+      deadline?: string;
+      orderPackagingTemplateId?: string;
+      orderLines: any[];
+    },
     items: Array<{
       productId: string;
       quantity: number;
@@ -350,6 +360,7 @@ export const orderRepository = {
     }>,
     subtotalOverride?: number,
     materialCostOverride?: number,
+    packagingCostOverride?: number,
   ) {
     // Delete existing items and lines
     await prisma.orderItem.deleteMany({ where: { orderId: id } });
@@ -375,7 +386,7 @@ export const orderRepository = {
     if (!order) return null;
 
     const discount = Number(order.discount);
-    const packagingCost = Number(order.packagingCost);
+    const packagingCost = packagingCostOverride ?? Number(order.packagingCost);
     const shippingCost = Number(order.shippingCost);
     // Use actual item costs (materialCostOverride) as base for totalCost, not sale-price subtotal
     const itemTotalFromItems = items.reduce((sum, i) => sum + i.totalPrice, 0);
@@ -385,12 +396,17 @@ export const orderRepository = {
     if (materialCostOverride != null) {
       updateData.materialCost = materialCostOverride;
     }
+    if (packagingCostOverride != null) {
+      updateData.packagingCost = packagingCostOverride;
+    }
     if (data.paidAmount != null) {
       updateData.paidAmount = data.paidAmount;
     }
     if (data.deadline !== undefined) {
       updateData.deadline = data.deadline ? new Date(data.deadline) : null;
     }
+    // ORDER-type template lives in its own column — never on order_lines
+    updateData.orderPackagingTemplateId = data.orderPackagingTemplateId || null;
 
     return prisma.order.update({
       where: { id },

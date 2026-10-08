@@ -105,7 +105,7 @@ orderRouter.post('/:id/items', async (req: Request, res: Response, next: NextFun
 
 orderRouter.put('/:id/lines', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { orderLines, notes, paidAmount, deadline } = req.body;
+    const { orderLines, notes, paidAmount, deadline, orderPackagingTemplateId } = req.body;
     if (paidAmount !== undefined && (typeof paidAmount !== 'number' || paidAmount < 0)) {
       throw new Error('Số tiền đã thanh toán không hợp lệ');
     }
@@ -114,6 +114,7 @@ orderRouter.put('/:id/lines', async (req: Request, res: Response, next: NextFunc
       notes,
       paidAmount,
       deadline,
+      orderPackagingTemplateId,
     });
     res.json({ success: true, data: order });
   } catch (error) {

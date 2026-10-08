@@ -18,7 +18,15 @@ interface OrderLineInput {
   productId: string;
   quantity: number;
   unitPrice: number;
+  packagingTemplateId: string;
   notes: string;
+}
+
+interface PackagingTemplateOption {
+  id: string;
+  name: string;
+  type: string;
+  totalCost: number;
 }
 
 interface OrderFormProps {
@@ -30,6 +38,7 @@ interface OrderFormProps {
     deadline?: string;
     notes?: string;
     paidAmount?: number;
+    orderPackagingTemplateId?: string;
     orderLines: Array<{
       type: string;
       recipeId?: string;
@@ -38,6 +47,7 @@ interface OrderFormProps {
       productId?: string;
       quantity?: number;
       unitPrice?: number;
+      packagingTemplateId?: string;
       notes?: string;
     }>;
   } | null;
@@ -46,6 +56,7 @@ interface OrderFormProps {
   products: any[];
   recipes: any[];
   matchingRules: any[];
+  packagingTemplates: PackagingTemplateOption[];
   onSuccess: () => void;
   onCustomerCreated: (customer: any) => void;
   showToast: (message: string, type?: 'success' | 'error') => void;
@@ -114,6 +125,24 @@ function formatDateValue(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+interface OrderFormState {
+  customerId: string;
+  deadline: string;
+  notes: string;
+  paidAmount: number;
+  orderPackagingTemplateId: string;
+  orderLines: OrderLineInput[];
+}
+
+const EMPTY_ORDER_FORM: OrderFormState = {
+  customerId: '',
+  deadline: '',
+  notes: '',
+  paidAmount: 0,
+  orderPackagingTemplateId: '',
+  orderLines: [],
+};
+
 export default function OrderForm({
   isOpen,
   onClose,
@@ -123,23 +152,12 @@ export default function OrderForm({
   products,
   recipes,
   matchingRules,
+  packagingTemplates,
   onSuccess,
   onCustomerCreated,
   showToast,
 }: OrderFormProps) {
-  const [form, setForm] = useState<{
-    customerId: string;
-    deadline: string;
-    notes: string;
-    paidAmount: number;
-    orderLines: OrderLineInput[];
-  }>({
-    customerId: '',
-    deadline: '',
-    notes: '',
-    paidAmount: 0,
-    orderLines: [],
-  });
+  const [form, setForm] = useState<OrderFormState>({ ...EMPTY_ORDER_FORM });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false);
@@ -161,6 +179,16 @@ export default function OrderForm({
   const customerMenuRef = useRef<HTMLDivElement>(null);
   const deadlinePickerRef = useRef<HTMLDivElement>(null);
   const selectedCustomer = customers.find((customer) => customer.id === form.customerId);
+  // Mẫu đóng gói theo loại: ITEM cho từng dòng, ORDER cho cả đơn
+  const itemPackaging = useMemo(
+    () => (packagingTemplates || []).filter((p) => p.type === 'ITEM'),
+    [packagingTemplates],
+  );
+  const orderPackaging = useMemo(
+    () => (packagingTemplates || []).filter((p) => p.type === 'ORDER'),
+    [packagingTemplates],
+  );
+  const selectedOrderPackaging = orderPackaging.find((p) => p.id === form.orderPackagingTemplateId);
   const sortedCustomers = useMemo(
     () =>
       [...customers].sort(
@@ -228,21 +256,25 @@ export default function OrderForm({
           productId: ol.productId || '',
           quantity: ol.quantity || 1,
           unitPrice: Number(ol.unitPrice || 0),
+          packagingTemplateId: ol.packagingTemplateId || '',
           notes: ol.notes || '',
         }));
+        // Đóng gói cả đơn (ORDER) lưu ở cột riêng orders.order_packaging_template_id,
+        // tách hẳn với mẫu đóng gói ITEM của từng dòng sản phẩm.
         setForm({
           customerId: editingOrder.customerId,
           deadline: editingOrder.deadline ? editingOrder.deadline.split('T')[0] : '',
           notes: editingOrder.notes || '',
           paidAmount: Number(editingOrder.paidAmount) || 0,
+          orderPackagingTemplateId: editingOrder.orderPackagingTemplateId || '',
           orderLines,
         });
       } else {
-        setForm({ customerId: '', deadline: '', notes: '', paidAmount: 0, orderLines: [] });
+        setForm({ ...EMPTY_ORDER_FORM });
       }
       setFormErrors({});
     }
-  }, [isOpen, editingOrder]);
+  }, [isOpen, editingOrder, packagingTemplates]);
 
   // Compute cost preview for a single RECIPE line
   const getRecipeLineCost = (line: { recipeId: string; customInput: string }) => {
@@ -307,6 +339,7 @@ export default function OrderForm({
       const body: Record<string, any> = {
         deadline: form.deadline || undefined,
         notes: form.notes,
+        orderPackagingTemplateId: form.orderPackagingTemplateId || undefined,
         orderLines: form.orderLines.map((line) => {
           if (line.type === 'RECIPE') {
             return {
@@ -315,6 +348,7 @@ export default function OrderForm({
               customInput: line.customInput,
               salePrice: Number(line.salePrice) || 0,
               quantity: line.quantity || 1,
+              packagingTemplateId: line.packagingTemplateId || undefined,
               notes: line.notes || undefined,
             };
           }
@@ -323,6 +357,7 @@ export default function OrderForm({
             productId: line.productId,
             quantity: line.quantity || 1,
             unitPrice: Number(line.unitPrice) || 0,
+            packagingTemplateId: line.packagingTemplateId || undefined,
             notes: line.notes || undefined,
           };
         }),
@@ -361,7 +396,7 @@ export default function OrderForm({
       }
 
       onClose();
-      setForm({ customerId: '', deadline: '', notes: '', paidAmount: 0, orderLines: [] });
+      setForm({ ...EMPTY_ORDER_FORM });
       setFormErrors({});
       onSuccess();
     } catch (e: any) {
@@ -617,6 +652,9 @@ export default function OrderForm({
 
               {form.orderLines.map((line, idx) => {
                 const type = line.type;
+                const selectedLinePackaging = itemPackaging.find(
+                  (p) => p.id === line.packagingTemplateId,
+                );
                 return (
                   <div
                     key={idx}
@@ -649,6 +687,7 @@ export default function OrderForm({
                             productId: '',
                             quantity: 1,
                             unitPrice: 0,
+                            packagingTemplateId: line.packagingTemplateId || '',
                           };
                           setForm({ ...form, orderLines: lines });
                         }}
@@ -669,6 +708,7 @@ export default function OrderForm({
                             productId: line.productId || '',
                             quantity: line.quantity || 1,
                             unitPrice: line.unitPrice || 0,
+                            packagingTemplateId: line.packagingTemplateId || '',
                           };
                           setForm({ ...form, orderLines: lines });
                         }}
@@ -851,6 +891,42 @@ export default function OrderForm({
                       </div>
                     )}
 
+                    {/* Đóng gói cho dòng này (mẫu loại ITEM) */}
+                    {itemPackaging.length > 0 && (
+                      <div className="mt-2">
+                        <label className="text-[10px] text-gray-500 font-medium">
+                          📦 Đóng gói cho sản phẩm này (cost × SL)
+                        </label>
+                        <CustomSelect
+                          value={line.packagingTemplateId || ''}
+                          onChange={(packagingTemplateId) => {
+                            const lines = [...form.orderLines];
+                            lines[idx] = { ...lines[idx]!, packagingTemplateId };
+                            setForm({ ...form, orderLines: lines });
+                          }}
+                          options={[
+                            { value: '', label: 'Không đóng gói' },
+                            ...itemPackaging.map((p) => ({
+                              value: p.id,
+                              label: `${p.name} — ${formatCurrency(Number(p.totalCost))}/sản phẩm`,
+                            })),
+                          ]}
+                        />
+                        {selectedLinePackaging && (
+                          <p className="text-[10px] text-pink-600 mt-1">
+                            Phí đóng gói dòng này:{' '}
+                            <strong>
+                              {formatCurrency(
+                                Number(selectedLinePackaging.totalCost) * (line.quantity || 1),
+                              )}
+                            </strong>{' '}
+                            ({formatCurrency(Number(selectedLinePackaging.totalCost))} ×{' '}
+                            {line.quantity || 1})
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {/* Notes for any type */}
                     <div className="mt-2">
                       <textarea
@@ -885,6 +961,7 @@ export default function OrderForm({
                         recipeId: '',
                         customInput: '',
                         salePrice: 0,
+                        packagingTemplateId: '',
                         notes: '',
                       },
                     ],
@@ -900,6 +977,43 @@ export default function OrderForm({
               )}
             </div>
 
+            {/* Đóng gói cho cả đơn (mẫu loại ORDER) */}
+            <div>
+              <label className="text-[10px] text-gray-500 font-medium">
+                🎁 Đóng gói cho cả đơn <span className="text-gray-400 font-normal">(tùy chọn)</span>
+              </label>
+              {orderPackaging.length > 0 ? (
+                <>
+                  <CustomSelect
+                    value={form.orderPackagingTemplateId}
+                    onChange={(orderPackagingTemplateId) =>
+                      setForm({ ...form, orderPackagingTemplateId })
+                    }
+                    options={[
+                      { value: '', label: 'Không đóng gói cả đơn' },
+                      ...orderPackaging.map((p) => ({
+                        value: p.id,
+                        label: `${p.name} — ${formatCurrency(Number(p.totalCost))}/đơn`,
+                      })),
+                    ]}
+                  />
+                  {selectedOrderPackaging && (
+                    <p className="text-[10px] text-pink-600 mt-1">
+                      Phí đóng gói cả đơn:{' '}
+                      <strong>{formatCurrency(Number(selectedOrderPackaging.totalCost))}</strong>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">
+                  Chưa có mẫu đóng gói cả đơn — tạo tại trang{' '}
+                  <a href="/packaging" target="_blank" className="text-avocado-600 underline">
+                    Đóng gói
+                  </a>
+                </p>
+              )}
+            </div>
+
             {/* Order total preview */}
             {(() => {
               let totalSalePrice = 0;
@@ -908,7 +1022,16 @@ export default function OrderForm({
                   totalSalePrice += (Number(line.salePrice) || 0) * (line.quantity || 1);
                 else totalSalePrice += (Number(line.unitPrice) || 0) * (line.quantity || 1);
               });
-              if (totalSalePrice <= 0) return null;
+              // Phí đóng gói ước tính: ITEM × SL + ORDER một lần
+              let packagingCost = 0;
+              form.orderLines.forEach((line) => {
+                if (!line.packagingTemplateId) return;
+                const tpl = itemPackaging.find((p) => p.id === line.packagingTemplateId);
+                if (tpl) packagingCost += Number(tpl.totalCost) * (line.quantity || 1);
+              });
+              const orderTpl = orderPackaging.find((p) => p.id === form.orderPackagingTemplateId);
+              if (orderTpl) packagingCost += Number(orderTpl.totalCost);
+              if (totalSalePrice <= 0 && packagingCost <= 0) return null;
               return (
                 <div className="p-3 bg-gradient-to-br from-avocado-50 to-avocado-50/30 rounded-xl border border-avocado-100">
                   <div className="flex items-center justify-between">
@@ -919,6 +1042,14 @@ export default function OrderForm({
                       {formatCurrency(totalSalePrice)}
                     </span>
                   </div>
+                  {packagingCost > 0 && (
+                    <div className="flex items-center justify-between mt-1 text-xs">
+                      <span className="text-gray-500">Phí đóng gói (giá vốn)</span>
+                      <span className="font-semibold text-pink-600">
+                        {formatCurrency(packagingCost)}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-gray-400 mt-1">
                     {form.orderLines.filter((l) => l.type === 'RECIPE' && l.recipeId).length} công
                     thức,{' '}

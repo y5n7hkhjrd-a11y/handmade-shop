@@ -167,6 +167,7 @@ model PackagingTemplate {
   components  PackagingComponent[]
   orderItems  OrderItem[]
   orderLines  OrderLine[]
+  orders      Order[]
 
   @@map("packaging_templates")
 }
@@ -211,6 +212,7 @@ model Order {
   paidAmount      Decimal     @default(0) @map("paid_amount") @db.Decimal(12, 2)
   materialCost    Decimal     @default(0) @map("material_cost") @db.Decimal(12, 2)
   packagingCost   Decimal     @default(0) @map("packaging_cost") @db.Decimal(12, 2)
+  orderPackagingTemplateId String? @map("order_packaging_template_id") @db.Uuid
   shippingCost    Decimal     @default(0) @map("shipping_cost") @db.Decimal(12, 2)
   shippingPaidBy  String?     @default("prepaid") @map("shipping_paid_by")
   totalCost       Decimal     @default(0) @map("total_cost") @db.Decimal(12, 2)
@@ -224,6 +226,7 @@ model Order {
 
   customer Customer      @relation(fields: [customerId], references: [id])
   recipe   Recipe?       @relation(fields: [recipeId], references: [id])
+  orderPackagingTemplate PackagingTemplate? @relation(fields: [orderPackagingTemplateId], references: [id])
   items    OrderItem[]
   orderLines OrderLine[]
   shipping Shipping[]
@@ -283,7 +286,7 @@ model InventoryTransaction {
   productId      String?         @map("product_id") @db.Uuid
   componentName  String?         @map("component_name")
   quantity       Decimal         @db.Decimal(12, 4)
-  unit           String          @default("unit")
+  cost           Decimal         @default(0) @db.Decimal(12, 2)
   reference      String?
   notes          String?
   createdAt      DateTime        @default(now())

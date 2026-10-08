@@ -90,8 +90,8 @@ function DeadlineChip({ order }: { order: any }) {
 
 /* ─── Mobile order card (replaces the table on small screens) ─── */
 function MobileOrderCard({ order, onClick }: { order: any; onClick: () => void }) {
-  const total =
-    Number(order.subtotal || 0) - Number(order.discount || 0) + Number(order.packagingCost || 0);
+  // Tổng cộng khách trả: không gồm phí đóng gói (đó là giá vốn)
+  const total = Number(order.subtotal || 0) - Number(order.discount || 0);
   const lineInfo =
     order.orderLines?.length > 0
       ? `${order.orderLines.length} dòng`
@@ -173,6 +173,7 @@ export default function OrdersPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
   const [matchingRules, setMatchingRules] = useState<any[]>([]);
+  const [packagingTemplates, setPackagingTemplates] = useState<any[]>([]);
 
   // Debounce search input
   useEffect(() => {
@@ -266,6 +267,9 @@ export default function OrdersPage() {
       apiClient('/matching-rules/all', { token })
         .then((r: any) => setMatchingRules(r.data || []))
         .catch(() => {});
+      apiClient('/packaging?limit=100', { token })
+        .then((r: any) => setPackagingTemplates(r.data || []))
+        .catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadOrders, token]);
@@ -281,10 +285,7 @@ export default function OrdersPage() {
 
     if (orderObj?.status === 'InProgress') {
       const paid = Number(orderObj.paidAmount) || 0;
-      const salePriceTotal =
-        Number(orderObj.subtotal || 0) -
-        Number(orderObj.discount || 0) +
-        Number(orderObj.packagingCost || 0);
+      const salePriceTotal = Number(orderObj.subtotal || 0) - Number(orderObj.discount || 0);
       const remaining = salePriceTotal - paid;
       if (remaining > 0) {
         showToast(
@@ -587,6 +588,7 @@ export default function OrdersPage() {
         products={products}
         recipes={recipes}
         matchingRules={matchingRules}
+        packagingTemplates={packagingTemplates}
         onSuccess={() => {
           loadOrders();
           loadCounts();
@@ -856,9 +858,7 @@ export default function OrdersPage() {
                         </td>
                         <td className="font-semibold tabular-nums text-left">
                           {formatCurrency(
-                            Number(order.subtotal || 0) -
-                              Number(order.discount || 0) +
-                              Number(order.packagingCost || 0),
+                            Number(order.subtotal || 0) - Number(order.discount || 0),
                           )}
                         </td>
                         <td className="text-left">

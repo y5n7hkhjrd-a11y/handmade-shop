@@ -182,6 +182,7 @@ export interface Order {
   paidAmount: number;
   materialCost: number;
   packagingCost: number;
+  orderPackagingTemplateId?: string | null;
   shippingCost: number;
   shippingPaidBy?: string | null;
   totalCost: number;
