@@ -30,7 +30,7 @@ export default function InventoryForm({
     productId: '',
     componentName: '',
     quantity: 0,
-    unit: 'pieces',
+    cost: 0,
     reference: '',
     notes: '',
   });
@@ -43,13 +43,18 @@ export default function InventoryForm({
     e.preventDefault();
     if (!token) return;
     if (form.quantity <= 0) {
-      setFormErrors({ quantity: 'Quantity must be greater than 0' });
+      setFormErrors({ quantity: 'Số lượng phải lớn hơn 0' });
       return;
     }
     try {
+      const body = {
+        ...form,
+        quantity: Number(form.quantity),
+        cost: form.type === 'IMPORT' ? Number(form.cost) || 0 : undefined,
+      };
       await apiClient('/inventory', {
         method: 'POST',
-        body: { ...form, quantity: Number(form.quantity) },
+        body,
         token,
       });
       showToast('Đã ghi nhận giao dịch');
@@ -59,7 +64,7 @@ export default function InventoryForm({
         productId: '',
         componentName: '',
         quantity: 0,
-        unit: 'pieces',
+        cost: 0,
         reference: '',
         notes: '',
       });
@@ -81,14 +86,14 @@ export default function InventoryForm({
         </div>
         <form onSubmit={handleCreate} className="p-6 space-y-4">
           <div>
-            <label className="label">Loại</label>
+            <label className="label">Loại giao dịch</label>
             <CustomSelect
               value={form.type}
               onChange={(type) => setForm({ ...form, type })}
               options={[
-                { value: 'IMPORT', label: '📥 Import — Stock received' },
-                { value: 'SALE', label: '📤 Sale — Stock sold' },
-                { value: 'ADJUSTMENT', label: '⚖️ Adjustment — Stock correction' },
+                { value: 'IMPORT', label: '📥 Nhập kho — Hàng về' },
+                { value: 'SALE', label: '📤 Xuất kho — Hàng bán' },
+                { value: 'ADJUSTMENT', label: '⚖️ Điều chỉnh — Kiểm kê' },
               ]}
             />
           </div>
@@ -111,13 +116,14 @@ export default function InventoryForm({
           {!form.productId && (
             <div>
               <label className="label">
-                Component Name <span className="text-gray-400 font-normal">(fallback)</span>
+                Tên nguyên liệu{' '}
+                <span className="text-gray-400 font-normal">(khi chưa chọn sản phẩm)</span>
               </label>
               <input
                 className="input"
                 value={form.componentName}
                 onChange={(e) => setForm({ ...form, componentName: e.target.value })}
-                placeholder="e.g., Beads, String, Clasp"
+                placeholder="VD: Hạt cườm, Dây, Khóa"
               />
             </div>
           )}
@@ -140,14 +146,18 @@ export default function InventoryForm({
                 <p className="mt-1 text-xs text-red-600">{formErrors.quantity}</p>
               )}
             </div>
-            <div>
-              <label className="label">Đơn vị</label>
-              <input
-                className="input"
-                value={form.unit}
-                onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              />
-            </div>
+            {form.type === 'IMPORT' && (
+              <div>
+                <label className="label">Giá vốn / đơn vị</label>
+                <NumberInput
+                  className="input"
+                  value={form.cost}
+                  allowDecimal
+                  hideZero
+                  onChange={(val) => setForm({ ...form, cost: val })}
+                />
+              </div>
+            )}
           </div>
 
           <div>

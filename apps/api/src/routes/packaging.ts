@@ -62,6 +62,16 @@ packagingRouter.put(
   validate(updatePackagingTemplateSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Không cho sửa mẫu đã dùng trong đơn hàng đang hoạt động
+      const orderItemCount = await prisma.orderItem.count({
+        where: { packagingTemplateId: req.params.id!, order: { deletedAt: null } },
+      });
+      if (orderItemCount > 0) {
+        throw new AppError(
+          `Không thể sửa mẫu đóng gói này vì đã được sử dụng trong ${orderItemCount} đơn hàng.`,
+          400,
+        );
+      }
       const template = await packagingRepository.update(req.params.id!, req.body);
       if (!template) throw new AppError('Packaging template not found', 404);
       res.json({ success: true, data: template });

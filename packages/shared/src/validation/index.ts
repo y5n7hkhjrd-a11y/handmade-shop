@@ -84,14 +84,26 @@ export const packagingComponentSchema = z.object({
   cost: z.number().min(0),
 });
 
-export const createPackagingTemplateSchema = z.object({
+const packagingTemplateBaseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   type: z.nativeEnum(PackagingType),
   description: z.string().optional().or(z.literal('')),
+  // Giá cost do người dùng nhập trực tiếp; nếu không nhập thì tính từ components
+  totalCost: z.number().min(0, 'Cost must be non-negative').optional(),
   components: z.array(packagingComponentSchema).default([]),
 });
 
-export const updatePackagingTemplateSchema = createPackagingTemplateSchema.partial();
+export const createPackagingTemplateSchema = packagingTemplateBaseSchema.refine(
+  (data) =>
+    data.totalCost !== undefined ||
+    data.components.length === 0 ||
+    data.components.some((c) => c.cost > 0),
+  {
+    message: 'Vui lòng nhập giá cost hoặc thêm thành phần có chi phí',
+  },
+);
+
+export const updatePackagingTemplateSchema = packagingTemplateBaseSchema.partial();
 
 // Order — OrderLine: each line is either RECIPE or PRODUCT type
 export const createOrderLineSchema = z.discriminatedUnion('type', [
@@ -101,6 +113,7 @@ export const createOrderLineSchema = z.discriminatedUnion('type', [
     customInput: z.string().min(1, 'Custom input is required'),
     salePrice: z.number().positive('Vui lòng nhập giá bán cho dòng công thức'),
     quantity: z.number().int().min(1).default(1),
+    packagingTemplateId: z.string().uuid().optional().or(z.literal('')),
     notes: z.string().optional().or(z.literal('')),
   }),
   z.object({
@@ -129,6 +142,8 @@ export const createOrderSchema = z
     paidAmount: z.number().min(0).default(0),
     // New multi-line format
     orderLines: z.array(createOrderLineSchema).optional(),
+    // Đóng gói cho cả đơn (ORDER-type packaging template)
+    orderPackagingTemplateId: z.string().uuid().optional().or(z.literal('')),
     // Legacy fields (backward compatibility)
     recipeId: z.string().uuid().optional(),
     customInput: z.string().optional(),
@@ -159,7 +174,7 @@ export const createInventoryTransactionSchema = z.object({
   productId: z.string().uuid().optional().or(z.literal('')),
   componentName: z.string().optional().or(z.literal('')),
   quantity: z.number().min(0, 'Quantity must be non-negative'),
-  unit: z.string().default('unit'),
+  cost: z.number().min(0).optional(),
   reference: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
 });

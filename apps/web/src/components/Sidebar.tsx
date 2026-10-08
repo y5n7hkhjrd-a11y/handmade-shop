@@ -74,15 +74,19 @@ export default function Sidebar({ mobileOpen = false, onMobileToggle }: SidebarP
 
         {/* Logo */}
         <div
-          className={`p-4 border-b border-gray-100 flex-shrink-0 ${collapsed ? 'text-center' : ''}`}
+          className={`p-3 border-b border-gray-100 flex-shrink-0 min-h-[4rem] flex items-center justify-center ${
+            collapsed ? 'px-2' : 'px-4'
+          }`}
         >
-          <div className="flex items-center justify-center relative">
+          <div className="flex items-center justify-center relative w-full overflow-hidden">
             <Link href="/dashboard" className="flex items-center justify-center group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo.svg"
+                src={collapsed ? '/icon-192.png' : '/logo.svg'}
                 alt="Linus Logo"
-                className="h-16 w-auto max-w-[180px] transition-all duration-300 group-hover:scale-105 object-contain"
+                className={`transition-all duration-300 group-hover:scale-105 object-contain ${
+                  collapsed ? 'h-8 w-8 rounded-lg shadow-xs' : 'h-10 w-auto max-w-[150px]'
+                }`}
               />
             </Link>
             <button

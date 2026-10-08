@@ -39,7 +39,7 @@ export const inventoryRepository = {
     productId?: string;
     componentName?: string;
     quantity: number;
-    unit?: string;
+    cost?: number;
     reference?: string;
     notes?: string;
   }) {
@@ -50,10 +50,20 @@ export const inventoryRepository = {
   },
 
   async getStockSummary() {
-    const transactions = await prisma.inventoryTransaction.groupBy({
-      by: ['productId', 'componentName'],
-      _sum: { quantity: true },
-    });
-    return transactions;
+    const [items, totals] = await Promise.all([
+      prisma.inventoryTransaction.groupBy({
+        by: ['productId', 'componentName'],
+        _sum: { quantity: true },
+      }),
+      prisma.inventoryTransaction.groupBy({
+        by: ['type'],
+        _sum: { quantity: true },
+      }),
+    ]);
+    const totalsByType: Record<string, number> = {};
+    for (const t of totals) {
+      totalsByType[t.type] = Number(t._sum.quantity || 0);
+    }
+    return { items, totals: totalsByType };
   },
 };

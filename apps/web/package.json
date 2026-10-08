@@ -10,13 +10,16 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "icons:gen": "node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
     "@flaticon/flaticon-uicons": "3.3.1",
     "@handmade-shop/shared": "workspace:*",
+    "chart.js": "^4.5.1",
     "next": "^14.2.4",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.23.8"
   },
