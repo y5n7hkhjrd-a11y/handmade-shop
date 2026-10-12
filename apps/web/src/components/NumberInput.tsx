@@ -12,6 +12,8 @@ interface NumberInputProps extends Omit<
   allowDecimal?: boolean;
   /** When true and value is 0, show empty string (placeholder will display). Default false. */
   hideZero?: boolean;
+  /** If true, format the value with thousands separators (e.g. 1.000.000). Default false. */
+  formatThousands?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export function NumberInput({
   onChange,
   allowDecimal = false,
   hideZero = false,
+  formatThousands = false,
   className,
   placeholder,
   min,
@@ -40,8 +43,16 @@ export function NumberInput({
   // without the value snapping back to 0 or the clamped minimum.
   const [rawInput, setRawInput] = useState<string | null>(null);
 
-  // When the controlled value changes externally, reset raw input
-  const displayValue = rawInput !== null ? rawInput : value === 0 && hideZero ? '' : String(value);
+  const formatNumber = (val: number | string) => {
+    if (val === '' || val === null || val === undefined) return '';
+    const num = typeof val === 'string' ? val.replace(/\D/g, '') : String(val);
+    if (!num) return '';
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const displayValue = rawInput !== null
+    ? (formatThousands ? formatNumber(rawInput) : rawInput)
+    : (value === 0 && hideZero ? '' : (formatThousands ? formatNumber(value) : String(value)));
 
   const filterInput = (raw: string): string => {
     return allowDecimal ? raw.replace(/[^0-9.]/g, '') : raw.replace(/\D/g, '');

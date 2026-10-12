@@ -364,11 +364,7 @@ export default function OrderForm({
       };
 
       // Reset payment when editing order lines (prices may have changed)
-      if (editingOrder) {
-        body.paidAmount = 0;
-      } else {
-        body.paidAmount = form.paidAmount || 0;
-      }
+      body.paidAmount = form.paidAmount || 0;
 
       if (editingOrder) {
         await apiClient(`/orders/${editingOrder.id}/lines`, { method: 'PUT', body, token });
@@ -789,6 +785,7 @@ export default function OrderForm({
                               }}
                               step={1000}
                               placeholder="0"
+                              formatThousands
                             />
                           </div>
                         </div>
@@ -886,6 +883,7 @@ export default function OrderForm({
                             }}
                             step={1000}
                             placeholder="0"
+                            formatThousands
                           />
                         </div>
                       </div>
@@ -1059,6 +1057,20 @@ export default function OrderForm({
                 </div>
               );
             })()}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="label">Số tiền đã thanh toán</label>
+                <NumberInput
+                  className="input text-sm"
+                  value={form.paidAmount}
+                  onChange={(val) => setForm({ ...form, paidAmount: val })}
+                  step={1000}
+                  placeholder="0"
+                  formatThousands
+                />
+              </div>
+            </div>
 
             <div>
               <label className="label">
