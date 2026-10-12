@@ -50,9 +50,16 @@ export function NumberInput({
     return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
-  const displayValue = rawInput !== null
-    ? (formatThousands ? formatNumber(rawInput) : rawInput)
-    : (value === 0 && hideZero ? '' : (formatThousands ? formatNumber(value) : String(value)));
+  const displayValue =
+    rawInput !== null
+      ? formatThousands
+        ? formatNumber(rawInput)
+        : rawInput
+      : value === 0 && hideZero
+        ? ''
+        : formatThousands
+          ? formatNumber(value)
+          : String(value);
 
   const filterInput = (raw: string): string => {
     return allowDecimal ? raw.replace(/[^0-9.]/g, '') : raw.replace(/\D/g, '');
